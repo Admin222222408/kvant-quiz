@@ -1,0 +1,2170 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Система тестирования</title>
+
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://firebaseinstallations.googleapis.com">
+<link rel="preconnect" href="https://kvantorium-48d8a-default-rtdb.firebaseio.com">
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getDatabase, ref, set, push, onValue, update, remove,
+  get, child, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import {
+  getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+  signOut, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+/* ============================================================
+   ⚠️ ЗАМЕНИТЕ ЭТОТ БЛОК НА ВАШИ ДАННЫЕ ИЗ FIREBASE CONSOLE
+   ============================================================ */
+const firebaseConfig = {
+  apiKey: "AIzaSyCYS2nXu7C1UtGOhnXKU1QO0lKxNotqlrc",
+  authDomain: "kvantorium-48d8a.firebaseapp.com",
+  databaseURL: "https://kvantorium-48d8a-default-rtdb.firebaseio.com",
+  projectId: "kvantorium-48d8a",
+  storageBucket: "kvantorium-48d8a.firebasestorage.app",
+  messagingSenderId: "161682059980",
+  appId: "1:161682059980:web:86bb33dc8c6a623ae28869"
+};
+/* ============================================================ */
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getDatabase(fbApp);
+const auth = getAuth(fbApp);
+
+window.FB = {
+  db, auth,
+  ref, set, push, onValue, update, remove, get, child, serverTimestamp,
+  signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut,
+  ready: false
+};
+
+onAuthStateChanged(auth, () => {
+  if (!window.FB.ready) {
+    window.FB.ready = true;
+    window.dispatchEvent(new CustomEvent('fb-ready'));
+  }
+});
+</script>
+
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    margin: 0; padding: 20px; min-height: 100vh;
+    background-color: #0f172a;
+    background-attachment: fixed;
+    color: #e2e8f0;
+  }
+
+  body.theme-developer {
+    background-color: #0b1220;
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'><g fill='none' stroke='%2360a5fa' stroke-width='1' opacity='0.22'><path d='M10 10 H60 V60 H110 V10'/><path d='M10 120 H50 V170 H100'/><path d='M170 20 V70 H120'/><path d='M10 220 H80 V170'/><path d='M230 210 H150 V150 H100'/><path d='M230 120 H180 V60'/><path d='M60 230 V190 H130 V230'/><path d='M170 230 H230 V170'/><path d='M50 50 V130'/><path d='M190 190 V120 H140'/></g><g fill='%2360a5fa' opacity='0.5'><circle cx='10' cy='10' r='2.5'/><circle cx='60' cy='60' r='2.5'/><circle cx='110' cy='10' r='2.5'/><circle cx='50' cy='170' r='2.5'/><circle cx='170' cy='20' r='2.5'/><circle cx='120' cy='70' r='2.5'/><circle cx='120' cy='120' r='3'/><circle cx='230' cy='120' r='2.5'/><circle cx='180' cy='60' r='2.5'/><circle cx='80' cy='170' r='2.5'/><circle cx='230' cy='230' r='2.5'/></g></svg>"),
+      radial-gradient(circle at 30% 25%, rgba(59,130,246,0.15) 0%, transparent 45%),
+      radial-gradient(circle at 70% 75%, rgba(14,165,233,0.12) 0%, transparent 45%),
+      linear-gradient(180deg, #0b1220 0%, #0f1a30 100%);
+    background-size: 240px 240px, auto, auto, auto;
+    background-attachment: fixed;
+    background-repeat: repeat, no-repeat, no-repeat, no-repeat;
+  }
+
+  body.theme-teacher {
+    background-color: #1a2a1e;
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='500' height='400' viewBox='0 0 500 400'><g stroke='%23ffffff' stroke-width='1' fill='none' opacity='0.12'><path d='M30 60 Q 90 50, 150 65 T 280 60'/><circle cx='380' cy='70' r='20'/><path d='M60 150 L 140 150 M 100 120 L 100 180'/><text x='200' y='160' font-family='serif' font-size='28' fill='%23ffffff' opacity='0.18'>E=mc²</text><text x='50' y='260' font-family='serif' font-size='22' fill='%23ffffff' opacity='0.15'>a² + b² = c²</text><path d='M280 250 Q 320 210, 360 250 T 440 250'/><text x='60' y='340' font-family='serif' font-size='24' fill='%23ffffff' opacity='0.13'>∫ f(x)dx</text></g></svg>"),
+      radial-gradient(ellipse at 50% 30%, rgba(255,255,255,0.05) 0%, transparent 70%),
+      linear-gradient(180deg, #1a2a1e 0%, #142219 100%);
+    background-size: 500px 400px, auto, auto;
+    background-attachment: fixed;
+    background-repeat: repeat, no-repeat, no-repeat;
+  }
+
+  body.theme-student {
+    background-color: #0a1220;
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'><g fill='none' stroke='%2360a5fa' stroke-width='0.8' opacity='0.18'><circle cx='60' cy='60' r='12'/><circle cx='180' cy='60' r='12'/><circle cx='60' cy='180' r='12'/><circle cx='180' cy='180' r='12'/><rect x='105' y='105' width='30' height='30' rx='4'/><line x1='72' y1='72' x2='110' y2='110'/><line x1='168' y1='72' x2='130' y2='110'/><line x1='72' y1='168' x2='110' y2='130'/><line x1='168' y1='168' x2='130' y2='130'/></g><g fill='none' stroke='%2360a5fa' stroke-width='0.8' opacity='0.12'><circle cx='310' cy='240' r='10'/><circle cx='380' cy='240' r='10'/><circle cx='310' cy='310' r='10'/><circle cx='380' cy='310' r='10'/><rect x='335' y='265' width='20' height='20' rx='3'/><line x1='318' y1='248' x2='337' y2='267'/><line x1='372' y1='248' x2='353' y2='267'/><line x1='318' y1='302' x2='337' y2='283'/><line x1='372' y1='302' x2='353' y2='283'/></g><g fill='%23ffffff' opacity='0.4'><circle cx='30' cy='300' r='0.8'/><circle cx='250' cy='30' r='1'/><circle cx='120' cy='360' r='0.6'/><circle cx='360' cy='90' r='0.9'/><circle cx='300' cy='160' r='0.7'/></g></svg>"),
+      radial-gradient(circle at 20% 90%, rgba(37,99,235,0.35) 0%, transparent 55%),
+      radial-gradient(circle at 80% 10%, rgba(14,165,233,0.30) 0%, transparent 55%),
+      linear-gradient(160deg, #0a1220 0%, #0f172a 50%, #111c33 100%);
+    background-size: 400px 400px, auto, auto, auto;
+    background-attachment: fixed;
+    background-repeat: repeat, no-repeat, no-repeat, no-repeat;
+  }
+
+  body.theme-home {
+    background-image:
+      radial-gradient(circle at 50% 0%, rgba(37,99,235,0.20) 0%, transparent 60%),
+      linear-gradient(160deg, #0a1220 0%, #0f172a 100%);
+    background-attachment: fixed;
+  }
+
+  .container {
+    max-width: 1250px; margin: 0 auto;
+    background: rgba(15,23,42,0.7);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    padding: 24px; border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    border: 1px solid rgba(148,163,184,0.15);
+  }
+
+  h1 { margin-top:0; color: #f1f5f9; font-size: 24px; }
+  h2 { margin-top:24px; color: #f1f5f9; font-size: 18px; }
+  h3 { color: #e2e8f0; font-size: 15px; }
+
+  button {
+    padding: 10px 18px; border: none; border-radius: 10px;
+    background: #3b82f6; color: #fff; font-size: 15px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  button:hover { background: #2563eb; }
+  button:disabled { background: #475569; color: #94a3b8; cursor: not-allowed; }
+
+  button.opt {
+    display: block; width: 100%; text-align: left; margin: 8px 0;
+    background: #334155; color: #e2e8f0;
+    border: 3px solid transparent;
+    padding: 12px 16px;
+  }
+  button.opt:hover { background: #3f4d63; }
+  button.opt.highlighted { border-color: #60a5fa; background: #1e3a5f; }
+  button.opt.selected { background: #3b82f6; color: #fff; border-color: #1e40af; }
+
+  button.small { padding: 6px 10px; font-size: 13px; margin: 2px 0; }
+  button.back { background: #475569; } button.back:hover { background: #64748b; }
+  button.download { background: #16a34a; } button.download:hover { background: #15803d; }
+  button.danger { background: #dc2626; } button.danger:hover { background: #b91c1c; }
+  button.refresh { background: #0ea5e9; } button.refresh:hover { background: #0284c7; }
+  button.green { background: #16a34a; } button.green:hover { background: #15803d; }
+  button.purple { background: #9333ea; } button.purple:hover { background: #7e22ce; }
+
+  input[type=text], input[type=password], input[type=email], input[type=number], textarea, select {
+    padding: 10px 12px; border: 1px solid #475569; border-radius: 10px;
+    font-size: 15px; width: 100%; box-sizing: border-box; margin-bottom: 10px;
+    background: rgba(15,23,42,0.7); color: #e2e8f0; font-family: inherit;
+  }
+  textarea { min-height: 60px; resize: vertical; }
+  input::placeholder, textarea::placeholder { color:#64748b; }
+  input.invalid { border-color:#dc2626; background:#3f1d1d; }
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(96,165,250,0.15);
+  }
+
+  .timer {
+    font-size: 34px; font-weight: bold; color: #f87171;
+    text-align: center; margin-top: 10px;
+  }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+  th, td {
+    padding: 10px 12px; text-align: left; font-size: 13px;
+    border-bottom: 1px solid rgba(51,65,85,0.6);
+    color: #e2e8f0;
+  }
+  th {
+    color: #94a3b8; font-weight: 500; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    background: transparent;
+  }
+  tr:last-child td { border-bottom: none; }
+
+  .ok { color: #4ade80; font-weight: bold; }
+  .bad { color: #f87171; font-weight: bold; }
+  .score { font-size: 52px; text-align: center; color: #60a5fa; font-weight: bold; margin: 12px 0; }
+
+  .badge {
+    display: inline-block; padding: 4px 10px; border-radius: 6px;
+    background: #1e3a5f; color: #93c5fd; font-size: 13px;
+    font-family: monospace;
+  }
+  .badge.session {
+    background: #166534; color: #86efac;
+    font-size: 14px; padding: 6px 12px; word-break: break-all;
+  }
+
+  .role-chip {
+    display: inline-block; padding: 6px 12px; border-radius: 20px;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.5px;
+  }
+  .role-chip.developer { background: #4c1d95; color: #d8b4fe; }
+  .role-chip.teacher { background: #1e3a5f; color: #93c5fd; }
+  .teacher-chip {
+    display: inline-block; padding: 6px 12px; border-radius: 20px;
+    background: #1e3a5f; color: #93c5fd; font-size: 13px;
+  }
+
+  .menu a { text-decoration:none; display:inline-block; margin:8px; }
+  .label { display:block; font-size:13px; color:#94a3b8; margin-bottom:6px; font-weight: 500; }
+  .hint { color:#94a3b8; font-size:13px; margin:4px 0 12px; }
+
+  .kbd {
+    display: inline-block; padding: 2px 6px;
+    border: 1px solid #475569; border-radius: 4px;
+    font-size: 12px; font-family: monospace;
+    background: #0f172a; color: #cbd5e1;
+  }
+
+  .tabs { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+  .tabs a { text-decoration:none; }
+
+  .summary-actions { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0; }
+  .summary-actions button { padding: 8px 14px; font-size: 13px; }
+
+  .action-cell { white-space: nowrap; text-align: center; }
+  .action-cell button { padding: 5px 9px; font-size: 12px; margin: 1px; }
+
+  .students-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 12px; margin-top: 16px;
+  }
+  .student-card {
+    background: rgba(15,23,42,0.7);
+    border: 1px solid rgba(148,163,184,0.15);
+    border-radius: 12px; padding: 14px;
+    transition: all 0.2s;
+  }
+  .student-card.active { border-color: #4ade80; }
+  .student-card.done { border-color: #60a5fa; background: rgba(30,58,95,0.5); }
+  .student-card.terminated { border-color: #f87171; background: rgba(63,29,29,0.5); }
+  .student-card.distracted { border-color: #f97316; }
+  .student-card .name { font-weight: bold; color: #f1f5f9; margin-bottom: 4px; }
+  .student-card .status { font-size: 12px; color: #94a3b8; }
+  .student-card .progress { font-size: 13px; color: #cbd5e1; margin-top: 6px; }
+  .student-card .dot {
+    display: inline-block; width: 8px; height: 8px;
+    border-radius: 50%; background: #4ade80; margin-right: 6px;
+  }
+  .student-card .dot.offline { background: #64748b; }
+
+  .warn-badge {
+    display: inline-block; background: #7c2d12; color: #fdba74;
+    padding: 2px 8px; border-radius: 4px; font-size: 11px;
+    margin-top: 6px; font-weight: 600; margin-right: 4px;
+  }
+  .warn-badge.critical { background: #7f1d1d; color: #fecaca; }
+
+  .status-bar {
+    background: rgba(15,23,42,0.7); padding: 12px 16px; border-radius: 12px;
+    margin-bottom: 16px; font-size: 13px; color: #94a3b8;
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+  }
+
+  /* ---------- АВТОРИЗАЦИЯ (обновлённая) ---------- */
+  .auth-form { max-width: 460px; margin: 20px auto; }
+  .auth-error { color:#f87171; font-size:13px; margin: 4px 0 10px; min-height: 20px; }
+
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 2000; padding: 20px;
+    backdrop-filter: blur(4px);
+  }
+  .modal {
+    background: #1e293b; border: 1px solid #334155; border-radius: 16px;
+    max-width: 1000px; width: 100%; max-height: 85vh; overflow: auto;
+    padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+  }
+
+  .question-editor {
+    background: rgba(15,23,42,0.6); border: 1px solid #334155;
+    border-radius: 10px; padding: 14px; margin-bottom: 12px; position: relative;
+  }
+  .question-editor .q-number {
+    position: absolute; top: 10px; right: 12px;
+    color: #64748b; font-size: 12px;
+  }
+  .question-editor .opt-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .question-editor .opt-row input[type=radio] { margin: 0; width: 20px; height: 20px; cursor: pointer; flex-shrink: 0; }
+  .question-editor .opt-row input[type=text] { margin: 0; flex: 1; }
+  .question-editor .remove-q { position: absolute; top: 8px; right: 60px; }
+  .question-editor .preview-img {
+    max-width: 100%; max-height: 180px; margin-top: 6px;
+    border-radius: 6px; border: 1px solid #334155;
+  }
+
+  .dev-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+  }
+  .dev-profile {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(76,29,149,0.5);
+    padding: 8px 14px 8px 8px; border-radius: 30px;
+    border: 1px solid rgba(168,85,247,0.3);
+  }
+  .dev-avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: linear-gradient(135deg, #a855f7, #6366f1);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px;
+  }
+  .dev-kpi-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 12px; margin-bottom: 24px;
+  }
+  @media (max-width: 800px) { .dev-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+  .dev-kpi {
+    background: rgba(15,23,42,0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(148,163,184,0.15);
+    border-radius: 14px; padding: 18px;
+    position: relative; overflow: hidden;
+  }
+  .dev-kpi::before {
+    content: ''; position: absolute; top: 0; left: 0;
+    width: 4px; height: 100%;
+    background: linear-gradient(180deg, #a855f7, #6366f1);
+  }
+  .dev-kpi .icon { font-size: 20px; margin-bottom: 6px; }
+  .dev-kpi .n { font-size: 30px; font-weight: 700; color: #f1f5f9; line-height: 1; }
+  .dev-kpi .t { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+  .dev-panel {
+    background: rgba(15,23,42,0.65);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(148,163,184,0.15);
+    border-radius: 14px; padding: 20px; margin-bottom: 16px;
+  }
+  .dev-panel-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 14px; flex-wrap: wrap; gap: 8px;
+  }
+  .dev-panel-head h3 { margin: 0; font-size: 16px; }
+
+  .teacher-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+  }
+  .teacher-header h1 { margin: 0; }
+  .teacher-user {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .big-action {
+    background: linear-gradient(135deg, rgba(59,130,246,0.18), rgba(14,165,233,0.08));
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(96,165,250,0.35);
+    border-radius: 20px; padding: 40px 32px;
+    margin-bottom: 28px; text-align: center;
+    position: relative; overflow: hidden;
+  }
+  .big-action::before {
+    content: ''; position: absolute; top: -80px; right: -80px;
+    width: 260px; height: 260px;
+    background: radial-gradient(circle, rgba(96,165,250,0.25), transparent 70%);
+    pointer-events: none;
+  }
+  .big-action h2 {
+    font-size: 26px; margin: 0 0 8px;
+    position: relative;
+  }
+  .big-action p {
+    color: #cbd5e1; font-size: 15px;
+    margin: 0 0 24px; position: relative;
+  }
+  .big-action .select-wrap {
+    max-width: 500px; margin: 0 auto 16px; position: relative;
+  }
+  .big-action .select-wrap select {
+    padding: 14px 16px; font-size: 15px;
+    background: rgba(15,23,42,0.8);
+    border: 1px solid rgba(96,165,250,0.35);
+    text-align: center;
+  }
+  .big-action .btn-create {
+    padding: 14px 40px; font-size: 16px; font-weight: 600;
+    background: linear-gradient(135deg, #16a34a, #22c55e);
+    box-shadow: 0 10px 30px rgba(22,163,74,0.3);
+    position: relative;
+  }
+  .big-action .btn-create:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 15px 35px rgba(22,163,74,0.4);
+  }
+  .teacher-panel {
+    background: rgba(15,23,42,0.65);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(148,163,184,0.15);
+    border-radius: 14px; padding: 20px; margin-bottom: 16px;
+  }
+  .teacher-panel-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 14px; flex-wrap: wrap; gap: 8px;
+  }
+  .teacher-panel-head h3 { margin: 0; font-size: 16px; }
+
+  .student-hero {
+    background:
+      linear-gradient(135deg, rgba(59,130,246,0.15), rgba(147,51,234,0.15)),
+      rgba(30,41,59,0.7);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(96,165,250,0.4);
+    border-radius: 24px; padding: 32px;
+    position: relative; overflow: hidden;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+    max-width: 620px; margin: 0 auto;
+  }
+  .student-hero::before {
+    content: ''; position: absolute; top: -100px; right: -100px;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(96,165,250,0.35), transparent 70%);
+    pointer-events: none;
+  }
+  .student-hero::after {
+    content: ''; position: absolute; bottom: -100px; left: -100px;
+    width: 250px; height: 250px;
+    background: radial-gradient(circle, rgba(147,51,234,0.25), transparent 70%);
+    pointer-events: none;
+  }
+  .student-hero h1 {
+    font-size: 28px; margin: 0 0 10px;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+    position: relative; z-index: 1;
+  }
+  .student-hero p.sub {
+    color: #cbd5e1; font-size: 14px;
+    margin: 0 0 24px; position: relative; z-index: 1;
+  }
+  .student-hero label {
+    display: block; font-size: 13px; color: #94a3b8;
+    margin-bottom: 6px; position: relative; z-index: 1; font-weight: 500;
+  }
+  .student-hero input[type="text"] {
+    padding: 14px 16px; border-radius: 12px;
+    background: rgba(15,23,42,0.6);
+    border: 1px solid rgba(96,165,250,0.3);
+    color: #e2e8f0; font-size: 16px; width: 100%;
+    position: relative; z-index: 1;
+    transition: all 0.15s;
+    margin-bottom: 10px;
+  }
+  .student-hero input[type="text"]:focus {
+    outline: none;
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(96,165,250,0.15);
+  }
+  .student-hero .btn-start {
+    padding: 16px 24px; border: none; border-radius: 12px;
+    font-size: 16px; font-weight: 600; cursor: pointer;
+    width: 100%; margin-top: 12px;
+    background: linear-gradient(135deg, #16a34a, #22c55e);
+    color: #fff;
+    position: relative; z-index: 1;
+    box-shadow: 0 10px 30px rgba(22,163,74,0.3);
+    transition: all 0.15s;
+  }
+  .student-hero .btn-start:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 15px 35px rgba(22,163,74,0.4);
+  }
+  .student-hero .facts {
+    display: flex; gap: 18px; flex-wrap: wrap;
+    margin-top: 20px; position: relative; z-index: 1;
+  }
+  .student-hero .fact { font-size: 13px; color: #cbd5e1; }
+
+  .test-locked { user-select: none; -webkit-user-select: none; }
+  .test-locked img { pointer-events: none; -webkit-user-drag: none; }
+
+  .question-image { text-align: center; margin: 14px 0; }
+  .question-image img {
+    max-width: 100%; max-height: 340px;
+    border-radius: 10px; box-shadow: 0 6px 20px rgba(0,0,0,.5);
+  }
+
+  .anti-cheat-note {
+    background: rgba(120,90,10,0.15);
+    border-left: 3px solid #fbbf24;
+    padding: 10px 14px; border-radius: 6px;
+    font-size: 12px; color: #fde68a; margin-top: 14px;
+    position: relative; z-index: 1;
+  }
+
+  .loading-spinner {
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid rgba(148, 163, 184, 0.3);
+    border-top-color: #60a5fa;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 8px; vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media print {
+    body { background: #fff !important; color: #000 !important; padding: 0 !important; background-image: none !important; }
+    .container { background: #fff !important; border: none !important; padding: 0 !important; backdrop-filter: none; }
+    .no-print { display: none !important; }
+    h1, h2, h3, p, div, span, td, th, label, b, i { color: #000 !important; }
+    th, td { border: 1px solid #666 !important; background: #fff !important; }
+    table { border-collapse: collapse !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container" id="app">
+  <p style="text-align:center; color:#94a3b8;"><span class="loading-spinner"></span>Подключение к Firebase…</p>
+</div>
+
+<script>
+/* ==================================================================
+   КОНСТАНТЫ
+   ================================================================== */
+const TIME_PER_QUESTION  = 20;
+const TOTAL_POINTS       = 100;
+const MAX_STUDENTS       = 20;
+const SESSION_TTL_MS     = 10 * 24 * 60 * 60 * 1000;
+const OLD_RESULTS_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const INSTANT_TERMINATE_ON_TAB_SWITCH = true;
+
+const DEFAULT_TESTS = {
+  seed_1: {
+    title: 'Входной тест по программе «Беспилотные летательные аппараты — программирование автономного полёта»',
+    questions: [
+      { q: "Как называется коптер с 8 моторами?", options: ["Пентакоптер","Октокоптер","Трикоптер","Гексакоптер"], correct: 1, image: '' },
+      { q: "Как обозначается сопротивление в законе Ома?", options: ["R","I","U","S"], correct: 0, image: '' },
+      { q: "При каком типе соединения аккумуляторов напряжение не складывается?", options: ["Последовательное","Параллельное","Смешанное","Замкнутое"], correct: 1, image: '' },
+      { q: "В соответствии с какими параметрами моторов БПЛА подбираются пропеллеры?", options: ["Количество обмоток","Мощность двигателя","Токопотребление","Частота вращения"], correct: 3, image: '' },
+      { q: "Какие моторы в основном используются в коптерах?", options: ["Коллекторные","Асинхронные","Бесколлекторные","Синхронные"], correct: 2, image: '' },
+      { q: "Отметьте преимущества бесколлекторных двигателей", options: ["Высокий КПД","Низкая стоимость","Высокая максимальная скорость","Высокая износостойкость"], correct: 0, image: '' },
+      { q: "Как обозначается аккумулятор с 3-мя ячейками?", options: ["3C","3S","3V","3G"], correct: 1, image: '' },
+      { q: "Что является «мозгом» коптера?", options: ["Регулятор оборотов (ESC)","Плата распределения питания","Полётный контроллер","Радиоприемник"], correct: 2, image: '' },
+      { q: "Какое минимальное количество каналов управления нужно для квадрокоптера?", options: ["3","4","5","8"], correct: 1, image: '' },
+      { q: "В какой момент нужно устанавливать пропеллеры на коптер?", options: ["Перед установкой моторов","При сборке защиты коптера","При настройке коптера","Перед взлётом"], correct: 3, image: '' },
+      { q: "Как называется процедура разблокировки моторов коптера?", options: ["Disarm","Kill Switch","Arm","FPV"], correct: 2, image: '' },
+      { q: "Где должны находиться зрители во время полёта коптера?", options: ["Слева от пилота, если пилот правша","Спереди от пилота на расстоянии 3–5 метров","За спиной пилота","Справа от пилота, если пилот правша"], correct: 2, image: '' },
+      { q: "В каких единицах измеряется напряжение?", options: ["Вольт","Кулон","Ампер","Ом"], correct: 0, image: '' },
+      { q: "Какой полётный режим используется при первых настроечных запусках квадрокоптера Клевер 4?", options: ["Stabilized","Offboard","Acro","AltHold"], correct: 0, image: '' },
+      { q: "Для чего в конструкции коптера одновременно используются пропеллеры, вращающиеся по и против часовой стрелки?", options: ["для стабилизации","для удержания крена","для разворота по оси YAW","для сопротивления сносу ветром"], correct: 2, image: '' },
+      { q: "Каким видом линии обозначается основной контур детали в программе Компас 3D?", options: ["тонкая пунктирная","осевая","основная","тонкая чёрная"], correct: 2, image: '' },
+      { q: "Для чего используется инструмент «выдавливание» в программе Компас 3D?", options: ["для черчения","для определения веса","для придания объёма","для художественной обработки"], correct: 2, image: '' },
+      { q: "В каком виде документа создаются чертежи в программе Компас 3D?", options: ["фрагмент","деталь","чертёж","сборка"], correct: 2, image: '' },
+      { q: "Что нужно указать при копировании элемента в программе Компас 3D?", options: ["ось","вектор","точку привязки","центр детали"], correct: 2, image: '' },
+      { q: "Напряжение полностью заряженной ячейки литий-полимерного аккумулятора:", options: ["3,0","3,5","3,8","4,2"], correct: 3, image: '' }
+    ]
+  },
+  seed_2: {
+    title: 'Тест: «Компоненты квадрокоптера»',
+    questions: [
+      { q: "На какую основу крепятся все остальные элементы дрона?", options: ["Полётный контроллер","Рама","Суперклей и молитва","Регулятор оборотов"], correct: 1, image: '' },
+      { q: "Какой компонент обрабатывает сигналы датчиков и подаёт команды моторам?", options: ["Приёмник управления","Аккумулятор","Полётный контроллер","Маленький хомяк внутри, который крутит колёсико"], correct: 2, image: '' },
+      { q: "Какие устройства создают вращательное движение пропеллеров и тягу?", options: ["Регуляторы оборотов (ESC)","Пропеллеры","Электродвигатели","Нано-гномы с вёслами"], correct: 2, image: '' },
+      { q: "Что преобразует сигнал полётного контроллера в напряжение, подаваемое на каждый мотор?", options: ["Рама","Регуляторы оборотов (ESC)","GPS-модуль","Магия и воля случая"], correct: 1, image: '' },
+      { q: "Какие детали, вращаясь, создают подъёмную силу?", options: ["Аккумулятор","Запасные носки пилота","Пропеллеры","Датчики"], correct: 2, image: '' },
+      { q: "Какой элемент питает всю электронику и двигатели дрона?", options: ["Приёмник управления","Аккумулятор","Беспроводное электричество из розетки бабушки","Полётный контроллер"], correct: 1, image: '' },
+      { q: "Какое устройство принимает команды с пульта пилота?", options: ["Приёмник управления","GPS-модуль","Телепатическая антенна","Регулятор оборотов"], correct: 0, image: '' },
+      { q: "Какой модуль определяет координаты и позволяет реализовать функции «возврат домой» и удержание точки?", options: ["Полётный контроллер","Встроенная интуиция дрона","GPS-модуль","Видеопередатчик"], correct: 2, image: '' },
+      { q: "Какой компонент захватывает видеоизображение для FPV-полёта или съёмки?", options: ["Камера","Видеопередатчик (VTX)","Подзорная труба, примотанная скотчем","Полётный контроллер"], correct: 0, image: '' },
+      { q: "Какой модуль передаёт видеосигнал с камеры на приёмник (очки или монитор) пилота?", options: ["Камера","Почтовый голубь с флешкой","Видеопередатчик (VTX)","Приёмник управления"], correct: 2, image: '' },
+      { q: "Какие сенсоры помогают дрону удерживать высоту, курс и стабильное положение без вмешательства пилота?", options: ["Только GPS-модуль","Кошачий вестибулярный аппарат","Барометр, компас, сонар, оптический поток","Регуляторы оборотов (ESC)"], correct: 2, image: '' }
+    ]
+  }
+};
+
+/* ==================================================================
+   СОСТОЯНИЕ
+   ================================================================== */
+const params = new URLSearchParams(location.search);
+const mode        = params.get('mode') || 'menu';
+const sessionCode = params.get('session') || null;
+
+const app = document.getElementById('app');
+let currentUser = null;
+let testsCache = {};
+let state = {};
+
+let activeUnsubs = [];
+function trackUnsub(fn) { if (typeof fn === 'function') activeUnsubs.push(fn); }
+function clearAllUnsubs() {
+  activeUnsubs.forEach(fn => { try { fn(); } catch (e) {} });
+  activeUnsubs = [];
+}
+
+let antiCheatActive = false;
+let antiCheatRef = null;
+let antiCheatTabSwitches = 0;
+let antiCheatCopyAttempts = 0;
+
+/* ==================================================================
+   УТИЛИТЫ
+   ================================================================== */
+function shuffleArray(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function prepareQuestions(qs) {
+  return shuffleArray(qs).map(q => {
+    const idx = shuffleArray([0,1,2,3]);
+    return { q: q.q, options: idx.map(i => q.options[i]), correct: idx.indexOf(q.correct), image: q.image || '' };
+  });
+}
+const NAME_REGEX = /^[А-Яа-яЁёA-Za-z]+$/;
+const isValidName = s => NAME_REGEX.test(String(s).trim());
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+function escapeXml(s) {
+  return String(s).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&apos;'})[c]);
+}
+function escapeAttr(s) { return escapeHtml(s); }
+function interpret(s) {
+  if (s >= 90) return '🏆 Отличное знание материала';
+  if (s >= 75) return '👍 Хорошее знание';
+  if (s >= 50) return '📘 Средний уровень, есть пробелы';
+  return '⚠️ Материал усвоен плохо';
+}
+function genSessionCode() { return String(Math.floor(100000 + Math.random() * 900000)); }
+function sanitizeSheetName(name, idx) {
+  let s = String(name).replace(/[:\\\/\?\*\[\]]/g, '_').trim();
+  if (!s) s = 'Ученик_' + (idx + 1);
+  return s.length > 31 ? s.slice(0, 28) + '...' : s;
+}
+function uniqueSheetNames(names) {
+  const used = new Set();
+  return names.map((raw, i) => {
+    const base = sanitizeSheetName(raw, i);
+    let name = base, k = 2;
+    while (used.has(name)) { name = (base.length > 28 ? base.slice(0, 28) : base) + '_' + k; k++; }
+    used.add(name); return name;
+  });
+}
+function formatDate(ts) { return new Date(ts).toLocaleString('ru-RU'); }
+function getStudentLocalId() {
+  let id = localStorage.getItem('quiz_student_id');
+  if (!id) { id = 's_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10); localStorage.setItem('quiz_student_id', id); }
+  return id;
+}
+function fbReady(cb) {
+  if (window.FB && window.FB.ready) { cb(); return; }
+  window.addEventListener('fb-ready', cb, { once: true });
+}
+function getCachedProfile(uid) {
+  try {
+    const raw = localStorage.getItem('quiz_profile_' + uid);
+    if (!raw) return null;
+    const p = JSON.parse(raw);
+    return (p && p.uid === uid) ? p : null;
+  } catch (e) { return null; }
+}
+function setCachedProfile(uid, profile) {
+  try { localStorage.setItem('quiz_profile_' + uid, JSON.stringify({ ...profile, uid })); } catch (e) {}
+}
+function clearCachedProfile(uid) {
+  try { if (uid) localStorage.removeItem('quiz_profile_' + uid); } catch (e) {}
+}
+
+/* ==================================================================
+   АНТИЧИТ
+   ================================================================== */
+function enableAntiCheat(studentRef) {
+  antiCheatActive = true;
+  antiCheatTabSwitches = 0;
+  antiCheatCopyAttempts = 0;
+  antiCheatRef = studentRef;
+  document.addEventListener('visibilitychange', onVisibilityChange);
+  document.addEventListener('copy', onCopyAttempt);
+  document.addEventListener('cut', onCopyAttempt);
+  document.addEventListener('contextmenu', onContextMenuGlobal);
+  document.addEventListener('dragstart', onDragStartGlobal);
+  document.addEventListener('selectstart', onSelectStartGlobal);
+}
+function disableAntiCheat() {
+  antiCheatActive = false;
+  antiCheatRef = null;
+  document.removeEventListener('visibilitychange', onVisibilityChange);
+  document.removeEventListener('copy', onCopyAttempt);
+  document.removeEventListener('cut', onCopyAttempt);
+  document.removeEventListener('contextmenu', onContextMenuGlobal);
+  document.removeEventListener('dragstart', onDragStartGlobal);
+  document.removeEventListener('selectstart', onSelectStartGlobal);
+}
+function onVisibilityChange() {
+  if (!antiCheatActive || !antiCheatRef) return;
+  if (document.hidden) {
+    antiCheatTabSwitches++;
+    window.FB.update(antiCheatRef, { tabSwitches: antiCheatTabSwitches, lastTabSwitchAt: Date.now() }).catch(() => {});
+    if (INSTANT_TERMINATE_ON_TAB_SWITCH) terminateTest('tab_switch');
+  }
+}
+function onCopyAttempt(e) {
+  if (!antiCheatActive) return;
+  const sel = window.getSelection();
+  if (sel && sel.toString().trim().length > 0) {
+    e.preventDefault();
+    antiCheatCopyAttempts++;
+    if (antiCheatRef) window.FB.update(antiCheatRef, { copyAttempts: antiCheatCopyAttempts }).catch(() => {});
+  }
+}
+function onContextMenuGlobal(e) {
+  if (!antiCheatActive) return;
+  const area = document.getElementById('testArea');
+  if (area && area.contains(e.target)) e.preventDefault();
+}
+function onDragStartGlobal(e) {
+  if (!antiCheatActive) return;
+  const area = document.getElementById('testArea');
+  if (area && area.contains(e.target)) e.preventDefault();
+}
+function onSelectStartGlobal(e) {
+  if (!antiCheatActive) return;
+  const area = document.getElementById('testArea');
+  if (area && area.contains(e.target)) e.preventDefault();
+}
+
+function terminateTest(reason) {
+  if (state.terminated || state.finished) return;
+  state.terminated = true;
+  clearInterval(state.timer);
+  disableAntiCheat();
+
+  const correct  = state.answers.filter(a => a.correct).length;
+  const wrong    = state.answers.length - correct;
+  const answered = state.answers.length;
+  const total    = state.questions.length;
+  const score    = Math.round(correct * TOTAL_POINTS / total);
+
+  const result = {
+    studentName: state.studentName,
+    testId: String(state.testId),
+    testTitle: state.test.title,
+    date: formatDate(Date.now()),
+    timestamp: Date.now(),
+    score, correct, wrong, total,
+    answeredQuestions: answered,
+    teacherId: state.teacherId,
+    teacherEmail: state.teacherEmail,
+    sessionCode: state.code,
+    decision: '',
+    tabSwitches: antiCheatTabSwitches,
+    copyAttempts: antiCheatCopyAttempts,
+    terminated: true,
+    terminateReason: reason || 'tab_switch',
+    answers: state.answers.map(a => ({
+      questionText: a.questionText, correctText: a.correctText,
+      selectedText: a.selectedText, correct: a.correct, image: a.image || ''
+    }))
+  };
+
+  window.FB.update(state.studentRef, {
+    status: 'terminated', terminatedAt: Date.now(), terminateReason: reason || 'tab_switch',
+    score, correct, wrong, result,
+    tabSwitches: antiCheatTabSwitches, copyAttempts: antiCheatCopyAttempts, online: true
+  }).catch(() => {});
+  const newRef = window.FB.push(window.FB.ref(window.FB.db, 'results'));
+  window.FB.set(newRef, result).catch(() => {});
+
+  const area = document.getElementById('testArea');
+  if (area) {
+    area.innerHTML = `
+      <div class="student-hero" style="text-align:center;">
+        <div style="font-size: 64px; margin-bottom: 8px;">🚫</div>
+        <h2 style="color:#f87171;">Тест прерван</h2>
+        <p style="font-size: 18px;">Вы покинули вкладку во время теста.</p>
+        <p style="color:#94a3b8; max-width:520px; margin: 12px auto;">
+          По правилам прохождения тест автоматически завершён. Учитель увидит ваш результат с отметкой о нарушении.
+        </p>
+        <div style="margin-top: 24px; padding: 16px 24px; background: rgba(15,23,42,0.7); border:1px solid #334155; border-radius: 12px; display: inline-block; text-align:left;">
+          <div>Отвечено вопросов: <b>${answered} из ${total}</b></div>
+          <div style="margin-top: 8px;">Правильных: <b class="ok">${correct}</b></div>
+          <div style="margin-top: 8px;">Баллов: <b>${score} / 100</b></div>
+        </div>
+        <p style="margin-top: 24px; color:#94a3b8;">Можете закрыть вкладку.</p>
+      </div>`;
+  }
+}
+
+/* ==================================================================
+   EXCEL
+   ================================================================== */
+function excelStyles() {
+  return `
+    table { border-collapse:collapse; font-family:Calibri,Arial,sans-serif; font-size:11pt; }
+    td,th { border:1px solid #999; padding:6px 8px; vertical-align:top; }
+    .title { font-size:14pt; font-weight:bold; background:#dbeafe; text-align:left; }
+    .summary-label { font-weight:bold; background:#f3f4f6; width:180px; text-align:left; }
+    .summary-value { text-align:left!important; mso-number-format:"\\@"; }
+    .score { font-size:22pt; font-weight:bold; color:#2563eb; text-align:center; }
+    th { background:#e5e7eb; font-weight:bold; text-align:left; }
+    .ok { color:#16a34a; font-weight:bold; }
+    .bad { color:#dc2626; font-weight:bold; }
+    .warn { color:#b45309; font-weight:bold; }
+    .c { text-align:center; }
+    .decision-header { font-weight:bold; background:#f3f4f6; text-align:left; }
+    .img-cell { text-align:center; }
+    .img-cell img { max-height: 120px; max-width: 200px; }
+  `;
+}
+function studentSheetHTML(rec) {
+  let rows = '';
+  rec.answers.forEach((a, i) => {
+    const ans = a.selectedText ? escapeHtml(a.selectedText) : '<i>нет ответа</i>';
+    const verdict = a.correct ? '<span class="ok">✔ верно</span>' : '<span class="bad">✘ неверно</span>';
+    const imgCell = a.image ? `<td class="img-cell"><img src="${escapeAttr(a.image)}" alt=""></td>` : `<td class="c">—</td>`;
+    rows += `<tr><td class="c">${i+1}</td>${imgCell}<td>${escapeHtml(a.questionText)}</td><td>${escapeHtml(a.correctText)}</td><td>${ans}</td><td class="c">${verdict}</td></tr>`;
+  });
+  const tRow = rec.teacherEmail ? `<tr><td colspan="2" class="summary-label">Учитель</td><td colspan="4" class="summary-value">${escapeHtml(rec.teacherEmail)}</td></tr>` : '';
+  const termRow = rec.terminated ? `<tr><td colspan="2" class="summary-label">⚠ Статус</td><td colspan="4" class="summary-value"><span class="bad">🚫 ТЕСТ ПРЕРВАН — покинул вкладку</span></td></tr>` : '';
+  const distractRow = rec.tabSwitches && rec.tabSwitches > 0 ? `<tr><td colspan="2" class="summary-label">Отвлекался</td><td colspan="4" class="summary-value"><span class="warn">⚠ ${rec.tabSwitches} раз</span></td></tr>` : '';
+  const copyRow = rec.copyAttempts && rec.copyAttempts > 0 ? `<tr><td colspan="2" class="summary-label">Попытки копирования</td><td colspan="4" class="summary-value"><span class="warn">⚠ ${rec.copyAttempts} раз</span></td></tr>` : '';
+
+  return `<table>
+    <colgroup><col style="width:50px;"><col style="width:150px;"><col style="width:400px;"><col style="width:280px;"><col style="width:280px;"><col style="width:100px;"></colgroup>
+    <tr><td colspan="6" class="title">${escapeHtml(rec.testTitle)}</td></tr>
+    <tr><td colspan="6" style="height:8px;border:none;"></td></tr>
+    <tr><td colspan="2" class="summary-label">Ученик</td><td colspan="4" class="summary-value">${escapeHtml(rec.studentName)}</td></tr>
+    ${tRow}
+    <tr><td colspan="2" class="summary-label">Дата</td><td colspan="4" class="summary-value">${escapeHtml(rec.date)}</td></tr>
+    <tr><td colspan="2" class="summary-label">Всего вопросов</td><td colspan="4" class="summary-value">${rec.total}</td></tr>
+    <tr><td colspan="2" class="summary-label">Правильных</td><td colspan="4" class="summary-value"><span class="ok">${rec.correct}</span></td></tr>
+    <tr><td colspan="2" class="summary-label">Неправильных</td><td colspan="4" class="summary-value"><span class="bad">${rec.wrong}</span></td></tr>
+    <tr><td colspan="2" class="summary-label">Баллов</td><td colspan="4" class="summary-value"><b>${rec.score} / 100</b></td></tr>
+    <tr><td colspan="2" class="summary-label">Оценка</td><td colspan="4" class="summary-value">${escapeHtml(interpret(rec.score))}</td></tr>
+    ${termRow}${distractRow}${copyRow}
+    <tr><td colspan="6" style="height:12px;border:none;"></td></tr>
+    <tr><th class="c">#</th><th class="c">Рисунок</th><th>Вопрос</th><th>Правильный ответ</th><th>Ответ ученика</th><th class="c">Итог</th></tr>
+    ${rows}
+    <tr><td colspan="6" style="height:12px;border:none;"></td></tr>
+    <tr><td colspan="6" class="decision-header">Решение учителя: ${rec.decision ? escapeHtml(rec.decision) : ''}</td></tr>
+    <tr><td colspan="6" style="height:16px;border:none;"></td></tr>
+    <tr><td colspan="6" style="border:none;padding:6px 8px;text-align:left;">Подпись учителя: _______________________ &nbsp;&nbsp;&nbsp;&nbsp; Дата: _______________________</td></tr>
+  </table>`;
+}
+function downloadBlob(content, filename, mime) {
+  const blob = new Blob(['\uFEFF' + content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+function exportStudentsWorkbook(results, testTitle, testId) {
+  if (!results || results.length === 0) { alert('Нет результатов для экспорта.'); return; }
+  const names = uniqueSheetNames(results.map(r => r.studentName));
+  const sheetsXML = names.map(n => `<x:ExcelWorksheet><x:Name>${escapeXml(n)}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet>`).join('');
+  const tables = results.map(r => studentSheetHTML(r)).join('');
+  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="UTF-8">
+<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets>${sheetsXML}</x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+<style>${excelStyles()}</style></head>
+<body>${tables}</body></html>`.trim();
+  downloadBlob(html, `Тест_${testTitle.slice(0, 30).replace(/[^\wа-яА-ЯёЁ]/g, '_')}_${Date.now()}.xls`, 'application/vnd.ms-excel;charset=utf-8;');
+}
+function exportFlatSummary(results, title, filename) {
+  if (!results || results.length === 0) { alert('Нет данных.'); return; }
+  const rows = results.sort((a,b) => b.timestamp - a.timestamp).map((r, i) => `<tr>
+    <td class="c">${results.length - i}</td>
+    <td>${escapeHtml(r.date)}</td>
+    <td>${escapeHtml(r.teacherEmail || '')}</td>
+    <td>${escapeHtml(r.testTitle || '')}</td>
+    <td>${escapeHtml(r.studentName || '')}</td>
+    <td class="c ok">${r.correct}</td>
+    <td class="c bad">${r.wrong}</td>
+    <td class="c"><b>${r.score}</b></td>
+    <td class="c warn">${r.tabSwitches ? '⚠ ' + r.tabSwitches : ''}</td>
+    <td>${escapeHtml(interpret(r.score))}</td>
+  </tr>`).join('');
+  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+<head><meta charset="UTF-8">
+<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
+<x:Name>Сводка</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+<style>${excelStyles()}</style></head>
+<body><table>
+  <tr><td colspan="10" class="title">${escapeHtml(title)}</td></tr>
+  <tr><td colspan="10" style="height:8px;border:none;"></td></tr>
+  <tr><th class="c">№</th><th>Дата</th><th>Учитель</th><th>Тест</th><th>Ученик</th><th class="c">Верно</th><th class="c">Неверно</th><th class="c">Балл</th><th class="c">Отвлёкся</th><th>Оценка</th></tr>
+  ${rows}
+</table></body></html>`.trim();
+  downloadBlob(html, filename, 'application/vnd.ms-excel;charset=utf-8;');
+}
+
+function openModal(innerHTML, maxWidth) {
+  const el = document.createElement('div');
+  el.className = 'modal-backdrop';
+  el.innerHTML = `<div class="modal" ${maxWidth ? `style="max-width:${maxWidth}px"` : ''}>${innerHTML}</div>`;
+  document.body.appendChild(el);
+  el.addEventListener('click', (e) => { if (e.target === el) el.remove(); });
+  return { el, close: () => el.remove(), $: s => el.querySelector(s), $$: s => el.querySelectorAll(s) };
+}
+
+/* ==================================================================
+   ЗАГРУЗКА ТЕСТОВ
+   ================================================================== */
+async function loadTests() {
+  try {
+    const snap = await window.FB.get(window.FB.ref(window.FB.db, 'tests'));
+    testsCache = snap.val() || {};
+    if (mode === 'developer' && currentUser && currentUser.role === 'developer') {
+      const area = document.getElementById('testsManageArea');
+      if (area) renderDeveloperTestsList();
+    }
+    if (mode === 'teacher' && currentUser && currentUser.role === 'teacher') {
+      const sel = document.getElementById('newSessionTest');
+      if (sel) renderTeacherTestOptions(sel);
+    }
+  } catch (e) { console.error('loadTests:', e); }
+}
+
+async function seedTestsIfEmpty() {
+  const snap = await window.FB.get(window.FB.ref(window.FB.db, 'tests'));
+  if (snap.exists()) return false;
+  await window.FB.set(window.FB.ref(window.FB.db, 'tests'), DEFAULT_TESTS);
+  return true;
+}
+
+/* ==================================================================
+   ГЛАВНОЕ МЕНЮ
+   ================================================================== */
+function renderMenu() {
+  clearAllUnsubs();
+  app.innerHTML = `
+    <h1>Система тестирования</h1>
+    <p>Выберите режим:</p>
+    <div class="menu">
+      <a href="?mode=developer"><button class="purple">🛠 Разработчик</button></a>
+      <a href="?mode=teacher"><button>👨‍🏫 Учитель</button></a>
+      <a href="?mode=student"><button class="green">🎓 Ученик</button></a>
+    </div>
+    <p class="hint" style="margin-top:20px;">
+      Система работает через Firebase. Все роли могут быть на разных устройствах.
+    </p>`;
+}
+
+/* ==================================================================
+   АВТОРИЗАЦИЯ — ТОЛЬКО ВХОД (без регистрации)
+   ==================================================================
+   Учётные записи разработчика и учителей уже созданы.
+   Новых учителей разработчик добавляет через свою панель.
+   ================================================================== */
+function renderAuth(expectedRole) {
+  clearAllUnsubs();
+  fbReady(() => {
+    const isDev = expectedRole === 'developer';
+
+    app.innerHTML = `
+      <h1>${isDev ? '🛠 Вход разработчика' : '👨‍🏫 Вход учителя'}</h1>
+      <div class="auth-form">
+        <label class="label">Email</label>
+        <input type="email" id="loginEmail" placeholder="you@school.ru" autocomplete="email">
+        <label class="label">Пароль</label>
+        <input type="password" id="loginPass" placeholder="••••••••">
+        <p class="auth-error" id="loginError"></p>
+        <button id="doLogin" class="green" style="width:100%; padding:14px;">Войти</button>
+      </div>
+      <p class="hint" style="text-align:center; margin-top:24px;">
+        ${!isDev ? 'Нет аккаунта? Обратитесь к разработчику.<br>' : ''}
+        <a href="?mode=student" style="color:#93c5fd;">Войти как ученик →</a>
+      </p>`;
+
+    document.getElementById('doLogin').onclick = doLogin;
+    document.getElementById('loginPass').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doLogin();
+    });
+
+    async function doLogin() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const pass  = document.getElementById('loginPass').value;
+      const err   = document.getElementById('loginError');
+      err.textContent = '';
+      if (!email || !pass) { err.textContent = 'Заполните email и пароль'; return; }
+
+      try {
+        const cred = await window.FB.signInWithEmailAndPassword(window.FB.auth, email, pass);
+        let profile = getCachedProfile(cred.user.uid);
+        if (!profile) {
+          const snap = await window.FB.get(window.FB.ref(window.FB.db, `users/${cred.user.uid}`));
+          profile = snap.val();
+          if (profile) setCachedProfile(cred.user.uid, profile);
+        }
+        if (!profile) { err.textContent = 'Профиль не найден'; await window.FB.signOut(window.FB.auth); return; }
+        if (isDev && profile.role !== 'developer') {
+          err.textContent = 'Это не аккаунт разработчика';
+          await window.FB.signOut(window.FB.auth);
+          return;
+        }
+        if (!isDev && profile.role !== 'teacher') {
+          err.textContent = 'Это не аккаунт учителя';
+          await window.FB.signOut(window.FB.auth);
+          return;
+        }
+        currentUser = { uid: cred.user.uid, email: profile.email || email, role: profile.role };
+        if (profile.role === 'developer') renderDeveloperHome();
+        else renderTeacherHome();
+      } catch (e) {
+        err.textContent = interpretAuthError(e);
+      }
+    }
+
+    function interpretAuthError(e) {
+      const c = e && e.code;
+      if (c === 'auth/invalid-email') return 'Некорректный email';
+      if (c === 'auth/user-not-found') return 'Пользователь не найден';
+      if (c === 'auth/wrong-password') return 'Неверный пароль';
+      if (c === 'auth/invalid-credential') return 'Неверный email или пароль';
+      if (c === 'auth/too-many-requests') return 'Слишком много попыток. Подождите.';
+      if (c === 'auth/network-request-failed') return 'Нет соединения с интернетом';
+      return 'Ошибка: ' + (e.message || 'неизвестная');
+    }
+  });
+}
+
+/* ==================================================================
+   ПАНЕЛЬ РАЗРАБОТЧИКА
+   ================================================================== */
+async function renderDeveloperHome() {
+  clearAllUnsubs();
+  if (!currentUser || currentUser.role !== 'developer') { renderAuth('developer'); return; }
+  await seedTestsIfEmpty();
+
+  app.innerHTML = `
+    <div class="dev-header">
+      <h1 style="margin:0;">🛠 Панель разработчика</h1>
+      <div class="dev-profile">
+        <div class="dev-avatar">A</div>
+        <span style="font-size:13px;color:#e9d5ff;">${escapeHtml(currentUser.email)}</span>
+        <button class="small back" id="logoutBtn" style="margin-left:6px;">Выйти</button>
+      </div>
+    </div>
+
+    <div class="dev-kpi-grid" id="metricsGrid">
+      <div class="dev-kpi"><div class="icon">📚</div><div class="n">…</div><div class="t">Тестов</div></div>
+      <div class="dev-kpi"><div class="icon">👨‍🏫</div><div class="n">…</div><div class="t">Учителей</div></div>
+      <div class="dev-kpi"><div class="icon">🎫</div><div class="n">…</div><div class="t">Сессий</div></div>
+      <div class="dev-kpi"><div class="icon">📈</div><div class="n">…</div><div class="t">Прохождений</div></div>
+    </div>
+
+    <div class="dev-panel">
+      <div class="dev-panel-head">
+        <h3>📚 Управление тестами</h3>
+        <div class="summary-actions" style="margin:0;">
+          <button id="addTestBtn" class="green">➕ Новый тест</button>
+          <button id="refreshTestsBtn" class="refresh">🔄 Обновить</button>
+        </div>
+      </div>
+      <div id="testsManageArea"><p class="hint"><span class="loading-spinner"></span>Загрузка…</p></div>
+    </div>
+
+    <div class="dev-panel">
+      <div class="dev-panel-head">
+        <h3>👨‍🏫 Учителя</h3>
+        <div class="summary-actions" style="margin:0;">
+          <button id="addTeacherBtn" class="green">➕ Создать учителя</button>
+          <button id="refreshTeachersBtn" class="refresh">🔄 Обновить</button>
+        </div>
+      </div>
+      <div id="teachersArea"><p class="hint"><span class="loading-spinner"></span>Загрузка…</p></div>
+    </div>
+
+    <div class="dev-panel">
+      <div class="dev-panel-head">
+        <h3>🎫 Все сессии (все учителя)</h3>
+      </div>
+      <div id="allSessionsArea"><p class="hint"><span class="loading-spinner"></span>Загрузка…</p></div>
+    </div>
+
+    <div class="dev-panel">
+      <div class="dev-panel-head">
+        <h3>📈 Результаты всей школы</h3>
+        <div class="summary-actions" style="margin:0;">
+          <button id="exportSchoolBtn" class="download">🏫 Скачать сводную</button>
+          <button id="clearOldResultsBtn" class="danger">🗑 Старше 30 дней</button>
+          <button id="clearAllResultsBtn" class="danger" style="background:#991b1b;">🗑 Очистить всё</button>
+        </div>
+      </div>
+      <div id="allResultsArea"><p class="hint"><span class="loading-spinner"></span>Загрузка…</p></div>
+    </div>`;
+
+  document.getElementById('logoutBtn').onclick = async () => {
+    if (!confirm('Выйти?')) return;
+    clearAllUnsubs();
+    clearCachedProfile(currentUser && currentUser.uid);
+    await window.FB.signOut(window.FB.auth);
+    location.href = '?mode=developer';
+  };
+  document.getElementById('addTestBtn').onclick = () => openTestEditor(null);
+  document.getElementById('refreshTestsBtn').onclick = () => { loadTests(); renderDeveloperTestsList(); };
+  document.getElementById('addTeacherBtn').onclick = () => openCreateTeacherModal();
+  document.getElementById('refreshTeachersBtn').onclick = () => renderTeachersList();
+  document.getElementById('exportSchoolBtn').onclick = exportWholeSchool;
+  document.getElementById('clearOldResultsBtn').onclick = clearOldResults;
+  document.getElementById('clearAllResultsBtn').onclick = clearAllResults;
+
+  cleanupOldSessions();
+  renderDeveloperMetrics();
+  renderDeveloperTestsList();
+  renderTeachersList();
+  subscribeAllSessions();
+  subscribeAllResults();
+}
+
+async function renderDeveloperMetrics() {
+  const el = document.getElementById('metricsGrid');
+  if (!el) return;
+  try {
+    const [testsSnap, sessionsSnap, resultsSnap, usersSnap] = await Promise.all([
+      window.FB.get(window.FB.ref(window.FB.db, 'tests')),
+      window.FB.get(window.FB.ref(window.FB.db, 'sessions')),
+      window.FB.get(window.FB.ref(window.FB.db, 'results')),
+      window.FB.get(window.FB.ref(window.FB.db, 'users'))
+    ]);
+    const tests = testsSnap.val() || {};
+    const sessions = sessionsSnap.val() || {};
+    const results = resultsSnap.val() || {};
+    const users = usersSnap.val() || {};
+    const teachers = Object.values(users).filter(u => u.role === 'teacher').length;
+    el.innerHTML = `
+      <div class="dev-kpi"><div class="icon">📚</div><div class="n">${Object.keys(tests).length}</div><div class="t">Тестов</div></div>
+      <div class="dev-kpi"><div class="icon">👨‍🏫</div><div class="n">${teachers}</div><div class="t">Учителей</div></div>
+      <div class="dev-kpi"><div class="icon">🎫</div><div class="n">${Object.keys(sessions).length}</div><div class="t">Сессий</div></div>
+      <div class="dev-kpi"><div class="icon">📈</div><div class="n">${Object.keys(results).length}</div><div class="t">Прохождений</div></div>`;
+  } catch (e) {
+    el.innerHTML = `<p class="hint">Ошибка: ${escapeHtml(e.message)}</p>`;
+  }
+}
+
+function renderDeveloperTestsList() {
+  const el = document.getElementById('testsManageArea');
+  if (!el) return;
+  const tests = Object.entries(testsCache);
+  if (tests.length === 0) { el.innerHTML = `<p class="hint">Тестов пока нет.</p>`; return; }
+  const rows = tests.map(([id, t]) => {
+    const withImages = (t.questions || []).filter(q => q.image).length;
+    return `<tr>
+      <td style="font-family:monospace; font-size:12px; color:#94a3b8;">${escapeHtml(id)}</td>
+      <td>${escapeHtml(t.title)}</td>
+      <td style="text-align:center;">${(t.questions || []).length}</td>
+      <td style="text-align:center;">${withImages > 0 ? `🖼 ${withImages}` : '—'}</td>
+      <td class="action-cell">
+        <button class="small" data-edit="${id}">✏ Изменить</button>
+        <button class="small danger" data-del="${id}">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+  el.innerHTML = `<table>
+    <thead><tr><th style="width:180px;">ID</th><th>Название</th><th style="width:100px;">Вопросов</th><th style="width:100px;">С рисунками</th><th style="width:220px;">Действия</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+  el.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => openTestEditor(b.dataset.edit, testsCache[b.dataset.edit]));
+  el.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.del;
+    const t = testsCache[id];
+    if (!confirm(`Удалить тест «${t.title}»?`)) return;
+    await window.FB.remove(window.FB.ref(window.FB.db, `tests/${id}`));
+    delete testsCache[id];
+    renderDeveloperTestsList();
+  });
+}
+
+async function renderTeachersList() {
+  const el = document.getElementById('teachersArea');
+  if (!el) return;
+  try {
+    const snap = await window.FB.get(window.FB.ref(window.FB.db, 'users'));
+    const users = snap.val() || {};
+    const teachers = Object.entries(users)
+      .filter(([_, u]) => u && u.role === 'teacher')
+      .map(([uid, u]) => ({ uid, ...u }))
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+    if (teachers.length === 0) {
+      el.innerHTML = `<p class="hint">Учителей ещё нет. Создайте первого.</p>`;
+      return;
+    }
+
+    const rows = teachers.map(t => `<tr>
+      <td>${escapeHtml(t.email)}</td>
+      <td>${formatDate(t.createdAt || Date.now())}</td>
+      <td style="font-family:monospace; font-size:11px; color:#94a3b8;">${escapeHtml(t.uid)}</td>
+      <td class="action-cell">
+        <button class="small danger" data-del-teacher="${t.uid}" data-email="${escapeHtml(t.email)}">🗑 Удалить</button>
+      </td>
+    </tr>`).join('');
+
+    el.innerHTML = `<table>
+      <thead><tr>
+        <th>Email</th><th style="width:200px;">Дата создания</th>
+        <th style="width:280px;">UID</th><th style="width:110px;">Действия</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+
+    el.querySelectorAll('[data-del-teacher]').forEach(b => b.onclick = async () => {
+      const uid = b.dataset.delTeacher;
+      const email = b.dataset.email;
+      if (!confirm(`Удалить учителя ${email}?\n\nАккаунт входа в Firebase останется, но войти он не сможет.`)) return;
+      try {
+        await window.FB.remove(window.FB.ref(window.FB.db, `users/${uid}`));
+        clearCachedProfile(uid);
+        alert('Профиль учителя удалён.');
+        renderTeachersList();
+        renderDeveloperMetrics();
+      } catch (e) { alert('Ошибка: ' + e.message); }
+    });
+  } catch (e) {
+    el.innerHTML = `<p class="hint">Ошибка: ${escapeHtml(e.message)}</p>`;
+  }
+}
+
+function openCreateTeacherModal() {
+  const m = openModal(`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h2 style="margin:0;">➕ Новый учитель</h2>
+      <button class="small back" id="closeModal">Закрыть</button>
+    </div>
+    <label class="label">Email учителя</label>
+    <input type="email" id="newTeacherEmail" placeholder="teacher@school.ru">
+    <label class="label">Пароль (минимум 6 символов)</label>
+    <input type="password" id="newTeacherPass" placeholder="••••••••">
+    <p class="hint">
+      Сообщите эти данные учителю. Он войдёт через кнопку «Войти как учитель» без регистрации.
+    </p>
+    <p class="auth-error" id="newTeacherError"></p>
+    <div class="summary-actions">
+      <button id="doCreateTeacher" class="green">Создать</button>
+    </div>
+  `, 520);
+
+  m.$('#closeModal').onclick = () => m.close();
+
+  m.$('#doCreateTeacher').onclick = async () => {
+    const email = m.$('#newTeacherEmail').value.trim();
+    const pass  = m.$('#newTeacherPass').value;
+    const err   = m.$('#newTeacherError');
+    err.textContent = '';
+
+    if (!email || !pass) { err.textContent = 'Заполните email и пароль'; return; }
+    if (pass.length < 6) { err.textContent = 'Пароль минимум 6 символов'; return; }
+
+    try {
+      const devUid = currentUser.uid;
+      const cred = await window.FB.createUserWithEmailAndPassword(window.FB.auth, email, pass);
+      const profile = { role: 'teacher', email, createdAt: Date.now(), createdBy: devUid };
+      await window.FB.set(window.FB.ref(window.FB.db, `users/${cred.user.uid}`), profile);
+      await window.FB.signOut(window.FB.auth);
+      clearCachedProfile(devUid);
+      alert(`✅ Учитель ${email} создан.\n\nРазработчику нужно войти заново — Firebase сбросил сессию.`);
+      location.href = '?mode=developer';
+    } catch (e) {
+      const c = e.code;
+      if (c === 'auth/email-already-in-use') err.textContent = 'Email уже занят';
+      else if (c === 'auth/invalid-email')   err.textContent = 'Некорректный email';
+      else if (c === 'auth/weak-password')   err.textContent = 'Слабый пароль';
+      else                                    err.textContent = 'Ошибка: ' + (e.message || 'неизвестная');
+    }
+  };
+}
+
+function openTestEditor(testId, testData) {
+  const isNew = !testId;
+  const initial = testData || { title: '', questions: [{ q: '', options: ['','','',''], correct: 0, image: '' }] };
+  const m = openModal(`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h2 style="margin:0;">${isNew ? '➕ Новый тест' : '✏ Редактирование теста'}</h2>
+      <button class="small back" id="closeEditor">Закрыть</button>
+    </div>
+    <label class="label">Название теста</label>
+    <input type="text" id="testTitle" value="${escapeHtml(initial.title)}" placeholder="Например: Входной тест по БПЛА">
+    <label class="label" style="margin-top:16px;">📖 Вводный текст (лекция перед тестом)</label>
+    <textarea id="testIntro" placeholder="Опционально. Ученик увидит этот текст перед началом теста." style="min-height:100px;">${escapeHtml(initial.intro || '')}</textarea>
+    <label class="label" style="margin-top:8px;">🖼 Картинка к вводному тексту (URL, необязательно)</label>
+    <input type="text" id="testIntroImage" placeholder="https://example.com/intro.jpg" value="${escapeHtml(initial.introImage || '')}">
+    <label class="label" style="margin-top:8px;">⏱ Время на вопрос (секунд)</label>
+    <input type="number" id="testTime" min="5" max="300" value="${initial.timePerQuestion || 20}">
+    <h3 style="margin-top:24px;">Вопросы</h3>
+    <p class="hint">Для вопроса можно указать ссылку на изображение (jpg/png/webp).</p>
+    <div id="questionsContainer"></div>
+    <div class="summary-actions" style="margin-top:12px;">
+      <button id="addQuestionBtn" class="refresh">➕ Добавить вопрос</button>
+    </div>
+    <p class="auth-error" id="editorError"></p>
+    <div class="summary-actions" style="margin-top:20px;">
+      <button id="saveTestBtn" class="green">💾 Сохранить</button>
+      ${!isNew ? `<button id="deleteTestBtn" class="danger">🗑 Удалить тест</button>` : ''}
+    </div>`, 900);
+
+  let questions = JSON.parse(JSON.stringify(initial.questions));
+  if (!questions.every(q => 'image' in q)) questions = questions.map(q => ({ ...q, image: q.image || '' }));
+
+  function renderQuestions() {
+    const cont = m.$('#questionsContainer');
+    cont.innerHTML = questions.map((q, qi) => `
+      <div class="question-editor" data-q="${qi}">
+        <div class="q-number">Вопрос ${qi + 1}</div>
+        <button class="small danger remove-q" data-remove="${qi}">Удалить</button>
+        <label class="label">Формулировка</label>
+        <textarea class="q-text" data-qi="${qi}" placeholder="Текст вопроса">${escapeHtml(q.q)}</textarea>
+        <label class="label" style="margin-top:8px;">Варианты ответов (отметьте правильный)</label>
+        ${q.options.map((opt, oi) => `
+          <div class="opt-row">
+            <input type="radio" name="correct-${qi}" data-correct="${qi}-${oi}" ${q.correct === oi ? 'checked' : ''}>
+            <input type="text" class="opt-text" data-qi="${qi}" data-oi="${oi}" placeholder="Вариант ${String.fromCharCode(65 + oi)}" value="${escapeHtml(opt)}">
+          </div>`).join('')}
+        <label class="label" style="margin-top:10px;">🖼 Изображение к вопросу (URL, необязательно)</label>
+        <input type="text" class="q-image" data-qi="${qi}" placeholder="https://example.com/image.jpg" value="${escapeHtml(q.image || '')}">
+        <div class="q-image-preview" data-preview="${qi}">${q.image ? `<img src="${escapeAttr(q.image)}" class="preview-img">` : ''}</div>
+      </div>`).join('');
+    cont.querySelectorAll('.q-text').forEach(el => el.addEventListener('input', () => { questions[+el.dataset.qi].q = el.value; }));
+    cont.querySelectorAll('.opt-text').forEach(el => el.addEventListener('input', () => { questions[+el.dataset.qi].options[+el.dataset.oi] = el.value; }));
+    cont.querySelectorAll('input[type=radio]').forEach(el => el.addEventListener('change', () => {
+      const [qi, oi] = el.dataset.correct.split('-').map(Number);
+      questions[qi].correct = oi;
+    }));
+    cont.querySelectorAll('.q-image').forEach(el => el.addEventListener('input', () => {
+      const qi = +el.dataset.qi;
+      questions[qi].image = el.value.trim();
+      const prev = cont.querySelector(`[data-preview="${qi}"]`);
+      prev.innerHTML = el.value.trim() ? `<img src="${escapeAttr(el.value.trim())}" class="preview-img">` : '';
+    }));
+    cont.querySelectorAll('[data-remove]').forEach(b => b.onclick = () => {
+      if (questions.length === 1) { alert('Должен остаться хотя бы один вопрос.'); return; }
+      questions.splice(+b.dataset.remove, 1);
+      renderQuestions();
+    });
+  }
+  renderQuestions();
+
+  m.$('#addQuestionBtn').onclick = () => { questions.push({ q: '', options: ['','','',''], correct: 0, image: '' }); renderQuestions(); };
+  m.$('#closeEditor').onclick = () => m.close();
+  m.$('#saveTestBtn').onclick = async () => {
+    const err = m.$('#editorError');
+    err.textContent = '';
+    const title = m.$('#testTitle').value.trim();
+    if (!title) { err.textContent = 'Укажите название теста'; return; }
+    if (questions.length === 0) { err.textContent = 'Добавьте хотя бы один вопрос'; return; }
+    for (let i = 0; i < questions.length; i++) {
+      if (!questions[i].q.trim()) { err.textContent = `Вопрос ${i+1}: пустая формулировка`; return; }
+      if (questions[i].options.some(o => !o.trim())) { err.textContent = `Вопрос ${i+1}: все 4 варианта должны быть заполнены`; return; }
+    }
+    const now = Date.now();
+    const id = testId || ('t_' + now + '_' + Math.random().toString(36).slice(2, 6));
+    const payload = {
+      title,
+      intro: m.$('#testIntro').value.trim(),
+      introImage: m.$('#testIntroImage').value.trim(),
+      timePerQuestion: parseInt(m.$('#testTime').value, 10) || 20,
+      questions: questions.map(q => ({ q: q.q, options: q.options, correct: q.correct, image: q.image || '' })),
+      createdBy: currentUser.uid, updatedAt: now
+    };
+    if (isNew) payload.createdAt = now;
+    try {
+      if (isNew) await window.FB.set(window.FB.ref(window.FB.db, `tests/${id}`), payload);
+      else       await window.FB.update(window.FB.ref(window.FB.db, `tests/${id}`), payload);
+      testsCache[id] = payload;
+      renderDeveloperTestsList();
+      m.close();
+    } catch (e) { err.textContent = 'Ошибка сохранения: ' + e.message; }
+  };
+  if (!isNew) {
+    m.$('#deleteTestBtn').onclick = async () => {
+      if (!confirm(`Удалить тест «${initial.title}»?`)) return;
+      await window.FB.remove(window.FB.ref(window.FB.db, `tests/${testId}`));
+      delete testsCache[testId];
+      renderDeveloperTestsList();
+      m.close();
+    };
+  }
+}
+
+function subscribeAllSessions() {
+  const el = document.getElementById('allSessionsArea');
+  if (!el) return;
+  trackUnsub(window.FB.onValue(window.FB.ref(window.FB.db, 'sessions'), (snapshot) => {
+    const data = snapshot.val() || {};
+    const list = Object.entries(data).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
+    if (list.length === 0) { el.innerHTML = `<p class="hint">Пока нет сессий.</p>`; return; }
+    const now = Date.now();
+    const rows = list.map(([code, s]) => {
+      const students = Object.keys(s.students || {}).length;
+      const done = Object.values(s.students || {}).filter(x => x.status === 'finished').length;
+      const ageMin = Math.floor((now - s.createdAt) / 60000);
+      const ageText = ageMin < 1 ? 'только что' : ageMin < 60 ? `${ageMin} мин назад` : ageMin < 1440 ? `${Math.floor(ageMin / 60)} ч назад` : `${Math.floor(ageMin / 1440)} дн назад`;
+      const statusLabel = s.status === 'active'
+        ? '<span style="color:#4ade80;">● активна</span>'
+        : '<span style="color:#94a3b8;">● закрыта</span>';
+      return `<tr>
+        <td style="text-align:center;font-weight:bold;color:#86efac;font-size:16px;">${code}</td>
+        <td>${escapeHtml(s.teacherEmail || '—')}</td>
+        <td>${escapeHtml((s.testTitle || '').slice(0, 50))}${s.testTitle && s.testTitle.length > 50 ? '…' : ''}</td>
+        <td>${ageText}</td>
+        <td style="text-align:center;">${students} / ${MAX_STUDENTS}</td>
+        <td style="text-align:center;">${done}</td>
+        <td>${statusLabel}</td>
+        <td class="action-cell" style="white-space:normal;">
+          <a href="?mode=developer&session=${code}"><button class="small purple">👁</button></a>
+          ${s.status === 'active'
+            ? `<button class="small back" data-close-session="${code}">🔒 Закрыть</button>`
+            : `<button class="small green" data-open-session="${code}">🔓 Открыть</button>`}
+          <button class="small danger" data-del-session="${code}">🗑</button>
+        </td>
+      </tr>`;
+    }).join('');
+    el.innerHTML = `<table>
+      <thead><tr>
+        <th style="width:80px;">Код</th><th>Учитель</th><th>Тест</th><th style="width:110px;">Создана</th>
+        <th style="width:100px;">Учеников</th><th style="width:90px;">Завершили</th><th style="width:100px;">Статус</th><th style="width:260px;">Действия</th>
+      </tr></thead>
+      <tbody>${rows}</tbody></table>`;
+
+    el.querySelectorAll('[data-close-session]').forEach(b => {
+      b.onclick = async (ev) => {
+        ev.preventDefault();
+        const code = b.dataset.closeSession;
+        if (!confirm(`Закрыть сессию ${code}?`)) return;
+        await window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}`), { status: 'closed', closedAt: Date.now() });
+      };
+    });
+    el.querySelectorAll('[data-open-session]').forEach(b => {
+      b.onclick = async (ev) => {
+        ev.preventDefault();
+        const code = b.dataset.openSession;
+        await window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}`), { status: 'active', reopenedAt: Date.now() });
+      };
+    });
+    el.querySelectorAll('[data-del-session]').forEach(b => {
+      b.onclick = async (ev) => {
+        ev.preventDefault();
+        const code = b.dataset.delSession;
+        if (!confirm(`Удалить сессию ${code} со всеми данными?`)) return;
+        await window.FB.remove(window.FB.ref(window.FB.db, `sessions/${code}`));
+      };
+    });
+  }));
+}
+
+function subscribeAllResults() {
+  const el = document.getElementById('allResultsArea');
+  if (!el) return;
+  trackUnsub(window.FB.onValue(window.FB.ref(window.FB.db, 'results'), (snapshot) => {
+    const data = snapshot.val() || {};
+    const list = Object.values(data).sort((a, b) => b.timestamp - a.timestamp);
+    if (list.length === 0) { el.innerHTML = `<p class="hint">Пока нет результатов.</p>`; return; }
+
+    const total = list.length;
+    const last100 = list.slice(0, 100);
+    const rows = last100.map((r, i) => `<tr>
+      <td style="text-align:center;">${i + 1}</td>
+      <td>${escapeHtml(r.date)}</td>
+      <td>${escapeHtml(r.teacherEmail || '')}</td>
+      <td>${escapeHtml((r.testTitle || '').slice(0, 40))}${r.testTitle && r.testTitle.length > 40 ? '…' : ''}</td>
+      <td>${escapeHtml(r.studentName)}</td>
+      <td style="text-align:center;" class="ok">${r.correct}</td>
+      <td style="text-align:center;" class="bad">${r.wrong}</td>
+      <td style="text-align:center;font-weight:bold;">${r.score}</td>
+      <td style="text-align:center;" class="bad">${r.tabSwitches ? '⚠ ' + r.tabSwitches : ''}</td>
+    </tr>`).join('');
+
+    el.innerHTML = `<p class="hint">Показаны последние 100 из ${total}.</p>
+      <table><thead><tr>
+        <th style="width:40px;">№</th><th>Дата</th><th>Учитель</th><th>Тест</th><th>Ученик</th>
+        <th style="width:60px;">Верно</th><th style="width:60px;">Неверно</th>
+        <th style="width:50px;">Балл</th><th style="width:70px;">Отвлёкся</th>
+      </tr></thead><tbody>${rows}</tbody></table>`;
+  }));
+}
+
+async function exportWholeSchool() {
+  const snap = await window.FB.get(window.FB.ref(window.FB.db, 'results'));
+  const data = snap.val() || {};
+  const all = Object.values(data).sort((a, b) => b.timestamp - a.timestamp);
+  exportFlatSummary(all, 'Сводная ведомость по всей школе', `Школа_сводка_${Date.now()}.xls`);
+}
+
+async function clearAllResults() {
+  const snap = await window.FB.get(window.FB.ref(window.FB.db, 'results'));
+  const data = snap.val() || {};
+  const count = Object.keys(data).length;
+  if (count === 0) { alert('Результатов нет — очищать нечего.'); return; }
+  if (!confirm(`⚠️ Удалить ВСЕ результаты (${count} шт.)?\n\nЭто действие необратимо.`)) return;
+  if (!confirm(`Точно удалить? Последнее подтверждение.`)) return;
+  try {
+    await window.FB.remove(window.FB.ref(window.FB.db, 'results'));
+    alert(`✅ Удалено ${count} записей.`);
+  } catch (e) { alert('Ошибка: ' + e.message); }
+}
+
+async function clearOldResults() {
+  if (!confirm('Удалить результаты старше 30 дней? Это действие необратимо.')) return;
+  const snap = await window.FB.get(window.FB.ref(window.FB.db, 'results'));
+  const data = snap.val() || {};
+  const now = Date.now();
+  const toDelete = Object.entries(data).filter(([_, r]) => now - (r.timestamp || 0) > OLD_RESULTS_TTL_MS);
+  if (toDelete.length === 0) { alert('Нет результатов старше 30 дней.'); return; }
+  for (const [id] of toDelete) await window.FB.remove(window.FB.ref(window.FB.db, `results/${id}`));
+  alert(`Удалено ${toDelete.length} записей.`);
+}
+
+async function cleanupOldSessions() {
+  if (!currentUser) return;
+  try {
+    const snap = await window.FB.get(window.FB.ref(window.FB.db, 'sessions'));
+    const all = snap.val() || {};
+    const now = Date.now();
+    const del = [];
+    for (const [code, s] of Object.entries(all)) {
+      if (!s || !s.createdAt) continue;
+      if (s.teacherId !== currentUser.uid && currentUser.role !== 'developer') continue;
+      if (now - s.createdAt > SESSION_TTL_MS) del.push(code);
+    }
+    for (const code of del) await window.FB.remove(window.FB.ref(window.FB.db, `sessions/${code}`));
+    if (del.length) console.log(`Автоочистка: удалено сессий — ${del.length}`);
+  } catch (e) { console.error('cleanupOldSessions:', e); }
+}
+
+async function renderDeveloperSession() {
+  clearAllUnsubs();
+  if (!currentUser || currentUser.role !== 'developer') { renderAuth('developer'); return; }
+  const code = sessionCode;
+  const snap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
+  const s = snap.val();
+  if (!s) { app.innerHTML = `<h1>⚠️ Сессия не найдена</h1><p><a href="?mode=developer"><button class="back">← Назад</button></a></p>`; return; }
+  const test = testsCache[s.testId] || (await window.FB.get(window.FB.ref(window.FB.db, `tests/${s.testId}`))).val();
+  if (!test) { app.innerHTML = `<h1>⚠️ Тест не найден</h1>`; return; }
+  app.innerHTML = `
+    <div class="tabs">
+      <a href="?mode=developer"><button class="back small">← К панели</button></a>
+      <button class="download small" id="exportSessionBtn">📥 Excel по сессии</button>
+    </div>
+    <h1>👁 Наблюдение за сессией <span style="color:#86efac;">${code}</span></h1>
+    <p><b>Учитель:</b> ${escapeHtml(s.teacherEmail || '—')}</p>
+    <p><b>Тест:</b> ${escapeHtml(s.testTitle)}</p>
+    <div class="status-bar">
+      <span>👥 Учеников: <b id="cntTotal">0</b> / ${MAX_STUDENTS}</span>
+      <span>✅ Завершили: <b id="cntDone">0</b></span>
+      <span>📝 Отвечают: <b id="cntActive">0</b></span>
+      <span>⚠ Отвлекались: <b id="cntDistracted">0</b></span>
+    </div>
+    <h2>👥 Ученики</h2>
+    <div id="studentsArea" class="students-grid">Загрузка…</div>
+    <h2>📊 Результаты</h2>
+    <div id="resultsArea"></div>`;
+  document.getElementById('exportSessionBtn').onclick = async () => {
+    const sSnap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
+    const session = sSnap.val();
+    const results = Object.values(session.students || {}).filter(x => x.result).map(x => x.result);
+    exportStudentsWorkbook(results, session.testTitle, session.testId);
+  };
+  subscribeSessionLive(code, test);
+}
+
+async function renderTeacherHome() {
+  clearAllUnsubs();
+  if (!currentUser || currentUser.role !== 'teacher') { renderAuth('teacher'); return; }
+
+  app.innerHTML = `
+    <div class="teacher-header">
+      <h1>👨‍🏫 Кабинет учителя</h1>
+      <div class="teacher-user">
+        <span class="role-chip teacher">TEACHER</span>
+        <span class="teacher-chip">${escapeHtml(currentUser.email)}</span>
+        <button class="small back" id="logoutBtn">Выйти</button>
+      </div>
+    </div>
+
+    <div class="big-action">
+      <h2>👋 Готовы запустить тест?</h2>
+      <p>Выберите тест — ученики получат код и начнут прохождение</p>
+      <div class="select-wrap">
+        <select id="newSessionTest"></select>
+      </div>
+      <button id="createSessionBtn" class="green btn-create">➕ Создать сессию</button>
+    </div>
+
+    <div class="teacher-panel">
+      <div class="teacher-panel-head">
+        <h3>📋 Мои сессии</h3>
+        <button id="exportMyResults" class="download small">📥 Все мои результаты</button>
+      </div>
+      <div id="sessionsList"><p class="hint"><span class="loading-spinner"></span>Загрузка…</p></div>
+    </div>`;
+
+  document.getElementById('logoutBtn').onclick = async () => {
+    if (!confirm('Выйти?')) return;
+    clearAllUnsubs();
+    clearCachedProfile(currentUser && currentUser.uid);
+    await window.FB.signOut(window.FB.auth);
+    location.href = '?mode=teacher';
+  };
+  document.getElementById('createSessionBtn').onclick = createSession;
+  document.getElementById('exportMyResults').onclick = exportMyResults;
+  renderTeacherTestOptions(document.getElementById('newSessionTest'));
+  cleanupOldSessions();
+  subscribeTeacherSessions();
+}
+
+function renderTeacherTestOptions(selectEl) {
+  const entries = Object.entries(testsCache);
+  if (entries.length === 0) { selectEl.innerHTML = `<option value="">— Нет доступных тестов —</option>`; return; }
+  selectEl.innerHTML = entries.map(([id, t]) => `<option value="${id}">${escapeHtml(t.title.slice(0, 70))}${t.title.length > 70 ? '…' : ''}</option>`).join('');
+}
+
+async function createSession() {
+  const testId = document.getElementById('newSessionTest').value;
+  if (!testId) { alert('Нет доступных тестов.'); return; }
+  const test = testsCache[testId];
+  const code = genSessionCode();
+  try {
+    await window.FB.set(window.FB.ref(window.FB.db, `sessions/${code}`), {
+      testId, testTitle: test.title,
+      teacherId: currentUser.uid, teacherEmail: currentUser.email,
+      createdAt: Date.now(), status: 'active'
+    });
+    alert(`Сессия создана!\n\nКод: ${code}\nСсылка:\n${location.origin}${location.pathname}?mode=student&session=${code}`);
+    location.href = `?mode=teacher&session=${code}`;
+  } catch (e) { alert('Ошибка: ' + e.message); }
+}
+
+function subscribeTeacherSessions() {
+  const el = document.getElementById('sessionsList');
+  if (!el) return;
+  trackUnsub(window.FB.onValue(window.FB.ref(window.FB.db, 'sessions'), (snapshot) => {
+    const data = snapshot.val() || {};
+    const mine = Object.entries(data)
+      .filter(([_, s]) => s && s.teacherId === currentUser.uid)
+      .sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
+    if (mine.length === 0) { el.innerHTML = `<p class="hint">Пока нет сессий.</p>`; return; }
+    const now = Date.now();
+    const rows = mine.map(([code, s]) => {
+      const students = Object.keys(s.students || {}).length;
+      const done = Object.values(s.students || {}).filter(x => x.status === 'finished').length;
+      const distracted = Object.values(s.students || {}).filter(x => x.tabSwitches && x.tabSwitches > 0).length;
+      const ageMin = Math.floor((now - s.createdAt) / 60000);
+      const ageText = ageMin < 1 ? 'только что' : ageMin < 60 ? `${ageMin} мин назад` : ageMin < 1440 ? `${Math.floor(ageMin / 60)} ч назад` : `${Math.floor(ageMin / 1440)} дн назад`;
+      const statusLabel = s.status === 'active' ? '<span style="color:#4ade80;">● активна</span>' : '<span style="color:#94a3b8;">● закрыта</span>';
+      return `<tr>
+        <td style="text-align:center;font-size:16px;font-weight:bold;color:#86efac;">${code}</td>
+        <td>${escapeHtml((s.testTitle || '').slice(0, 50))}${s.testTitle && s.testTitle.length > 50 ? '…' : ''}</td>
+        <td>${ageText}</td>
+        <td style="text-align:center;">${students} / ${MAX_STUDENTS}</td>
+        <td style="text-align:center;">${done}</td>
+        <td style="text-align:center;">${distracted > 0 ? `<span class="warn-badge">⚠ ${distracted}</span>` : '—'}</td>
+        <td>${statusLabel}</td>
+        <td class="action-cell"><a href="?mode=teacher&session=${code}"><button class="small">Открыть</button></a></td>
+      </tr>`;
+    }).join('');
+    el.innerHTML = `<table>
+      <thead><tr><th style="width:100px;">Код</th><th>Тест</th><th style="width:110px;">Создана</th><th style="width:100px;">Учеников</th><th style="width:100px;">Завершили</th><th style="width:110px;">⚠ Отвлеклись</th><th style="width:110px;">Статус</th><th style="width:110px;">Действия</th></tr></thead>
+      <tbody>${rows}</tbody></table>`;
+  }));
+}
+
+async function exportMyResults() {
+  const snap = await window.FB.get(window.FB.ref(window.FB.db, 'results'));
+  const data = snap.val() || {};
+  const mine = Object.values(data).filter(r => r.teacherId === currentUser.uid);
+  exportFlatSummary(mine, 'Мои результаты', `Мои_результаты_${Date.now()}.xls`);
+}
+
+async function renderTeacherSession() {
+  clearAllUnsubs();
+  if (!currentUser || currentUser.role !== 'teacher') { renderAuth('teacher'); return; }
+  const code = sessionCode;
+  const snap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
+  const s = snap.val();
+  if (!s) { app.innerHTML = `<h1>⚠️ Сессия не найдена</h1><p><a href="?mode=teacher"><button class="back">← Назад</button></a></p>`; return; }
+  if (s.teacherId !== currentUser.uid) { app.innerHTML = `<h1>⚠️ Это чужая сессия</h1><p><a href="?mode=teacher"><button class="back">← Назад</button></a></p>`; return; }
+  const test = testsCache[s.testId] || (await window.FB.get(window.FB.ref(window.FB.db, `tests/${s.testId}`))).val();
+  if (!test) { app.innerHTML = `<h1>⚠️ Тест не найден</h1>`; return; }
+  app.innerHTML = `
+    <div class="tabs no-print">
+      <a href="?mode=teacher"><button class="back small">← К списку</button></a>
+      <button class="download small" id="exportSessionBtn">📥 Excel по сессии</button>
+      <button class="danger small" id="closeBtn">⏹ Закрыть</button>
+    </div>
+    <h1 class="no-print">👨‍🏫 Сессия <span style="color:#86efac;">${code}</span></h1>
+    <p class="no-print"><b>Тест:</b> ${escapeHtml(test.title)}</p>
+    <p class="no-print">Ссылка:
+      <span class="badge session">${escapeHtml(location.origin + location.pathname + '?mode=student&session=' + code)}</span>
+      <button class="small" id="copyLink">Скопировать</button>
+    </p>
+    <div class="status-bar no-print">
+      <span>👥 Учеников: <b id="cntTotal">0</b> / ${MAX_STUDENTS}</span>
+      <span>✅ Завершили: <b id="cntDone">0</b></span>
+      <span>📝 Отвечают: <b id="cntActive">0</b></span>
+      <span>⚠ Отвлекались: <b id="cntDistracted">0</b></span>
+    </div>
+    <h2 class="no-print">👥 Ученики</h2>
+    <div id="studentsArea" class="students-grid">Ожидание…</div>
+    <h2 class="no-print" style="margin-top:32px;">📊 Результаты</h2>
+    <div id="resultsArea" class="no-print"></div>`;
+  document.getElementById('copyLink').onclick = () => {
+    navigator.clipboard.writeText(location.origin + location.pathname + '?mode=student&session=' + code);
+    alert('Ссылка скопирована');
+  };
+  document.getElementById('exportSessionBtn').onclick = async () => {
+    const sSnap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
+    const session = sSnap.val();
+    const results = Object.values(session.students || {}).filter(x => x.result).map(x => x.result);
+    exportStudentsWorkbook(results, session.testTitle, session.testId);
+  };
+  document.getElementById('closeBtn').onclick = async () => {
+    if (!confirm(`Закрыть сессию ${code}?`)) return;
+    await window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}`), { status: 'closed', closedAt: Date.now() });
+  };
+  subscribeSessionLive(code, test);
+}
+
+function subscribeSessionLive(code, test) {
+  trackUnsub(window.FB.onValue(window.FB.ref(window.FB.db, `sessions/${code}`), (snapshot) => {
+    const s = snapshot.val();
+    if (!s) return;
+    const studentsArr = Object.entries(s.students || {}).map(([id, v]) => ({ id, ...v })).sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
+    const total = studentsArr.length;
+    const done = studentsArr.filter(x => x.status === 'finished' || x.status === 'terminated').length;
+    const active = studentsArr.filter(x => x.status === 'in_progress').length;
+    const distracted = studentsArr.filter(x => x.tabSwitches && x.tabSwitches > 0).length;
+
+    const elTotal = document.getElementById('cntTotal');
+    if (elTotal) {
+      elTotal.textContent = total;
+      document.getElementById('cntDone').textContent = done;
+      document.getElementById('cntActive').textContent = active;
+      const elD = document.getElementById('cntDistracted');
+      if (elD) elD.textContent = distracted;
+    }
+
+    const area = document.getElementById('studentsArea');
+    if (area) {
+      if (studentsArr.length === 0) {
+        area.innerHTML = `<p class="hint">Ожидание учеников… Сообщите код <b>${code}</b>.</p>`;
+      } else {
+        area.innerHTML = studentsArr.map(st => {
+          let statusText = '', cls = '', dot = '';
+          if (st.status === 'in_progress') { cls = 'active'; statusText = `Отвечает: вопрос ${(st.currentQuestion || 0) + 1} из ${test.questions.length}`; dot = '<span class="dot"></span>'; }
+          else if (st.status === 'finished') { cls = 'done'; statusText = `Завершил — ${st.score || 0} баллов`; dot = '<span class="dot"></span>'; }
+          else if (st.status === 'terminated') { cls = 'terminated'; statusText = `🚫 Прерван — ${st.score || 0} баллов`; dot = '<span class="dot offline"></span>'; }
+          else if (st.status === 'disconnected') { statusText = 'Отключился'; dot = '<span class="dot offline"></span>'; }
+          else { statusText = 'Подключился'; dot = '<span class="dot"></span>'; }
+
+          const hasSwitch = st.tabSwitches && st.tabSwitches > 0;
+          const hasCopy = st.copyAttempts && st.copyAttempts > 0;
+          const hasTerm = st.status === 'terminated';
+          if (hasSwitch) cls += ' distracted';
+
+          const warnings = [];
+          if (hasTerm) warnings.push(`<div class="warn-badge critical">🚫 Прерван — покинул вкладку</div>`);
+          if (hasSwitch && !hasTerm) warnings.push(`<div class="warn-badge ${st.tabSwitches >= 3 ? 'critical' : ''}">⚠ Отвлекался: ${st.tabSwitches} раз</div>`);
+          if (hasCopy) warnings.push(`<div class="warn-badge">📋 Копировал: ${st.copyAttempts} раз</div>`);
+
+          return `<div class="student-card ${cls}">
+            <div class="name">${dot}${escapeHtml(st.studentName || '—')}</div>
+            <div class="status">${escapeHtml(statusText)}</div>
+            ${st.status === 'in_progress' ? `<div class="progress">Верно: ${st.correctSoFar || 0}</div>` : ''}
+            ${warnings.join('')}
+          </div>`;
+        }).join('');
+      }
+    }
+
+    const rArea = document.getElementById('resultsArea');
+    if (rArea) {
+      const finished = studentsArr.filter(x => x.result);
+      if (finished.length === 0) { rArea.innerHTML = `<p class="hint">Ещё никто не завершил.</p>`; }
+      else {
+        const rows = finished.map((st, i) => {
+          const r = st.result;
+          const warn = (r.tabSwitches || r.copyAttempts || r.terminated)
+            ? `<span class="warn-badge">${r.terminated ? '🚫 ' : ''}${r.tabSwitches ? '⚠ ' + r.tabSwitches + ' ' : ''}${r.copyAttempts ? '📋 ' + r.copyAttempts : ''}</span>`
+            : '—';
+          return `<tr>
+            <td style="text-align:center;">${i + 1}</td>
+            <td>${escapeHtml(r.studentName)}</td>
+            <td style="text-align:center;">${r.correct}</td>
+            <td style="text-align:center;">${r.wrong}</td>
+            <td style="text-align:center;font-weight:bold;">${r.score}</td>
+            <td style="text-align:center;">${warn}</td>
+            <td class="action-cell">
+              <button class="small" data-view="${st.id}">Открыть</button>
+              <button class="small download" data-excel="${st.id}">📥</button>
+            </td>
+          </tr>`;
+        }).join('');
+        rArea.innerHTML = `<table>
+          <thead><tr><th style="width:50px;">№</th><th>Ученик</th><th style="width:70px;">Верно</th><th style="width:70px;">Неверно</th><th style="width:60px;">Балл</th><th style="width:120px;">Тревоги</th><th style="width:160px;">Действия</th></tr></thead>
+          <tbody>${rows}</tbody></table>`;
+        rArea.querySelectorAll('[data-view]').forEach(b => b.onclick = () => {
+          const st = studentsArr.find(x => x.id === b.dataset.view);
+          if (st && st.result) showStudentResult(st.result);
+        });
+        rArea.querySelectorAll('[data-excel]').forEach(b => b.onclick = () => {
+          const st = studentsArr.find(x => x.id === b.dataset.excel);
+          if (st && st.result) exportStudentsWorkbook([st.result], test.title, s.testId);
+        });
+      }
+    }
+  }));
+}
+
+function showStudentResult(rec) {
+  const rows = rec.answers.map((a, i) => {
+    const img = a.image ? `<img src="${escapeAttr(a.image)}" style="max-width:120px; max-height:80px; border-radius:4px; display:block; margin-bottom:4px;">` : '';
+    return `<tr>
+      <td>${i + 1}</td>
+      <td>${img}</td>
+      <td>${escapeHtml(a.questionText)}</td>
+      <td>${escapeHtml(a.correctText)}</td>
+      <td>${a.selectedText ? escapeHtml(a.selectedText) : '<i>нет ответа</i>'}</td>
+      <td class="${a.correct ? 'ok' : 'bad'}">${a.correct ? '✔' : '✘'}</td>
+    </tr>`;
+  }).join('');
+  const warnings = [];
+  if (rec.terminated) warnings.push(`<span class="warn-badge critical">🚫 Тест прерван</span>`);
+  if (rec.tabSwitches) warnings.push(`<span class="warn-badge critical">⚠ Отвлекался: ${rec.tabSwitches} раз</span>`);
+  if (rec.copyAttempts) warnings.push(`<span class="warn-badge">📋 Копировал: ${rec.copyAttempts} раз</span>`);
+  const m = openModal(`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+      <h2 style="margin:0;">${escapeHtml(rec.studentName)} — ${rec.score} / 100</h2>
+      <button class="small back" id="mClose">Закрыть</button>
+    </div>
+    ${warnings.length ? `<div style="margin-bottom:12px;">${warnings.join(' ')}</div>` : ''}
+    <table><tr><th>#</th><th>Рис.</th><th>Вопрос</th><th>Правильный ответ</th><th>Ответ ученика</th><th>Итог</th></tr>${rows}</table>
+    <p style="margin-top:16px;">Правильных: <b class="ok">${rec.correct}</b> | Неправильных: <b class="bad">${rec.wrong}</b></p>`);
+  m.$('#mClose').onclick = m.close;
+}
+
+function renderStudentEnterCode(errMsg) {
+  clearAllUnsubs();
+  fbReady(() => {
+    app.innerHTML = `
+      <div class="student-hero" style="margin-top:24px;">
+        <h1>🎓 Ученик</h1>
+        <p class="sub">Введите код сессии, который сообщил учитель</p>
+        <label>Код сессии</label>
+        <input type="text" id="sessionInput" placeholder="6-значный код" inputmode="numeric" maxlength="6" autocomplete="off"
+               style="font-size:24px;text-align:center;letter-spacing:10px;padding:16px;">
+        <p id="codeError" style="color:#f87171;display:${errMsg ? 'block' : 'none'};margin:4px 0 10px;position:relative;z-index:1;">${errMsg || ''}</p>
+        <button id="go" class="btn-start">Открыть тест →</button>
+      </div>`;
+    const input = document.getElementById('sessionInput');
+    input.focus();
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('go').click(); } });
+    document.getElementById('go').onclick = async () => {
+      const code = input.value.trim();
+      const err = document.getElementById('codeError');
+      err.style.display = 'none';
+      if (!/^\d{6}$/.test(code)) { err.textContent = 'Код должен состоять из 6 цифр'; err.style.display = 'block'; return; }
+      try {
+        const snap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
+        const s = snap.val();
+        if (!s) { err.textContent = `Сессия «${code}» не найдена`; err.style.display = 'block'; return; }
+        if (s.status === 'closed') { err.textContent = 'Эта сессия уже закрыта'; err.style.display = 'block'; return; }
+        if (Object.keys(s.students || {}).length >= MAX_STUDENTS) { err.textContent = `В сессии уже ${MAX_STUDENTS} учеников`; err.style.display = 'block'; return; }
+        location.search = `?mode=student&session=${code}`;
+      } catch (e) { err.textContent = 'Ошибка: ' + e.message; err.style.display = 'block'; }
+    };
+  });
+}
+
+async function renderStudentSession() {
+  clearAllUnsubs();
+  fbReady(async () => {
+    const code = sessionCode;
+    const snap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
+    const s = snap.val();
+    if (!s) { app.innerHTML = `<h1>⚠️ Сессия не найдена</h1><p><a href="?mode=student"><button class="back">← Ввести другой код</button></a></p>`; return; }
+    if (s.status === 'closed') { app.innerHTML = `<h1>⚠️ Сессия закрыта</h1><p><a href="?mode=student"><button class="back">← Ввести другой код</button></a></p>`; return; }
+
+    const myId = getStudentLocalId();
+    const myRecord = (s.students || {})[myId];
+    if (myRecord && myRecord.status === 'terminated') {
+      app.innerHTML = `<div class="student-hero" style="text-align:center;margin-top:40px;">
+        <div style="font-size: 64px;">🚫</div>
+        <h2 style="color:#f87171;">Тест был прерван</h2>
+        <p>Вы покинули вкладку во время прохождения теста.</p>
+        <p style="color:#94a3b8;">Повторное прохождение этой сессии невозможно.</p>
+        <p style="margin-top: 24px;"><a href="?mode=student"><button class="back">← Ввести другой код</button></a></p>
+      </div>`;
+      return;
+    }
+    if (myRecord && myRecord.status === 'finished') {
+      app.innerHTML = `<div class="student-hero" style="text-align:center;margin-top:40px;">
+        <div style="font-size: 64px;">✅</div>
+        <h2>Вы уже прошли этот тест</h2>
+        <p>Баллов: <b>${myRecord.score || 0} / 100</b></p>
+        <p style="margin-top: 24px;"><a href="?mode=student"><button class="back">← Ввести другой код</button></a></p>
+      </div>`;
+      return;
+    }
+
+    const testSnap = await window.FB.get(window.FB.ref(window.FB.db, `tests/${s.testId}`));
+    const test = testSnap.val();
+    if (!test) { app.innerHTML = `<h1>⚠️ Тест не найден</h1>`; return; }
+
+    const introHTML = test.intro
+      ? `<div id="introArea" class="student-hero" style="margin-bottom:20px;">
+          <h3 style="margin-top:0;position:relative;z-index:1;">📖 Информация перед тестом</h3>
+          ${test.introImage ? `<div class="question-image" style="position:relative;z-index:1;"><img src="${escapeAttr(test.introImage)}" alt=""></div>` : ''}
+          <div style="white-space:pre-wrap;color:#cbd5e1;font-size:15px;position:relative;z-index:1;">${escapeHtml(test.intro)}</div>
+          <p class="hint" style="margin-top:16px;position:relative;z-index:1;">Прочитайте внимательно. Когда будете готовы — нажмите кнопку ниже.</p>
+          <button id="introReadBtn" class="btn-start">✔ Я прочитал, перейти к тесту</button>
+        </div>`
+      : '';
+    const regAreaDisplay = test.intro ? 'display:none;' : '';
+
+    app.innerHTML = `
+      ${introHTML}
+      <div id="regArea" class="student-hero" style="${regAreaDisplay}">
+        <h1>${escapeHtml(test.title)}</h1>
+        <p class="sub">Код сессии: <b style="color:#86efac;">${code}</b></p>
+
+        <label>Имя</label>
+        <input type="text" id="firstName" placeholder="Иван" autocomplete="off">
+
+        <label>Фамилия</label>
+        <input type="text" id="lastName" placeholder="Иванов" autocomplete="off">
+
+        <p id="nameError" style="color:#f87171;display:none;margin:4px 0 10px;position:relative;z-index:1;"></p>
+
+        <button id="start" class="btn-start">Начать тест ✨</button>
+
+        <div class="facts">
+          <div class="fact">📚 ${test.questions.length} вопросов</div>
+          <div class="fact">⏱ ${test.timePerQuestion || TIME_PER_QUESTION} сек/вопрос</div>
+          <div class="fact">🎯 ${TOTAL_POINTS} баллов</div>
+        </div>
+
+        <div class="anti-cheat-note">
+          🛡 Во время теста фиксируется переключение вкладок и попытки копирования.
+          Если вы покинете вкладку — тест будет прерван.
+        </div>
+      </div>
+      <div id="testArea"></div>`;
+
+    const introBtn = document.getElementById('introReadBtn');
+    if (introBtn) {
+      introBtn.onclick = () => {
+        document.getElementById('introArea').style.display = 'none';
+        document.getElementById('regArea').style.display = 'block';
+      };
+    }
+
+    ['firstName', 'lastName'].forEach(id => {
+      const el = document.getElementById(id);
+      el.addEventListener('input', () => { el.classList.remove('invalid'); validateNames(false); });
+      el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('start').click(); } });
+    });
+    document.getElementById('start').onclick = () => tryStartStudent(code, test, s);
+  });
+}
+
+function validateNames(showError) {
+  const firstEl = document.getElementById('firstName');
+  const lastEl  = document.getElementById('lastName');
+  const err     = document.getElementById('nameError');
+  const first = firstEl.value.trim(), last = lastEl.value.trim();
+  let message = '';
+  if (!first || !last) message = 'Заполните имя и фамилию';
+  else if (!isValidName(first) || !isValidName(last)) message = 'Только русские и английские буквы (без цифр и знаков)';
+  if (message) {
+    if (showError) {
+      err.textContent = message; err.style.display = 'block';
+      if (first && !isValidName(first)) firstEl.classList.add('invalid');
+      if (last && !isValidName(last)) lastEl.classList.add('invalid');
+    }
+    return null;
+  }
+  err.style.display = 'none';
+  return { first, last };
+}
+
+async function tryStartStudent(code, test, sessionData) {
+  const names = validateNames(true);
+  if (!names) return;
+  const studentName = `${names.last} ${names.first}`;
+  const studentId = getStudentLocalId();
+  const existing = Object.values(sessionData.students || {});
+  if (existing.some(x => x.studentName === studentName)) { alert(`«${studentName}» уже участвует в этой сессии.`); return; }
+  if (existing.length >= MAX_STUDENTS) { alert(`В сессии уже ${MAX_STUDENTS} учеников.`); return; }
+
+  const studentRef = window.FB.ref(window.FB.db, `sessions/${code}/students/${studentId}`);
+  try {
+    await window.FB.set(studentRef, {
+      studentName, joinedAt: Date.now(),
+      status: 'in_progress', currentQuestion: 0, correctSoFar: 0, online: true,
+      tabSwitches: 0, copyAttempts: 0
+    });
+    state = {
+      code, test, testId: sessionData.testId,
+      teacherId: sessionData.teacherId, teacherEmail: sessionData.teacherEmail,
+      studentRef, studentId, studentName,
+      timePerQuestion: test.timePerQuestion || TIME_PER_QUESTION,
+      questions: prepareQuestions(test.questions),
+      answers: [], qIndex: 0, answered: false, highlightIndex: -1, finished: false, terminated: false
+    };
+    enableAntiCheat(studentRef);
+    document.getElementById('regArea').style.display = 'none';
+    askQuestion();
+  } catch (e) { alert('Ошибка: ' + e.message); }
+}
+
+function askQuestion() {
+  if (state.terminated || state.finished) return;
+  const i = state.qIndex;
+  if (i >= state.questions.length) return finishStudent();
+  const q = state.questions[i];
+  state.highlightIndex = -1;
+  const timePerQ = state.timePerQuestion || TIME_PER_QUESTION;
+  const imageHTML = q.image ? `<div class="question-image"><img src="${escapeAttr(q.image)}" alt=""></div>` : '';
+
+  document.getElementById('testArea').innerHTML = `
+    <div class="student-hero" style="margin-top:20px;">
+      <div class="test-locked" id="testLocked">
+        <h2 style="position:relative;z-index:1;">Вопрос ${i + 1} / ${state.questions.length}</h2>
+        ${imageHTML}
+        <p style="font-size:17px;position:relative;z-index:1;">${escapeHtml(q.q)}</p>
+        <div id="options" style="position:relative;z-index:1;"></div>
+        <div class="timer" style="position:relative;z-index:1;" id="timer">${timePerQ}</div>
+      </div>
+    </div>`;
+
+  q.options.forEach((opt, idx) => {
+    const b = document.createElement('button');
+    b.className = 'opt';
+    b.dataset.index = idx;
+    b.innerHTML = `<b>${idx + 1}.</b> ${escapeHtml(opt)}`;
+    b.onclick = () => selectAnswer(idx);
+    document.getElementById('options').appendChild(b);
+  });
+  window.FB.update(state.studentRef, { currentQuestion: i, correctSoFar: state.answers.filter(a => a.correct).length, online: true, lastUpdate: Date.now() }).catch(() => {});
+  let timeLeft = timePerQ;
+  const tEl = document.getElementById('timer');
+  state.timer = setInterval(() => {
+    timeLeft--;
+    if (tEl) tEl.textContent = timeLeft;
+    if (timeLeft <= 0) { clearInterval(state.timer); selectAnswer(null); }
+  }, 1000);
+}
+
+function updateHighlight() {
+  document.querySelectorAll('.opt').forEach((b, i) => b.classList.toggle('highlighted', i === state.highlightIndex));
+}
+
+function selectAnswer(idx) {
+  if (state.answered || state.terminated || state.finished) return;
+  state.answered = true;
+  clearInterval(state.timer);
+  const q = state.questions[state.qIndex];
+  const correct = idx !== null && idx === q.correct;
+  const selectedText = idx !== null ? q.options[idx] : null;
+  state.answers.push({ selected: idx, selectedText, correct, questionText: q.q, correctText: q.options[q.correct], image: q.image || '' });
+  document.querySelectorAll('.opt').forEach((b, i) => {
+    b.disabled = true; b.classList.remove('highlighted');
+    if (i === idx) b.classList.add('selected');
+  });
+  state.qIndex++;
+  state.answered = false;
+  setTimeout(askQuestion, 800);
+}
+
+async function finishStudent() {
+  if (state.finished) return;
+  state.finished = true;
+  disableAntiCheat();
+  const correct = state.answers.filter(a => a.correct).length;
+  const wrong = state.answers.length - correct;
+  const score = Math.round(correct * TOTAL_POINTS / state.questions.length);
+  const result = {
+    studentName: state.studentName, testId: String(state.testId), testTitle: state.test.title,
+    date: formatDate(Date.now()), timestamp: Date.now(),
+    score, correct, wrong, total: state.questions.length,
+    teacherId: state.teacherId, teacherEmail: state.teacherEmail, sessionCode: state.code,
+    decision: '', tabSwitches: antiCheatTabSwitches, copyAttempts: antiCheatCopyAttempts,
+    answers: state.answers.map(a => ({ questionText: a.questionText, correctText: a.correctText, selectedText: a.selectedText, correct: a.correct, image: a.image || '' }))
+  };
+  try {
+    await window.FB.update(state.studentRef, { status: 'finished', finishedAt: Date.now(), score, correct, wrong, result, online: true, tabSwitches: antiCheatTabSwitches, copyAttempts: antiCheatCopyAttempts });
+    const newRef = window.FB.push(window.FB.ref(window.FB.db, 'results'));
+    await window.FB.set(newRef, result);
+  } catch (e) { console.error(e); }
+
+  document.getElementById('testArea').innerHTML = `
+    <div class="student-hero" style="margin-top:20px;text-align:center;">
+      <h2 style="position:relative;z-index:1;">✅ Тест завершён</h2>
+      <p style="position:relative;z-index:1;">Ученик: <b>${escapeHtml(state.studentName)}</b></p>
+      <p style="position:relative;z-index:1;">Правильных: <b class="ok">${correct}</b> из ${state.questions.length}</p>
+      <p style="position:relative;z-index:1;">Неправильных: <b class="bad">${wrong}</b></p>
+      <div class="score" style="position:relative;z-index:1;">${score} / 100</div>
+      <p style="text-align:center;font-size:18px;position:relative;z-index:1;">${interpret(score)}</p>
+      <p style="text-align:center;margin-top:16px;color:#94a3b8;position:relative;z-index:1;">Можете закрыть вкладку. Учитель уже видит результат.</p>
+    </div>`;
+}
+
+document.addEventListener('keydown', (e) => {
+  if (!state || !state.questions || state.answered || state.terminated || state.finished) return;
+  const opts = document.querySelectorAll('.opt');
+  if (opts.length === 0) return;
+  if (e.key === 'ArrowDown') { e.preventDefault(); state.highlightIndex = Math.min(state.highlightIndex + 1, opts.length - 1); updateHighlight(); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); state.highlightIndex = Math.max(0, state.highlightIndex - 1); updateHighlight(); }
+  else if (e.key === 'Enter') { e.preventDefault(); if (state.highlightIndex >= 0) selectAnswer(state.highlightIndex); }
+  else if (e.key >= '1' && e.key <= '4') { e.preventDefault(); const idx = parseInt(e.key, 10) - 1; if (idx < opts.length) selectAnswer(idx); }
+});
+
+function boot() {
+  loadTests();
+
+  if (mode === 'developer') {
+    document.body.classList.add('theme-developer');
+    window.FB.auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        let profile = getCachedProfile(user.uid);
+        if (!profile) {
+          const snap = await window.FB.get(window.FB.ref(window.FB.db, `users/${user.uid}`));
+          profile = snap.val();
+          if (profile) setCachedProfile(user.uid, profile);
+        }
+        if (profile && profile.role === 'developer') {
+          currentUser = { uid: user.uid, email: profile.email || user.email, role: 'developer' };
+          if (sessionCode) renderDeveloperSession();
+          else renderDeveloperHome();
+          return;
+        }
+      }
+      if (sessionCode) renderDeveloperSession();
+      else renderAuth('developer');
+    });
+  }
+  else if (mode === 'teacher') {
+    document.body.classList.add('theme-teacher');
+    window.FB.auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        let profile = getCachedProfile(user.uid);
+        if (!profile) {
+          const snap = await window.FB.get(window.FB.ref(window.FB.db, `users/${user.uid}`));
+          profile = snap.val();
+          if (profile) setCachedProfile(user.uid, profile);
+        }
+        if (profile && profile.role === 'teacher') {
+          currentUser = { uid: user.uid, email: profile.email || user.email, role: 'teacher' };
+          if (sessionCode) renderTeacherSession();
+          else renderTeacherHome();
+          return;
+        }
+      }
+      if (sessionCode) renderTeacherSession();
+      else renderAuth('teacher');
+    });
+  }
+  else if (mode === 'student') {
+    document.body.classList.add('theme-student');
+    if (sessionCode) renderStudentSession();
+    else renderStudentEnterCode();
+  }
+  else {
+    document.body.classList.add('theme-home');
+    renderMenu();
+  }
+}
+
+fbReady(boot);
+</script>
+</body>
+</html>
