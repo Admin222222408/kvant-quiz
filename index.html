@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://kvantorium-48d8a-default-rtdb.firebaseio.com">
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, set, push, onValue, update, remove, get, child, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
@@ -27,7 +27,12 @@ const fbApp = initializeApp(firebaseConfig);
 const db = getDatabase(fbApp);
 const auth = getAuth(fbApp);
 
-window.FB = { db, auth, ref, set, push, onValue, update, remove, get, child, serverTimestamp,
+// Вторичное Firebase-приложение — чтобы создание учителя не разлогинивало разработчика
+const _existingSec = getApps().find(a => a.name === 'secondary');
+const secondaryApp = _existingSec || initializeApp(firebaseConfig, 'secondary');
+const secondaryAuth = getAuth(secondaryApp);
+
+window.FB = { db, auth, secondaryAuth, ref, set, push, onValue, update, remove, get, child, serverTimestamp,
   signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail, ready: false };
 
 onAuthStateChanged(auth, () => {
@@ -328,13 +333,12 @@ onAuthStateChanged(auth, () => {
 <script>
 /* ==================================================================
    KVANT-QUIZ — FULL VERSION
-   Изменения:
-   • Античит работает (жёсткий и мягкий)
-   • Два режима сессии: 🏠 Лобби / 👤 Индивидуальный
-   • Авто-переход сразу, когда все ответили
-   • Без бонусов в индивидуальном режиме
-   • Создание учителя с ИО + письмо на почту
-   • Везде отображается ИО вместо email
+   • Античит (жёсткий и мягкий)
+   • Режимы: 🏠 Лобби / 👤 Индивидуальный
+   • Авто-переход когда все ответили
+   • Создание учителя через secondaryAuth (разработчик не вылетает)
+   • Вход учителя по ИО (teacher_lookup)
+   • Экспорт индивидуальной таблицы ученика
    ================================================================== */
 const DEFAULT_BASE_POINTS = 5;
 const DEFAULT_SPEED_TIERS = [
@@ -537,6 +541,11 @@ function clearCachedProfile(uid) {
   try { if (uid) localStorage.removeItem('quiz_profile_' + uid); } catch (e) {}
 }
 function getInitial(email) { return (String(email || '?')[0] || '?').toUpperCase(); }
+function nameLookupKey(name) {
+  return String(name).trim().toLowerCase()
+    .replace(/[.#$\[\]\/]/g, '')
+    .replace(/\s+/g, '_');
+}
 function readFileAsDataURL(file) {
   return new Promise((resolve, reject) => {
     if (file.size / 1024 > MAX_IMG_SIZE_KB) { reject(new Error(`Файл больше ${MAX_IMG_SIZE_KB} КБ`)); return; }
@@ -834,8 +843,14 @@ function renderAuth(expectedRole) {
     app.innerHTML = `<div class="auth-form" style="max-width:440px;margin:40px auto;background:#fff;border-radius:24px;padding:36px 32px;box-shadow:0 20px 60px rgba(124,58,237,0.12);">
       <h1 style="text-align:center;">${isDev ? '🛠 Вход разработчика' : '👨‍🏫 Вход учителя'}</h1>
       <p class="hint" style="text-align:center;margin-bottom:24px;">${isDev ? 'Панель управления системой' : 'Кабинет для проведения тестов'}</p>
-      <label class="label">Email</label>
-      <input type="email" id="loginEmail" placeholder="you@school.ru" autocomplete="email">
+      ${isDev ? `
+        <label class="label">Email</label>
+        <input type="email" id="loginEmail" placeholder="you@school.ru" autocomplete="email">
+      ` : `
+        <label class="label">Имя Отчество</label>
+        <input type="text" id="loginName" placeholder="Иванов Иван" autocomplete="username">
+        <p class="hint" style="font-size:11px;margin-top:-4px;">Введите ИО, указанное разработчиком при создании</p>
+      `}
       <label class="label">Пароль</label>
       <input type="password" id="loginPass" placeholder="••••••••">
       <p id="loginError" style="color:#ef4444;font-size:13px;font-weight:600;min-height:20px;margin:6px 0 10px;text-align:center;"></p>
@@ -843,14 +858,44 @@ function renderAuth(expectedRole) {
       <p class="hint" style="text-align:center;margin-top:14px;"><a href="?mode=student" style="color:var(--violet);text-decoration:none;font-weight:600;">← Ко входу ученика</a></p>
     </div>`;
     document.getElementById('doLogin').onclick = doLogin;
-    document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+    const passInput = document.getElementById('loginPass');
+    if (passInput) passInput.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+    const nameInput = document.getElementById('loginName');
+    if (nameInput) nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
     async function doLogin() {
-      const email = document.getElementById('loginEmail').value.trim();
       const pass = document.getElementById('loginPass').value;
       const err = document.getElementById('loginError');
       err.textContent = '';
-      if (!email || !pass) { err.textContent = 'Заполните email и пароль'; return; }
+
+      let email = '';
+
+      if (isDev) {
+        email = document.getElementById('loginEmail').value.trim();
+        if (!email || !pass) { err.textContent = 'Заполните email и пароль'; return; }
+      } else {
+        const nameRaw = document.getElementById('loginName').value.trim();
+        if (!nameRaw || !pass) { err.textContent = 'Заполните ИО и пароль'; return; }
+
+        if (nameRaw.includes('@')) {
+          email = nameRaw;
+        } else {
+          try {
+            const key = nameLookupKey(nameRaw);
+            const snap = await window.FB.get(window.FB.ref(window.FB.db, `teacher_lookup/${key}`));
+            const entry = snap.val();
+            if (!entry || !entry.email) {
+              err.textContent = 'Учитель с таким ИО не найден';
+              return;
+            }
+            email = entry.email;
+          } catch (lookupErr) {
+            err.textContent = 'Ошибка поиска: ' + (lookupErr.message || '');
+            return;
+          }
+        }
+      }
+
       try {
         const cred = await window.FB.signInWithEmailAndPassword(window.FB.auth, email, pass);
         let profile = getCachedProfile(cred.user.uid);
@@ -870,7 +915,7 @@ function renderAuth(expectedRole) {
         if (c === 'auth/invalid-email') err.textContent = 'Некорректный email';
         else if (c === 'auth/user-not-found') err.textContent = 'Пользователь не найден';
         else if (c === 'auth/wrong-password') err.textContent = 'Неверный пароль';
-        else if (c === 'auth/invalid-credential') err.textContent = 'Неверный email или пароль';
+        else if (c === 'auth/invalid-credential') err.textContent = 'Неверное ИО или пароль';
         else if (c === 'auth/too-many-requests') err.textContent = 'Слишком много попыток';
         else err.textContent = 'Ошибка: ' + (e.message || 'неизвестная');
       }
@@ -1022,6 +1067,7 @@ async function renderDeveloperHome() {
   onClick('clearOldResultsBtn', clearOldResults);
   onClick('clearAllResultsBtn', clearAllResults);
 
+  try { rebuildTeacherLookup();     } catch (e) {}
   try { cleanupOldSessions();       } catch (e) {}
   try { renderDeveloperMetrics();   } catch (e) {}
   try { renderDeveloperTestsList(); } catch (e) {}
@@ -1029,6 +1075,24 @@ async function renderDeveloperHome() {
   try { renderTeachersList();       } catch (e) {}
   try { subscribeAllSessions();     } catch (e) {}
   try { subscribeAllResults();      } catch (e) {}
+}
+
+async function rebuildTeacherLookup() {
+  try {
+    const snap = await window.FB.get(window.FB.ref(window.FB.db, 'users'));
+    const users = snap.val() || {};
+    const updates = {};
+    for (const [uid, u] of Object.entries(users)) {
+      if (u && u.role === 'teacher' && u.name && u.email) {
+        updates[`teacher_lookup/${nameLookupKey(u.name)}`] = {
+          email: u.email, uid, name: u.name
+        };
+      }
+    }
+    if (Object.keys(updates).length > 0) {
+      await window.FB.update(window.FB.ref(window.FB.db), updates);
+    }
+  } catch (e) { console.warn('rebuildTeacherLookup:', e); }
 }
 
 async function renderDeveloperMetrics() {
@@ -1218,6 +1282,11 @@ async function renderTeachersList() {
     const uid = b.dataset.teacherDel;
     const t = teachers.find(x => x.uid === uid);
     if (!confirm(`Удалить профиль учителя «${t.name || t.email}»?`)) return;
+    if (t && t.name) {
+      await window.FB
+        .remove(window.FB.ref(window.FB.db, `teacher_lookup/${nameLookupKey(t.name)}`))
+        .catch(() => {});
+    }
     await window.FB.remove(window.FB.ref(window.FB.db, `users/${uid}`));
     renderTeachersList();
   });
@@ -1226,7 +1295,7 @@ async function renderTeachersList() {
 function openCreateTeacherModal() {
   const m = openModal(`<div class="modal-body">
     <h2 style="margin:0 0 8px;">➕ Новый учитель</h2>
-    <p class="hint" style="margin-bottom:18px;">Аккаунт создастся в Firebase Auth. На указанный email придёт письмо для установки пароля.</p>
+    <p class="hint" style="margin-bottom:18px;">Аккаунт создастся в Firebase Auth. Учитель сможет войти по введённому ИО.</p>
 
     <label class="label">Email (логин)</label>
     <input type="email" id="newTeacherEmail" placeholder="teacher@school.ru" autocomplete="off">
@@ -1245,8 +1314,8 @@ function openCreateTeacherModal() {
     </div>
 
     <div class="anti-cheat-note" style="margin-top:14px;">
-      ⚠️ На указанный email придёт письмо со ссылкой для установки своего пароля.<br>
-      Учитель входит по адресу <code>?mode=teacher</code>.
+      ⚠️ На указанный email придёт письмо для смены пароля.<br>
+      Учитель входит по адресу <code>?mode=teacher</code> — по <b>ИО</b> и паролю.
     </div>
   </div>`, 560);
 
@@ -1268,7 +1337,8 @@ function openCreateTeacherModal() {
     btn.textContent = 'Создаём…';
 
     try {
-      const cred = await window.FB.createUserWithEmailAndPassword(window.FB.auth, email, pass);
+      // Создаём учителя через secondaryAuth — основная сессия разработчика не сбивается
+      const cred = await window.FB.createUserWithEmailAndPassword(window.FB.secondaryAuth, email, pass);
       const uid = cred.user.uid;
 
       await window.FB.set(window.FB.ref(window.FB.db, `users/${uid}`), {
@@ -1279,6 +1349,18 @@ function openCreateTeacherModal() {
         createdBy: currentUser ? currentUser.uid : null
       });
 
+      // Индекс для входа по ИО
+      try {
+        await window.FB.set(
+          window.FB.ref(window.FB.db, `teacher_lookup/${nameLookupKey(name)}`),
+          { email, uid, name, createdAt: Date.now() }
+        );
+      } catch (lookupErr) { console.warn('teacher_lookup:', lookupErr); }
+
+      // Чистим вторичную сессию
+      try { await window.FB.signOut(window.FB.secondaryAuth); } catch (signOutErr) {}
+
+      // Письмо сброса пароля — через основную auth
       let emailSent = false;
       try {
         await window.FB.sendPasswordResetEmail(window.FB.auth, email);
@@ -1293,10 +1375,11 @@ function openCreateTeacherModal() {
         `Имя: ${name}\n` +
         `Email: ${email}\n` +
         `Пароль: ${pass}\n\n` +
+        `Вход: ?mode=teacher\n` +
+        `Логин: ввести ИО «${name}»\n\n` +
         (emailSent
           ? `📧 На почту отправлено письмо для установки своего пароля.\n\n`
-          : `⚠️ Письмо отправить не удалось. Передайте пароль лично.\n\n`) +
-        `Передайте учителю данные для входа.`
+          : `⚠️ Письмо отправить не удалось. Передайте пароль лично.\n\n`)
       );
 
       renderTeachersList();
@@ -2099,6 +2182,75 @@ function buildSessionResults(session, test) {
   return results;
 }
 
+/* ---------- НОВОЕ: экспорт одного ученика ---------- */
+function exportOneStudentTable(code, studentId, session, test) {
+  if (!test) return;
+  const st = (session.students || {})[studentId];
+  if (!st) { alert('Ученик не найден'); return; }
+
+  const totalQ = (test.questions || []).length;
+  const maxScore = getMaxScore(test);
+  const answersMap = st.answers || {};
+  const arr = [];
+  for (let i = 0; i < totalQ; i++) {
+    const a = answersMap[i] || answersMap[String(i)];
+    const tq = test.questions[i];
+    if (a) {
+      arr.push({
+        questionText: a.questionText || (tq ? tq.q : 'Вопрос ' + (i + 1)),
+        correctText: a.correctText || (tq ? tq.options[tq.correct] : ''),
+        selectedText: a.selectedText || null,
+        correct: !!a.correct,
+        image: a.image || (tq ? (tq.image || '') : ''),
+        points: a.points || 0,
+        speedBonus: a.speedBonus || 0,
+        timeSpentSec: a.timeSpentSec || 0
+      });
+    } else {
+      arr.push({
+        questionText: tq ? tq.q : ('Вопрос ' + (i + 1)),
+        correctText: tq ? tq.options[tq.correct] : '',
+        selectedText: null,
+        correct: false,
+        image: tq ? (tq.image || '') : '',
+        points: 0, speedBonus: 0, timeSpentSec: 0
+      });
+    }
+  }
+  const correct = st.correctCount != null ? st.correctCount : arr.filter(a => a.correct).length;
+
+  const rec = {
+    studentName: st.studentName || '—',
+    testId: session.testId,
+    testTitle: session.testTitle,
+    date: formatDate(st.finishedAt || st.startedAt || st.joinedAt || Date.now()),
+    timestamp: st.finishedAt || st.startedAt || st.joinedAt || Date.now(),
+    score: round1(st.score || 0),
+    maxScore,
+    correct,
+    wrong: Math.max(0, totalQ - correct),
+    total: totalQ,
+    teacherId: session.teacherId,
+    teacherEmail: session.teacherEmail,
+    teacherName: session.teacherName || session.teacherEmail,
+    sessionCode: code,
+    tabSwitches: st.tabSwitches || 0,
+    copyAttempts: st.copyAttempts || 0,
+    terminated: st.status === 'terminated',
+    terminateReason: st.terminateReason || '',
+    answers: arr
+  };
+
+  const tableHTML = studentSheetHTML(rec);
+  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="UTF-8"><style>${excelStyles()}</style></head><body>${tableHTML}</body></html>`;
+
+  const shortTest = sanitizeFilename(test.shortName || session.testTitle || 'тест', 30);
+  const shortStudent = sanitizeFilename(st.studentName || 'Ученик', 30);
+  const filename = `${shortTest}_${shortStudent}_${shortDateStamp()}.xls`;
+  downloadBlob(html, filename, 'application/vnd.ms-excel;charset=utf-8;');
+}
+
 async function exportSessionSummary(code, test) {
   try {
     const sSnap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
@@ -2182,11 +2334,9 @@ function startAutoAdvance(code, test) {
         const elapsed = Date.now() - (s.questionStartedAt || 0);
         const arr = Object.values(s.students || {});
         const allAns = arr.length > 0 && arr.every(st => st.answers && st.answers[idx]);
-        // Если ВСЕ ответили — сразу переходим к результатам (минимум 1.5 сек после старта)
         if (allAns && elapsed >= 1500) {
           await window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}`), { phase: 'results', revealedAt: Date.now() });
         }
-        // Иначе — по истечении таймера
         else if (elapsed >= tTotal) {
           await window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}`), { phase: 'results', revealedAt: Date.now() });
         }
@@ -2418,12 +2568,18 @@ function renderTeacherStudentsList(s, test) {
     const warns = [];
     if (st.tabSwitches > 0) warns.push(`<span style="background:#fef3c7;color:#b45309;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;margin-right:4px;">⚠ ${st.tabSwitches}</span>`);
     if (st.copyAttempts > 0) warns.push(`<span style="background:#fee2e2;color:#b91c1c;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">📋 ${st.copyAttempts}</span>`);
+    const canDownload = st.status === 'finished' || st.status === 'terminated';
     return `<div class="student-card ${cls}">
       <div class="name">${escapeHtml(st.studentName || '—')}</div>
       <div class="status">${escapeHtml(status)}</div>
       <div class="progress">Верно: ${st.correctCount || 0} · ${formatScore(st.score || 0)} б. ${warns.join(' ')}</div>
+      ${canDownload ? `<button class="small download" data-export-student="${st.id}" style="width:100%;margin-top:10px;font-size:11px;padding:7px 10px;">📥 Скачать таблицу</button>` : ''}
     </div>`;
   }).join('');
+
+  area.querySelectorAll('[data-export-student]').forEach(b => b.onclick = () => {
+    exportOneStudentTable(sessionCode, b.dataset.exportStudent, s, test);
+  });
 }
 
 /* ==================================================================
@@ -2947,7 +3103,6 @@ async function submitAnswer(code, idx, oi, timeTotal, sessionMode) {
   const timeSpentSec = timeSpentMs / 1000;
 
   const base = getBasePoints(test);
-  // Бонусы за скорость — только в режиме Лобби
   const speedBonus = (isCorrect && sessionMode === 'lobby')
     ? calcSpeedBonus(test, timeSpentSec, timeTotal)
     : 0;
