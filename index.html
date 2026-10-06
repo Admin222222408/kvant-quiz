@@ -302,11 +302,9 @@ onAuthStateChanged(auth, () => {
   .auth-art {
     background: #e9e8ee; position: relative; overflow: hidden;
     display: flex; align-items: center; justify-content: center;
-    contain: strict;
   }
   .art-scene {
     position: relative; width: 420px; height: 420px;
-    contain: layout style paint;
   }
   @media (max-height: 700px) { .art-scene { width: 340px; height: 340px; } }
 
@@ -328,7 +326,7 @@ onAuthStateChanged(auth, () => {
     border-radius: 50%;
     background: #111;
     left: 50%; top: 50%;
-    transform: translate3d(calc(-50% + var(--ex, 0px)), calc(-50% + var(--ey, 0px)), 0);
+    transform: translate3d(-50%, -50%, 0);
     transition: transform 0.28s cubic-bezier(0.3, 1.2, 0.4, 1), width 0.3s ease, height 0.3s ease, background 0.3s ease;
     will-change: transform;
   }
@@ -352,16 +350,13 @@ onAuthStateChanged(auth, () => {
     border-radius: 2px;
   }
 
-  /* ======================= ОРАНЖЕВЫЙ (полукруг) ======================= */
+  /* ======================= ОРАНЖЕВЫЙ ======================= */
   .art-orange { left: 20px; width: 210px; height: 130px; background: #f97316; border-radius: 110px 110px 0 0; z-index: 4; }
   .art-orange .eye.l { left: 65px; top: 46px; }
   .art-orange .eye.r { left: 110px; top: 46px; }
   .art-orange .eye-closed.l { left: 65px; top: 46px; }
   .art-orange .eye-closed.r { left: 110px; top: 46px; }
   .art-orange .mouth { left: 105px; top: 85px; width: 14px; height: 3px; }
-  .auth-art[data-state="ready"] .art-orange .mouth,
-  .auth-art[data-state="curious"] .art-orange .mouth,
-  .auth-art[data-state="password"] .art-orange .mouth { /* состояние управляется ниже */ }
 
   /* ======================= ФИОЛЕТОВЫЙ ======================= */
   .art-violet { left: 100px; width: 110px; height: 250px; background: #7c3aed; border-radius: 6px 6px 0 0; z-index: 1; }
@@ -522,7 +517,7 @@ onAuthStateChanged(auth, () => {
 
 <script>
 /* ==================================================================
-   KVANT-QUIZ — v5 (оптимизация)
+   KVANT-QUIZ — v6
    ================================================================== */
 const DEFAULT_BASE_POINTS = 5;
 const DEFAULT_SPEED_TIERS = [
@@ -649,7 +644,6 @@ function onClick(id, handler) {
   return el;
 }
 
-/* Быстрый escapeHtml через один regex + map (быстрее чем цепочка replace) */
 const HTML_ESC_MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => HTML_ESC_MAP[c]);
@@ -758,7 +752,6 @@ function buildExcelFilename(testTitle, shortName, prefix) {
   return prefix ? `${prefix}_${clean}_${stamp}.xls` : `${clean}_${stamp}.xls`;
 }
 
-/* ============ НАПРАВЛЕНИЯ / КЛАССЫ — помощники ============ */
 function getTeacherDirections(uid) {
   const result = [];
   for (const [id, d] of Object.entries(directionsCache)) {
@@ -1039,7 +1032,7 @@ function bindTopNav() {
 }
 
 /* ==================================================================
-   АВТОРИЗАЦИЯ (сплит + анимированные персонажи) — ОПТИМИЗИРОВАННАЯ
+   АВТОРИЗАЦИЯ
    ================================================================== */
 function renderAuth(expectedRole) {
   clearAllUnsubs();
@@ -1130,8 +1123,8 @@ function renderAuth(expectedRole) {
         <div class="auth-form-side">
           <div class="auth-form-card">
             <div class="auth-logo">✈️</div>
-            <h1 class="auth-title">Вход учителя</h1>
-            <p class="auth-sub">Кабинет для проведения тестов</p>
+            <h1 class="auth-title" id="authTitle">Добро пожаловать!</h1>
+            <p class="auth-sub">Кабинет учителя</p>
 
             <div class="auth-field">
               <label>Имя Отчество</label>
@@ -1157,7 +1150,7 @@ function renderAuth(expectedRole) {
         </div>
       </div>`;
 
-    /* ====== ОПТИМИЗИРОВАННАЯ АНИМАЦИЯ ====== */
+    /* ====== АНИМАЦИЯ ====== */
     const artEl = document.getElementById('authArt');
     const scene = artEl.querySelector('.art-scene');
     const nameInput = document.getElementById('loginName');
@@ -1165,15 +1158,20 @@ function renderAuth(expectedRole) {
     const passToggle = document.getElementById('passToggle');
     const loginBtn = document.getElementById('doLogin');
     const errEl = document.getElementById('loginError');
+    const authTitleEl = document.getElementById('authTitle');
 
     const isMobile = window.matchMedia('(max-width: 800px)').matches;
 
-    // Кэш позиций персонажей — обновляется при инициализации и resize
     let charBoxes = [];
-    // Кэш позиции поля пароля
     let passRect = { left: 0, right: 0, top: 0, bottom: 0 };
-    // Кэш списка зрачков (NodeList → Array)
     const allPupils = Array.from(artEl.querySelectorAll('.eye-pupil'));
+
+    function updateAuthTitle() {
+      const raw = nameInput.value.trim();
+      if (!raw) { authTitleEl.textContent = 'Добро пожаловать!'; return; }
+      const firstWord = raw.split(/\s+/)[0];
+      authTitleEl.textContent = 'Добро пожаловать, ' + firstWord + '.';
+    }
 
     function measureArt() {
       const sceneRect = scene.getBoundingClientRect();
@@ -1182,6 +1180,7 @@ function renderAuth(expectedRole) {
         const r = ch.getBoundingClientRect();
         return {
           el: ch,
+          pupils: Array.from(ch.querySelectorAll('.eye-pupil')),
           cx: r.left + r.width / 2 - sceneRect.left,
           cy: r.top + r.height * 0.3 - sceneRect.top
         };
@@ -1196,10 +1195,8 @@ function renderAuth(expectedRole) {
       passRect.bottom = r.bottom;
     }
 
-    // Замер один раз после рендера
     requestAnimationFrame(() => { measureArt(); measurePass(); });
 
-    // ResizeObserver — эффективнее чем window.resize
     if (!isMobile && 'ResizeObserver' in window) {
       const ro = new ResizeObserver(() => {
         measureArt();
@@ -1215,11 +1212,10 @@ function renderAuth(expectedRole) {
     let mouseOverPass = false;
     let rafId = null;
 
-    // ============ ЕДИНЫЙ ЦИКЛ ОБНОВЛЕНИЯ ============
     function updateEyes() {
       rafId = null;
       if (isMobile || sadLock) return;
-      if (currentState === 'ready' || currentState === 'revealed') return;
+      if (currentState === 'revealed') return;
       if (charBoxes.length === 0) return;
 
       const isPasswordArea = (document.activeElement === passInput) || mouseOverPass;
@@ -1238,31 +1234,27 @@ function renderAuth(expectedRole) {
 
         let ox, oy;
         if (isPasswordArea) {
-          const awayX = -dx / dist;
-          const awayY = -dy / dist * 0.4;
-          ox = awayX * 5.5;
-          oy = awayY * 5.5;
+          ox = (-dx / dist) * 6;
+          oy = (-dy / dist) * 6 * 0.4;
         } else {
-          const strength = Math.min(1, dist / 260);
-          const maxOffset = 4.5;
+          const strength = Math.min(1, dist / 240);
+          const maxOffset = 7;
           ox = (dx / dist) * maxOffset * strength;
           oy = (dy / dist) * maxOffset * strength;
         }
 
-        ox = Math.max(-6, Math.min(6, ox));
-        oy = Math.max(-6, Math.min(6, oy));
-        const oxStr = ox.toFixed(1) + 'px';
-        const oyStr = oy.toFixed(1) + 'px';
-        box.el.style.setProperty('--ex', oxStr);
-        box.el.style.setProperty('--ey', oyStr);
+        ox = Math.max(-8, Math.min(8, ox));
+        oy = Math.max(-8, Math.min(8, oy));
+        const transform = 'translate3d(calc(-50% + ' + ox.toFixed(1) + 'px), calc(-50% + ' + oy.toFixed(1) + 'px), 0)';
+        for (let j = 0; j < box.pupils.length; j++) {
+          box.pupils[j].style.transform = transform;
+        }
       }
     }
 
-    // Единый обработчик mousemove — пассивный
     const onMouseMove = (e) => {
       mouseX = e.clientX;
       mouseY = e.clientY;
-      // Проверка попадания в поле пароля — через кэш
       mouseOverPass = (
         mouseX >= passRect.left && mouseX <= passRect.right &&
         mouseY >= passRect.top && mouseY <= passRect.bottom
@@ -1271,7 +1263,6 @@ function renderAuth(expectedRole) {
     };
     document.addEventListener('mousemove', onMouseMove, { passive: true });
 
-    // Отмена rAF при скрытии вкладки — не жжём CPU в фоне
     const onVis = () => {
       if (document.hidden && rafId) {
         cancelAnimationFrame(rafId);
@@ -1280,7 +1271,6 @@ function renderAuth(expectedRole) {
     };
     document.addEventListener('visibilitychange', onVis);
 
-    // ============ СОСТОЯНИЯ ============
     function updateState() {
       const hasName = nameInput.value.trim().length > 0;
       const hasPass = passInput.value.length > 0;
@@ -1298,7 +1288,7 @@ function renderAuth(expectedRole) {
         artEl.setAttribute('data-state', state);
       }
 
-      if (!isMobile && state !== 'ready' && state !== 'revealed' && !sadLock) {
+      if (!isMobile && state !== 'revealed' && !sadLock) {
         if (!rafId) rafId = requestAnimationFrame(updateEyes);
       }
     }
@@ -1306,15 +1296,13 @@ function renderAuth(expectedRole) {
     function setSad(on) {
       sadLock = on;
       if (on) {
-        for (const pupil of allPupils) {
-          pupil.style.setProperty('--ex', '0px');
-          pupil.style.setProperty('--ey', '3.5px');
-        }
+        const transform = 'translate3d(-50%, calc(-50% + 3.5px), 0)';
+        for (const pupil of allPupils) pupil.style.transform = transform;
       }
       updateState();
     }
 
-    nameInput.addEventListener('input', () => { sadLock = false; updateState(); });
+    nameInput.addEventListener('input', () => { sadLock = false; updateState(); updateAuthTitle(); });
     passInput.addEventListener('input', () => { sadLock = false; updateState(); });
     passInput.addEventListener('focus', () => { if (!rafId) rafId = requestAnimationFrame(updateEyes); });
     passInput.addEventListener('blur', () => setTimeout(() => { if (!rafId) rafId = requestAnimationFrame(updateEyes); }, 100));
@@ -1401,6 +1389,7 @@ function renderAuth(expectedRole) {
     }
 
     updateState();
+    updateAuthTitle();
     nameInput.focus();
   });
 }
@@ -2086,7 +2075,7 @@ function openCreateTeacherModal() {
 }
 
 /* ==================================================================
-   РЕДАКТОР ТЕСТА (без изменений)
+   РЕДАКТОР ТЕСТА
    ================================================================== */
 function openTestEditor(testId, testData) {
   const isNew = !testId;
@@ -2634,7 +2623,7 @@ async function cleanupOldSessions() {
 }
 
 /* ==================================================================
-   УЧИТЕЛЬ: КАБИНЕТ — с выбором направления
+   УЧИТЕЛЬ: КАБИНЕТ
    ================================================================== */
 async function renderTeacherHome() {
   clearAllUnsubs();
@@ -3307,7 +3296,7 @@ function renderTeacherStudentsList(s, test) {
 }
 
 /* ==================================================================
-   УЧЕНИК: ВВОД КОДА + СЕССИЯ
+   УЧЕНИК
    ================================================================== */
 function renderStudentEnterCode() {
   clearAllUnsubs();
