@@ -312,94 +312,164 @@ onAuthStateChanged(auth, () => {
   .art-scene { position: relative; width: 420px; height: 420px; }
   @media (max-height: 700px) { .art-scene { width: 340px; height: 340px; } }
 
-  .art-char { position: absolute; bottom: 0; transition: transform 0.5s ease; }
-  .art-char .eyes { position: absolute; width: 100%; }
+  .art-char { position: absolute; bottom: 0; }
+
+  /* ============= ОБЩИЕ СТИЛИ ГЛАЗ И РТА ============= */
   .eye {
-    position: absolute; background: #111; border-radius: 50%;
-    transition: all 0.3s ease;
+    position: absolute;
+    transform: translate(-50%, -50%) translate(var(--ex, 0px), var(--ey, 0px));
+    transition: transform 0.25s cubic-bezier(0.3, 1.2, 0.4, 1),
+                width 0.3s ease, height 0.3s ease,
+                opacity 0.25s ease, background 0.3s ease;
+    will-change: transform;
   }
   .eye-closed {
-    opacity: 0; border-radius: 50% 50% 0 0;
+    position: absolute;
+    transform: translate(-50%, -50%) translate(var(--ex, 0px), var(--ey, 0px));
+    transition: opacity 0.25s ease, width 0.3s ease, height 0.3s ease;
+    opacity: 0;
     background: transparent !important;
-    border: 3px solid #111; border-bottom: none;
-    width: 14px !important; height: 8px !important;
+    border-bottom: none !important;
+    box-sizing: border-box;
+    will-change: transform, opacity;
   }
   .mouth {
-    position: absolute; background: #111; border-radius: 3px;
-    transition: all 0.3s ease;
+    position: absolute;
+    transform: translate(-50%, -50%);
+    transition: all 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
+    background: #111;
+    border-radius: 2px;
   }
 
-  /* Оранжевый полукруг */
+  /* ======================= ОРАНЖЕВЫЙ ======================= */
   .art-orange { left: 20px; width: 210px; height: 130px; background: #f97316; border-radius: 110px 110px 0 0; z-index: 4; }
-  .art-orange .eyes { top: 55px; left: 0; }
-  .art-orange .eye { width: 8px; height: 8px; }
-  .art-orange .eye-open.left { left: 75px; }
-  .art-orange .eye-open.right { left: 120px; }
-  .art-orange .eye-closed.left { left: 72px; top: 2px; }
-  .art-orange .eye-closed.right { left: 117px; top: 2px; }
-  .art-orange .mouth { left: 90px; top: 85px; width: 14px; height: 3px; }
+  .art-orange .eye-open { width: 9px; height: 9px; background: #111; border-radius: 50%; }
+  .art-orange .eye-open.left { left: 75px; top: 55px; }
+  .art-orange .eye-open.right { left: 120px; top: 55px; }
+  .art-orange .eye-closed { width: 16px; height: 8px; border: 3px solid #111; border-radius: 50% 50% 0 0; }
+  .art-orange .eye-closed.left { left: 75px; top: 55px; }
+  .art-orange .eye-closed.right { left: 120px; top: 55px; }
+  .art-orange .mouth { left: 105px; top: 85px; width: 14px; height: 3px; }
+  .art-orange .mouth.smile-shape { width: 24px; height: 12px; background: transparent; border-bottom: 3.5px solid #111; border-radius: 0 0 24px 24px; }
+  .art-orange .mouth.frown-shape { width: 24px; height: 12px; background: transparent; border-top: 3.5px solid #111; border-radius: 24px 24px 0 0; }
+  .art-orange .mouth.o-small { width: 9px; height: 9px; border-radius: 50%; }
+  .art-orange .mouth.o-big { width: 12px; height: 12px; border-radius: 50%; }
 
-  /* Фиолетовый прямоугольник */
+  /* ======================= ФИОЛЕТОВЫЙ ======================= */
   .art-violet { left: 100px; width: 110px; height: 250px; background: #7c3aed; border-radius: 6px 6px 0 0; z-index: 1; }
-  .art-violet .eyes { top: 60px; left: 0; }
-  .art-violet .eye { width: 7px; height: 7px; }
-  .art-violet .eye-open.left { left: 32px; }
-  .art-violet .eye-open.right { left: 62px; }
-  .art-violet .eye-closed.left { left: 28px; top: 1px; }
-  .art-violet .eye-closed.right { left: 58px; top: 1px; }
-  .art-violet .mouth { left: 45px; top: 85px; width: 12px; height: 3px; }
+  .art-violet .eye-open { width: 8px; height: 8px; background: #111; border-radius: 50%; }
+  .art-violet .eye-open.left { left: 32px; top: 60px; }
+  .art-violet .eye-open.right { left: 62px; top: 60px; }
+  .art-violet .eye-closed { width: 14px; height: 7px; border: 3px solid #111; border-radius: 50% 50% 0 0; }
+  .art-violet .eye-closed.left { left: 32px; top: 60px; }
+  .art-violet .eye-closed.right { left: 62px; top: 60px; }
+  .art-violet .mouth { left: 55px; top: 85px; width: 12px; height: 3px; }
+  .art-violet .mouth.smile-shape { width: 20px; height: 10px; background: transparent; border-bottom: 3.5px solid #111; border-radius: 0 0 20px 20px; }
+  .art-violet .mouth.frown-shape { width: 20px; height: 10px; background: transparent; border-top: 3.5px solid #111; border-radius: 20px 20px 0 0; }
+  .art-violet .mouth.o-small { width: 8px; height: 8px; border-radius: 50%; }
+  .art-violet .mouth.o-big { width: 11px; height: 11px; border-radius: 50%; }
 
-  /* Чёрный прямоугольник */
+  /* ======================= ЧЁРНЫЙ ======================= */
   .art-black { left: 200px; width: 88px; height: 175px; background: #1a1a1a; border-radius: 4px 4px 0 0; z-index: 3; }
-  .art-black .eyes { top: 45px; left: 0; }
-  .art-black .eye { width: 7px; height: 7px; background: #fff; }
-  .art-black .eye-closed { border-color: #fff; }
-  .art-black .eye-open.left { left: 24px; }
-  .art-black .eye-open.right { left: 50px; }
-  .art-black .eye-closed.left { left: 20px; top: 1px; }
-  .art-black .eye-closed.right { left: 46px; top: 1px; }
-  .art-black .mouth { left: 34px; top: 70px; width: 12px; height: 3px; background: #fff; }
+  .art-black .eye-open { width: 8px; height: 8px; background: #fff; border-radius: 50%; }
+  .art-black .eye-open.left { left: 24px; top: 45px; }
+  .art-black .eye-open.right { left: 50px; top: 45px; }
+  .art-black .eye-closed { width: 14px; height: 7px; border: 3px solid #fff; border-radius: 50% 50% 0 0; }
+  .art-black .eye-closed.left { left: 24px; top: 45px; }
+  .art-black .eye-closed.right { left: 50px; top: 45px; }
+  .art-black .mouth { left: 44px; top: 70px; width: 12px; height: 3px; background: #fff; }
+  .art-black .mouth.smile-shape { width: 20px; height: 10px; background: transparent; border-bottom: 3.5px solid #fff; border-radius: 0 0 20px 20px; }
+  .art-black .mouth.frown-shape { width: 20px; height: 10px; background: transparent; border-top: 3.5px solid #fff; border-radius: 20px 20px 0 0; }
+  .art-black .mouth.o-small { width: 8px; height: 8px; border-radius: 50%; }
+  .art-black .mouth.o-big { width: 11px; height: 11px; border-radius: 50%; }
 
-  /* Жёлтая фигурка */
+  /* ======================= ЖЁЛТЫЙ ======================= */
   .art-yellow { left: 275px; width: 82px; height: 140px; background: #fbbf24; border-radius: 42px 42px 0 0; z-index: 2; }
-  .art-yellow .eyes { top: 50px; left: 0; }
-  .art-yellow .eye { width: 6px; height: 6px; }
-  .art-yellow .eye-open.left { left: 22px; }
-  .art-yellow .eye-open.right { left: 44px; }
-  .art-yellow .eye-closed.left { left: 18px; top: 1px; }
-  .art-yellow .eye-closed.right { left: 40px; top: 1px; }
-  .art-yellow .mouth { left: 30px; top: 72px; width: 10px; height: 3px; }
+  .art-yellow .eye-open { width: 7px; height: 7px; background: #111; border-radius: 50%; }
+  .art-yellow .eye-open.left { left: 22px; top: 50px; }
+  .art-yellow .eye-open.right { left: 44px; top: 50px; }
+  .art-yellow .eye-closed { width: 12px; height: 6px; border: 3px solid #111; border-radius: 50% 50% 0 0; }
+  .art-yellow .eye-closed.left { left: 22px; top: 50px; }
+  .art-yellow .eye-closed.right { left: 44px; top: 50px; }
+  .art-yellow .mouth { left: 41px; top: 72px; width: 10px; height: 3px; }
+  .art-yellow .mouth.smile-shape { width: 18px; height: 9px; background: transparent; border-bottom: 3px solid #111; border-radius: 0 0 18px 18px; }
+  .art-yellow .mouth.frown-shape { width: 18px; height: 9px; background: transparent; border-top: 3px solid #111; border-radius: 18px 18px 0 0; }
+  .art-yellow .mouth.o-small { width: 7px; height: 7px; border-radius: 50%; }
+  .art-yellow .mouth.o-big { width: 10px; height: 10px; border-radius: 50%; }
 
-  /* Состояния */
-  .auth-art[data-state="neutral"] .art-char { transform: translateY(0); }
+  /* ============= СОСТОЯНИЯ ============= */
 
-  .auth-art[data-state="typing"] .eye-open { width: 10px !important; height: 10px !important; }
-  .auth-art[data-state="typing"] .mouth { width: 8px; height: 8px; border-radius: 50%; }
+  /* CURIOUS — лёгкое удивление */
+  .auth-art[data-state="curious"] .eye-open { width: 10px !important; height: 10px !important; }
+  .auth-art[data-state="curious"] .art-violet .eye-open,
+  .auth-art[data-state="curious"] .art-black .eye-open { width: 9px !important; height: 9px !important; }
+  .auth-art[data-state="curious"] .mouth { width: 9px !important; height: 9px !important; border-radius: 50% !important; background: #111 !important; }
 
-  .auth-art[data-state="password"] .eye-open { width: 11px !important; height: 11px !important; }
-  .auth-art[data-state="password"] .art-violet .eye-open { width: 9px !important; height: 9px !important; }
-  .auth-art[data-state="password"] .mouth { width: 10px; height: 10px; border-radius: 50%; }
-  .auth-art[data-state="password"] .art-orange .mouth { width: 12px; height: 12px; }
+  /* PASSWORD — сильно удивлены, пытаются подглядеть */
+  .auth-art[data-state="password"] .eye-open { width: 12px !important; height: 12px !important; }
+  .auth-art[data-state="password"] .art-violet .eye-open,
+  .auth-art[data-state="password"] .art-black .eye-open { width: 10px !important; height: 10px !important; }
+  .auth-art[data-state="password"] .mouth { width: 12px !important; height: 12px !important; border-radius: 50% !important; background: #111 !important; }
   .auth-art[data-state="password"] .art-violet { transform: translateY(-6px); }
   .auth-art[data-state="password"] .art-yellow { transform: translateY(-4px); }
+  .auth-art[data-state="password"] .art-char { transition: transform 0.4s ease; }
 
-  .auth-art[data-state="ready"] .eye-open { opacity: 0; }
-  .auth-art[data-state="ready"] .eye-closed { opacity: 1; }
-  .auth-art[data-state="ready"] .mouth {
-    width: 20px !important; height: 10px !important;
-    background: transparent !important;
-    border-bottom: 3px solid #111;
-    border-radius: 0 0 20px 20px;
-    border-top: none; border-left: none; border-right: none;
+  /* REVEALED — закрыли глаза, не смотрим */
+  .auth-art[data-state="revealed"] .eye-open { opacity: 0 !important; }
+  .auth-art[data-state="revealed"] .eye-closed {
+    opacity: 1 !important;
+    border-radius: 0 !important;
+    border: none !important;
+    height: 3px !important;
+    width: 14px !important;
+    background: #111 !important;
+    transform: translate(-50%, -50%) !important;
   }
-  .auth-art[data-state="ready"] .art-black .mouth { border-color: #fff; }
-  .auth-art[data-state="ready"] .art-char { animation: happyBounce 0.6s ease; }
+  .auth-art[data-state="revealed"] .art-black .eye-closed { background: #fff !important; }
+  .auth-art[data-state="revealed"] .mouth { width: 12px !important; height: 3px !important; border-radius: 2px !important; background: #111 !important; }
+
+  /* READY — все улыбаются, глаза закрыты дугами */
+  .auth-art[data-state="ready"] .eye-open { opacity: 0 !important; }
+  .auth-art[data-state="ready"] .eye-closed {
+    opacity: 1 !important;
+    transform: translate(-50%, -50%) !important;
+  }
+  .auth-art[data-state="ready"] .mouth {
+    width: 24px !important; height: 12px !important;
+    background: transparent !important;
+    border-bottom: 3.5px solid #111 !important;
+    border-radius: 0 0 24px 24px !important;
+    border-top: none !important; border-left: none !important; border-right: none !important;
+  }
+  .auth-art[data-state="ready"] .art-black .mouth { border-bottom-color: #fff !important; }
+  .auth-art[data-state="ready"] .art-char { animation: happyBounce 0.7s ease; }
   @keyframes happyBounce {
     0% { transform: translateY(0); }
     40% { transform: translateY(-8px); }
+    70% { transform: translateY(-2px); }
     100% { transform: translateY(0); }
   }
 
+  /* SAD — расстроились */
+  .auth-art[data-state="sad"] .eye-open {
+    /* глаза смотрят вниз — задаётся через JS */
+  }
+  .auth-art[data-state="sad"] .mouth {
+    width: 22px !important; height: 11px !important;
+    background: transparent !important;
+    border-top: 3.5px solid #111 !important;
+    border-radius: 22px 22px 0 0 !important;
+    border-bottom: none !important; border-left: none !important; border-right: none !important;
+  }
+  .auth-art[data-state="sad"] .art-black .mouth { border-top-color: #fff !important; }
+  .auth-art[data-state="sad"] .art-char { animation: sadDrop 0.5s ease; }
+  @keyframes sadDrop {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(4px); }
+    100% { transform: translateY(0); }
+  }
+
+  /* ============= ФОРМА ============= */
   .auth-form-side {
     display: flex; align-items: center; justify-content: center;
     padding: 40px 24px; background: #f8f7fb;
@@ -433,6 +503,7 @@ onAuthStateChanged(auth, () => {
     box-shadow: none;
   }
   .btn-login-big:hover { background: #1e1b4b; transform: translateY(-1px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
+  .btn-login-big:disabled { background: #cbd5e1; transform: none; box-shadow: none; }
 
   .auth-error {
     color: #ef4444; font-size: 13px; font-weight: 700;
@@ -481,8 +552,7 @@ onAuthStateChanged(auth, () => {
 <script>
 /* ==================================================================
    KVANT-QUIZ — FULL VERSION
-   • Анимированный экран входа учителя (персонажи + форма)
-   • Античит, Лобби/Индивидуальный, привязка классов к учителям и тестам
+   • Анимированный вход учителя с персонажами, следящими за мышью
    ================================================================== */
 const DEFAULT_BASE_POINTS = 5;
 const DEFAULT_SPEED_TIERS = [
@@ -989,7 +1059,7 @@ function renderAuth(expectedRole) {
     document.body.style.padding = '0';
 
     if (isDev) {
-      // Разработчик — старая форма
+      // Разработчик — старая простая форма
       app.innerHTML = `<div style="max-width:440px;margin:60px auto;background:#fff;border-radius:24px;padding:36px 32px;box-shadow:0 20px 60px rgba(124,58,237,0.12);">
         <h1 style="text-align:center;">🛠 Вход разработчика</h1>
         <p class="hint" style="text-align:center;margin-bottom:24px;">Панель управления системой</p>
@@ -1040,39 +1110,31 @@ function renderAuth(expectedRole) {
         <div class="auth-art" id="authArt" data-state="neutral">
           <div class="art-scene">
             <div class="art-char art-violet">
-              <div class="eyes">
-                <div class="eye eye-open left"></div>
-                <div class="eye eye-open right"></div>
-                <div class="eye eye-closed left"></div>
-                <div class="eye eye-closed right"></div>
-              </div>
+              <div class="eye eye-open left"></div>
+              <div class="eye eye-open right"></div>
+              <div class="eye eye-closed left"></div>
+              <div class="eye eye-closed right"></div>
               <div class="mouth"></div>
             </div>
             <div class="art-char art-yellow">
-              <div class="eyes">
-                <div class="eye eye-open left"></div>
-                <div class="eye eye-open right"></div>
-                <div class="eye eye-closed left"></div>
-                <div class="eye eye-closed right"></div>
-              </div>
+              <div class="eye eye-open left"></div>
+              <div class="eye eye-open right"></div>
+              <div class="eye eye-closed left"></div>
+              <div class="eye eye-closed right"></div>
               <div class="mouth"></div>
             </div>
             <div class="art-char art-black">
-              <div class="eyes">
-                <div class="eye eye-open left"></div>
-                <div class="eye eye-open right"></div>
-                <div class="eye eye-closed left"></div>
-                <div class="eye eye-closed right"></div>
-              </div>
+              <div class="eye eye-open left"></div>
+              <div class="eye eye-open right"></div>
+              <div class="eye eye-closed left"></div>
+              <div class="eye eye-closed right"></div>
               <div class="mouth"></div>
             </div>
             <div class="art-char art-orange">
-              <div class="eyes">
-                <div class="eye eye-open left"></div>
-                <div class="eye eye-open right"></div>
-                <div class="eye eye-closed left"></div>
-                <div class="eye eye-closed right"></div>
-              </div>
+              <div class="eye eye-open left"></div>
+              <div class="eye eye-open right"></div>
+              <div class="eye eye-closed left"></div>
+              <div class="eye eye-closed right"></div>
               <div class="mouth"></div>
             </div>
           </div>
@@ -1111,44 +1173,127 @@ function renderAuth(expectedRole) {
     const nameInput = document.getElementById('loginName');
     const passInput = document.getElementById('loginPass');
     const passToggle = document.getElementById('passToggle');
+    const loginBtn = document.getElementById('doLogin');
+    const errEl = document.getElementById('loginError');
 
+    const isMobile = window.matchMedia('(max-width: 800px)').matches;
+    let currentState = 'neutral';
+    let sadLock = false;
+    let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
+    let rafPending = false;
+
+    // ============ СЛЕЖКА ГЛАЗ ЗА МЫШЬЮ ============
+    function updateEyes() {
+      if (isMobile || sadLock) return;
+      if (currentState === 'ready' || currentState === 'revealed') return;
+
+      const chars = artEl.querySelectorAll('.art-char');
+      chars.forEach(ch => {
+        const rect = ch.getBoundingClientRect();
+        // центр "глаз" — верхняя треть фигуры
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height * 0.3;
+        const dx = mouseX - cx;
+        const dy = mouseY - cy;
+        const dist = Math.hypot(dx, dy) || 1;
+        const maxOffset = 3.5;
+        const strength = Math.min(1, dist / 250);
+        let ox = (dx / dist) * maxOffset * strength;
+        let oy = (dy / dist) * maxOffset * strength;
+
+        // ограничение по осям
+        ox = Math.max(-3.5, Math.min(3.5, ox));
+        oy = Math.max(-3.5, Math.min(3.5, oy));
+
+        ch.querySelectorAll('.eye').forEach(eye => {
+          eye.style.setProperty('--ex', ox.toFixed(2) + 'px');
+          eye.style.setProperty('--ey', oy.toFixed(2) + 'px');
+        });
+      });
+    }
+
+    document.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      if (rafPending) return;
+      rafPending = true;
+      requestAnimationFrame(() => {
+        rafPending = false;
+        updateEyes();
+      });
+    });
+
+    // Для мобильных — не следим
+    if (isMobile) {
+      artEl.querySelectorAll('.eye').forEach(el => {
+        el.style.setProperty('--ex', '0px');
+        el.style.setProperty('--ey', '0px');
+      });
+    }
+
+    // ============ ОБНОВЛЕНИЕ СОСТОЯНИЯ ============
     function updateState() {
       const hasName = nameInput.value.trim().length > 0;
       const hasPass = passInput.value.length > 0;
-      const passFocused = document.activeElement === passInput;
+      const isRevealed = passInput.type === 'text';
 
       let state = 'neutral';
-      if (hasName && hasPass) state = 'ready';
-      else if (passFocused && hasPass) state = 'password';
-      else if (hasName || hasPass) state = 'typing';
-      else if (passFocused) state = 'typing';
+      if (sadLock) state = 'sad';
+      else if (isRevealed && hasPass) state = 'revealed';
+      else if (hasName && hasPass) state = 'ready';
+      else if (hasPass) state = 'password';
+      else if (hasName) state = 'curious';
 
-      artEl.setAttribute('data-state', state);
+      if (state !== currentState) {
+        currentState = state;
+        artEl.setAttribute('data-state', state);
+      }
+
+      // Обновляем следящие глаза (если нужно)
+      if (!isMobile && state !== 'ready' && state !== 'revealed' && !sadLock) {
+        updateEyes();
+      }
     }
 
+    function setSad(on) {
+      sadLock = on;
+      if (on) {
+        // глаза смотрят вниз
+        artEl.querySelectorAll('.eye').forEach(eye => {
+          eye.style.setProperty('--ex', '0px');
+          eye.style.setProperty('--ey', '3px');
+        });
+      }
+      updateState();
+    }
+
+    // ============ СЛУШАТЕЛИ ============
     nameInput.addEventListener('input', updateState);
-    nameInput.addEventListener('focus', updateState);
-    nameInput.addEventListener('blur', updateState);
-    passInput.addEventListener('input', updateState);
-    passInput.addEventListener('focus', updateState);
-    passInput.addEventListener('blur', () => { setTimeout(updateState, 100); });
+    nameInput.addEventListener('focus', () => {
+      if (!sadLock) { /* ничего, если не sad */ }
+    });
+    passInput.addEventListener('input', () => { setSad(false); updateState(); });
+    nameInput.addEventListener('input', () => { setSad(false); });
 
     passToggle.onclick = () => {
       const isPass = passInput.type === 'password';
       passInput.type = isPass ? 'text' : 'password';
       passToggle.textContent = isPass ? '🙈' : '👁';
+      updateState();
     };
 
-    document.getElementById('doLogin').onclick = doLogin;
+    loginBtn.onclick = doLogin;
     nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
     passInput.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
     async function doLogin() {
       const nameRaw = nameInput.value.trim();
       const pass = passInput.value;
-      const err = document.getElementById('loginError');
-      err.textContent = '';
-      if (!nameRaw || !pass) { err.textContent = 'Заполните ИО и пароль'; return; }
+      errEl.textContent = '';
+
+      if (!nameRaw || !pass) { errEl.textContent = 'Заполните ИО и пароль'; return; }
+
+      setSad(false);
 
       let email = '';
       if (nameRaw.includes('@')) {
@@ -1158,13 +1303,21 @@ function renderAuth(expectedRole) {
           const key = nameLookupKey(nameRaw);
           const snap = await window.FB.get(window.FB.ref(window.FB.db, `teacher_lookup/${key}`));
           const entry = snap.val();
-          if (!entry || !entry.email) { err.textContent = 'Учитель с таким ИО не найден'; return; }
+          if (!entry || !entry.email) {
+            errEl.textContent = 'Учитель с таким ИО не найден';
+            setSad(true);
+            return;
+          }
           email = entry.email;
         } catch (lookupErr) {
-          err.textContent = 'Ошибка поиска: ' + (lookupErr.message || '');
+          errEl.textContent = 'Ошибка поиска: ' + (lookupErr.message || '');
+          setSad(true);
           return;
         }
       }
+
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Входим…';
 
       try {
         const cred = await window.FB.signInWithEmailAndPassword(window.FB.auth, email, pass);
@@ -1174,21 +1327,50 @@ function renderAuth(expectedRole) {
           profile = snap.val();
           if (profile) setCachedProfile(cred.user.uid, profile);
         }
-        if (!profile) { err.textContent = 'Профиль не найден'; await window.FB.signOut(window.FB.auth); return; }
-        if (profile.role !== 'teacher') { err.textContent = 'Это не аккаунт учителя'; await window.FB.signOut(window.FB.auth); return; }
+        if (!profile) {
+          errEl.textContent = 'Профиль не найден';
+          setSad(true);
+          await window.FB.signOut(window.FB.auth);
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'Войти →';
+          return;
+        }
+        if (profile.role !== 'teacher') {
+          errEl.textContent = 'Это не аккаунт учителя';
+          setSad(true);
+          await window.FB.signOut(window.FB.auth);
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'Войти →';
+          return;
+        }
         currentUser = { uid: cred.user.uid, email: profile.email || email, role: profile.role, name: profile.name || '' };
-        document.body.style.padding = '';
-        renderTeacherHome();
+        // Успех! Показываем "ready" на секунду и уходим
+        sadLock = false;
+        currentState = 'ready';
+        artEl.setAttribute('data-state', 'ready');
+        setTimeout(() => {
+          document.body.style.padding = '';
+          renderTeacherHome();
+        }, 700);
       } catch (e) {
         const c = e && e.code;
-        if (c === 'auth/invalid-email') err.textContent = 'Некорректный email';
-        else if (c === 'auth/user-not-found') err.textContent = 'Пользователь не найден';
-        else if (c === 'auth/wrong-password') err.textContent = 'Неверный пароль';
-        else if (c === 'auth/invalid-credential') err.textContent = 'Неверное ИО или пароль';
-        else if (c === 'auth/too-many-requests') err.textContent = 'Слишком много попыток';
-        else err.textContent = 'Ошибка: ' + (e.message || 'неизвестная');
+        if (c === 'auth/invalid-email') errEl.textContent = 'Некорректный email';
+        else if (c === 'auth/user-not-found') errEl.textContent = 'Пользователь не найден';
+        else if (c === 'auth/wrong-password') errEl.textContent = 'Неверный пароль';
+        else if (c === 'auth/invalid-credential') errEl.textContent = 'Неверное ИО или пароль';
+        else if (c === 'auth/too-many-requests') errEl.textContent = 'Слишком много попыток';
+        else errEl.textContent = 'Ошибка: ' + (e.message || 'неизвестная');
+
+        // персонажи расстроились
+        setSad(true);
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Войти →';
       }
     }
+
+    // первичная отрисовка
+    updateState();
+    nameInput.focus();
   });
 }
 
