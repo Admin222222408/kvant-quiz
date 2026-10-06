@@ -2612,17 +2612,16 @@ function subscribeStudentSession(code) {
   trackUnsub(window.FB.onValue(window.FB.ref(window.FB.db, `sessions/${code}`), (snap) => {
     const s = snap.val();
     if (!s) return;
-    // Обновляем локальное состояние
     const myRec = (s.students || {})[syncState.studentId];
     if (!myRec) { location.href = '?mode=student'; return; }
     syncState.answersByQ = myRec.answers || {};
     syncState.score = myRec.score || 0;
     syncState.correctCount = myRec.correctCount || 0;
-    renderStudentSyncView(s);
+    renderStudentSyncView(s, code);   // ← передаём code
   }));
 }
 
-function renderStudentSyncView(s) {
+function renderStudentSyncView(s, code) {
   const test = syncState.test;
   if (!test) return;
   const phase = s.phase || 'lobby';
