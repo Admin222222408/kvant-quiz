@@ -2200,12 +2200,14 @@ async function renderTeacherSession() {
     <div id="studentsArea" class="students-grid">Ожидание…</div>`;
 
   document.getElementById('copyLink').onclick = () => { navigator.clipboard.writeText(studentLink); alert('Ссылка скопирована'); };
-  document.getElementById('exportSessionBtn').onclick = async () => {
+    document.getElementById('exportSessionBtn').onclick = async () => {
     const sSnap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
     const session = sSnap.val();
-    const results = Object.values(session.students || {}).filter(x => x.result).map(x => x.result);
+    if (!session) { alert('Сессия не найдена'); return; }
+    const results = buildSessionResults(session, test);
+    if (results.length === 0) { alert('Нет данных для экспорта'); return; }
     exportStudentsWorkbook(results, session.testTitle, session.testId);
-  };
+  };;
    document.getElementById('closeBtn').onclick = async () => {
     if (!confirm(`Закрыть сессию ${code}?`)) return;
     if (autoAdvanceInterval) { clearInterval(autoAdvanceInterval); autoAdvanceInterval = null; }
@@ -2215,6 +2217,80 @@ async function renderTeacherSession() {
 
   subscribeTeacherSessionLive(code, test);
 }
+
+/* Преобразует данные синхронной сессии в массив "results" для Excel/PDF */
+function buildSessionResults(session, test) {
+  const students = session.students || {};
+  const totalQ = (test && test.questions && test.questions.length)
+              || session.testQuestionCount
+              || 0;
+
+  const results = [];
+
+  Object.values(students).forEach(st => {
+    // Старый формат (не-синхронный) — уже готовый result
+    if (st.result && Array.isArray(st.result.answers)) {
+      results.push(st.result);
+      return;
+    }
+
+    // Синхронный режим — собираем answers по индексам
+    const answersMap = st.answers || {};
+    const answersArr = [];
+    const count = totalQ || Object.keys(answersMap).length;
+
+    for (let i = 0; i < count; i++) {
+      const a = answersMap[i] || answersMap[String(i)];
+      if (a) {
+        answersArr.push({
+          questionText: a.questionText || (test && test.questions[i] ? test.questions[i].q : ('Вопрос ' + (i + 1))),
+          correctText:  a.correctText  || (test && test.questions[i] ? test.questions[i].options[test.questions[i].correct] : ''),
+          selectedText: a.selectedText || null,
+          correct:      !!a.correct,
+          image:        a.image || (test && test.questions[i] ? (test.questions[i].image || '') : '')
+        });
+      } else {
+        // вопрос без ответа
+        const tq = test && test.questions[i];
+        answersArr.push({
+          questionText: tq ? tq.q : ('Вопрос ' + (i + 1)),
+          correctText:  tq ? tq.options[tq.correct] : '',
+          selectedText: null,
+          correct: false,
+          image: tq ? (tq.image || '') : ''
+        });
+      }
+    }
+
+    const correct = st.correctCount != null
+      ? st.correctCount
+      : answersArr.filter(a => a.correct).length;
+    const total = answersArr.length || totalQ;
+    const wrong = Math.max(0, total - correct);
+
+    results.push({
+      studentName:   st.studentName || '—',
+      testId:        session.testId,
+      testTitle:     session.testTitle,
+      date:          formatDate(st.finishedAt || st.joinedAt || Date.now()),
+      timestamp:     st.finishedAt || st.joinedAt || Date.now(),
+      score:         st.score || 0,
+      correct, wrong, total,
+      teacherId:     session.teacherId,
+      teacherEmail:  session.teacherEmail,
+      sessionCode:   sessionCode || '',
+      decision:      '',
+      tabSwitches:   st.tabSwitches || 0,
+      copyAttempts:  st.copyAttempts || 0,
+      maxStreak:     st.maxStreak || 0,
+      terminated:    false,
+      answers:       answersArr
+    });
+  });
+
+  return results;
+}
+
 
 function subscribeTeacherSessionLive(code, test) {
   trackUnsub(window.FB.onValue(window.FB.ref(window.FB.db, `sessions/${code}`), (snapshot) => {
@@ -2519,6 +2595,22 @@ async function finishSession(code) {
       finishedAt: Date.now(),
       status: 'closed'
     });
+    // Пробуем сохранить результаты в общую ветку (тихо, не блокируем UI)
+    try {
+      const snap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
+      const session = snap.val();
+      if (session && session.students) {
+        const results = buildSessionResults(session, null);
+        const updates = {};
+        results.forEach(r => {
+          const rid = 'sync_' + code + '_' + (r.studentName || 'x').replace(/\s+/g, '_') + '_' + r.timestamp;
+          updates[rid] = r;
+        });
+        if (Object.keys(updates).length > 0) {
+          await window.FB.update(window.FB.ref(window.FB.db, 'results'), updates);
+        }
+      }
+    } catch (e) { console.warn('Не удалось сохранить результаты в общий список:', e); }
   } catch (e) { alert('Ошибка: ' + e.message); }
 }
 
