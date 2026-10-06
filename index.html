@@ -6,7 +6,8 @@
 <title>kvant-quiz</title>
 <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://firebaseinstallations.googleapis.com">
-<link rel="preconnect" href="https://kvantorium-48d8a-default-rtdb.firebaseio.com">
+<link rel="preconnect" href="https://kvantorium-48d8a-default-rtdb.firebaseio.com" crossorigin>
+<link rel="dns-prefetch" href="https://firebaseapp.com">
 
 <script type="module">
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -63,7 +64,7 @@ onAuthStateChanged(auth, () => {
     padding: 12px 20px; border: none; border-radius: 12px;
     background: linear-gradient(135deg, #7c3aed, #a855f7);
     color: #fff; font-size: 15px; font-weight: 700; font-family: inherit;
-    cursor: pointer; transition: all 0.15s;
+    cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
     box-shadow: 0 4px 14px rgba(124,58,237,0.25); letter-spacing: 0.01em; }
   button:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(124,58,237,0.35); }
   button:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; box-shadow: none; transform: none; }
@@ -86,12 +87,12 @@ onAuthStateChanged(auth, () => {
   button.opt:disabled { opacity: 0.85; cursor: default; transform: none; }
   button.opt .fig { display: inline-flex; align-items: center; justify-content: center;
     width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.25);
-    font-size: 20px; margin-right: 14px; flex-shrink: 0; font-family: 'Segoe UI Symbol', sans-serif; }
+    font-size: 20px; margin-right: 14px; flex-shrink: 0; }
   button.opt span { flex: 1; }
   input[type=text], input[type=password], input[type=email], input[type=number], input[type=file], input[type=search], textarea, select {
     width: 100%; padding: 12px 16px; border: 2px solid var(--line); border-radius: 12px;
     font-size: 15px; font-family: inherit; font-weight: 600; color: var(--ink);
-    background: #fff; margin-bottom: 10px; transition: all 0.15s; }
+    background: #fff; margin-bottom: 10px; transition: border-color 0.15s, box-shadow 0.15s; }
   input:focus, textarea:focus, select:focus { outline: none; border-color: var(--violet); box-shadow: 0 0 0 4px rgba(124,58,237,0.15); }
   input.invalid { border-color: var(--red); background: #fef2f2; }
   textarea { min-height: 80px; resize: vertical; }
@@ -122,12 +123,6 @@ onAuthStateChanged(auth, () => {
   .top-nav .nav-user .avatar-sm { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #7c3aed, #a855f7); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 800; }
   .kpi-line { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; background: #fff; padding: 12px 18px; border-radius: 12px; margin-bottom: 16px; border: 1px solid rgba(124,58,237,0.08); font-size: 13px; font-weight: 700; color: var(--muted); }
   .kpi-line b { color: var(--ink); font-size: 15px; margin-left: 2px; }
-  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
-  .kpi { background: #fff; border-radius: 16px; padding: 18px; box-shadow: 0 6px 20px rgba(124,58,237,0.08); position: relative; overflow: hidden; }
-  .kpi::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: linear-gradient(180deg, #7c3aed, #ec4899); }
-  .kpi .icon { font-size: 20px; margin-bottom: 6px; }
-  .kpi .n { font-size: 30px; font-weight: 900; color: var(--ink); line-height: 1; letter-spacing: -0.02em; }
-  .kpi .t { font-size: 11px; color: var(--muted); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
   .big-action { background: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #ec4899 100%); border-radius: 22px; padding: 36px 26px; text-align: center; color: #fff; margin-bottom: 22px; box-shadow: 0 20px 50px rgba(124,58,237,0.3); }
   .big-action h2 { font-size: 26px; margin: 0 0 8px; color: #fff; }
   .big-action p { color: rgba(255,255,255,0.9); font-size: 15px; margin: 0 0 22px; }
@@ -292,7 +287,6 @@ onAuthStateChanged(auth, () => {
   .tier-row .tier-del { width: 34px; height: 34px; padding: 0; border-radius: 8px; background: #fee2e2; color: #b91c1c; box-shadow: none; font-size: 14px; }
   .tier-add-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: #f0fdf4; color: #16a34a; border: 2px dashed #86efac; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer; box-shadow: none; }
   .tier-preset-btn { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; box-shadow: none; }
-  .print-form { display: none; }
 
   /* ============================================================
      АНИМИРОВАННЫЙ ЭКРАН ВХОДА УЧИТЕЛЯ
@@ -302,36 +296,53 @@ onAuthStateChanged(auth, () => {
     background: #f1f0f5; margin: -24px -20px -48px -20px;
   }
   @media (max-width: 800px) {
-    .auth-split { grid-template-columns: 1fr; margin: -24px -20px -48px -20px; }
+    .auth-split { grid-template-columns: 1fr; }
     .auth-art { display: none; }
   }
   .auth-art {
     background: #e9e8ee; position: relative; overflow: hidden;
     display: flex; align-items: center; justify-content: center;
+    contain: strict;
   }
-  .art-scene { position: relative; width: 420px; height: 420px; }
+  .art-scene {
+    position: relative; width: 420px; height: 420px;
+    contain: layout style paint;
+  }
   @media (max-height: 700px) { .art-scene { width: 340px; height: 340px; } }
 
-  .art-char { position: absolute; bottom: 0; }
+  .art-char { position: absolute; bottom: 0; transition: transform 0.45s cubic-bezier(0.34, 1.2, 0.64, 1); will-change: transform; }
 
-  /* ============= ОБЩИЕ СТИЛИ ГЛАЗ И РТА ============= */
+  /* ===== ГЛАЗА (белок + зрачок) ===== */
   .eye {
     position: absolute;
-    transform: translate(-50%, -50%) translate(var(--ex, 0px), var(--ey, 0px));
-    transition: transform 0.25s cubic-bezier(0.3, 1.2, 0.4, 1),
-                width 0.3s ease, height 0.3s ease,
-                opacity 0.25s ease, background 0.3s ease;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    overflow: hidden;
+    transition: width 0.3s ease, height 0.3s ease, opacity 0.25s ease, background 0.25s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  }
+  .eye-pupil {
+    position: absolute;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: #111;
+    left: 50%; top: 50%;
+    transform: translate3d(calc(-50% + var(--ex, 0px)), calc(-50% + var(--ey, 0px)), 0);
+    transition: transform 0.28s cubic-bezier(0.3, 1.2, 0.4, 1), width 0.3s ease, height 0.3s ease, background 0.3s ease;
     will-change: transform;
   }
+
+  /* Закрытые глаза (дуги) — оверлей */
   .eye-closed {
     position: absolute;
-    transform: translate(-50%, -50%) translate(var(--ex, 0px), var(--ey, 0px));
-    transition: opacity 0.25s ease, width 0.3s ease, height 0.3s ease;
+    width: 18px; height: 9px;
+    border: 3px solid #111;
+    border-bottom: none;
+    border-radius: 50% 50% 0 0;
     opacity: 0;
-    background: transparent !important;
-    border-bottom: none !important;
-    box-sizing: border-box;
-    will-change: transform, opacity;
+    transition: opacity 0.25s ease, width 0.3s ease, height 0.3s ease, border-color 0.25s ease, border-radius 0.3s ease;
+    pointer-events: none;
   }
   .mouth {
     position: absolute;
@@ -341,132 +352,112 @@ onAuthStateChanged(auth, () => {
     border-radius: 2px;
   }
 
-  /* ======================= ОРАНЖЕВЫЙ ======================= */
+  /* ======================= ОРАНЖЕВЫЙ (полукруг) ======================= */
   .art-orange { left: 20px; width: 210px; height: 130px; background: #f97316; border-radius: 110px 110px 0 0; z-index: 4; }
-  .art-orange .eye-open { width: 9px; height: 9px; background: #111; border-radius: 50%; }
-  .art-orange .eye-open.left { left: 75px; top: 55px; }
-  .art-orange .eye-open.right { left: 120px; top: 55px; }
-  .art-orange .eye-closed { width: 16px; height: 8px; border: 3px solid #111; border-radius: 50% 50% 0 0; }
-  .art-orange .eye-closed.left { left: 75px; top: 55px; }
-  .art-orange .eye-closed.right { left: 120px; top: 55px; }
+  .art-orange .eye.l { left: 65px; top: 46px; }
+  .art-orange .eye.r { left: 110px; top: 46px; }
+  .art-orange .eye-closed.l { left: 65px; top: 46px; }
+  .art-orange .eye-closed.r { left: 110px; top: 46px; }
   .art-orange .mouth { left: 105px; top: 85px; width: 14px; height: 3px; }
-  .art-orange .mouth.smile-shape { width: 24px; height: 12px; background: transparent; border-bottom: 3.5px solid #111; border-radius: 0 0 24px 24px; }
-  .art-orange .mouth.frown-shape { width: 24px; height: 12px; background: transparent; border-top: 3.5px solid #111; border-radius: 24px 24px 0 0; }
-  .art-orange .mouth.o-small { width: 9px; height: 9px; border-radius: 50%; }
-  .art-orange .mouth.o-big { width: 12px; height: 12px; border-radius: 50%; }
+  .auth-art[data-state="ready"] .art-orange .mouth,
+  .auth-art[data-state="curious"] .art-orange .mouth,
+  .auth-art[data-state="password"] .art-orange .mouth { /* состояние управляется ниже */ }
 
   /* ======================= ФИОЛЕТОВЫЙ ======================= */
   .art-violet { left: 100px; width: 110px; height: 250px; background: #7c3aed; border-radius: 6px 6px 0 0; z-index: 1; }
-  .art-violet .eye-open { width: 8px; height: 8px; background: #111; border-radius: 50%; }
-  .art-violet .eye-open.left { left: 32px; top: 60px; }
-  .art-violet .eye-open.right { left: 62px; top: 60px; }
-  .art-violet .eye-closed { width: 14px; height: 7px; border: 3px solid #111; border-radius: 50% 50% 0 0; }
-  .art-violet .eye-closed.left { left: 32px; top: 60px; }
-  .art-violet .eye-closed.right { left: 62px; top: 60px; }
+  .art-violet .eye { width: 16px; height: 16px; }
+  .art-violet .eye-pupil { width: 8px; height: 8px; }
+  .art-violet .eye.l { left: 24px; top: 52px; }
+  .art-violet .eye.r { left: 54px; top: 52px; }
+  .art-violet .eye-closed { width: 16px; height: 8px; }
+  .art-violet .eye-closed.l { left: 24px; top: 52px; }
+  .art-violet .eye-closed.r { left: 54px; top: 52px; }
   .art-violet .mouth { left: 55px; top: 85px; width: 12px; height: 3px; }
-  .art-violet .mouth.smile-shape { width: 20px; height: 10px; background: transparent; border-bottom: 3.5px solid #111; border-radius: 0 0 20px 20px; }
-  .art-violet .mouth.frown-shape { width: 20px; height: 10px; background: transparent; border-top: 3.5px solid #111; border-radius: 20px 20px 0 0; }
-  .art-violet .mouth.o-small { width: 8px; height: 8px; border-radius: 50%; }
-  .art-violet .mouth.o-big { width: 11px; height: 11px; border-radius: 50%; }
 
   /* ======================= ЧЁРНЫЙ ======================= */
   .art-black { left: 200px; width: 88px; height: 175px; background: #1a1a1a; border-radius: 4px 4px 0 0; z-index: 3; }
-  .art-black .eye-open { width: 8px; height: 8px; background: #fff; border-radius: 50%; }
-  .art-black .eye-open.left { left: 24px; top: 45px; }
-  .art-black .eye-open.right { left: 50px; top: 45px; }
-  .art-black .eye-closed { width: 14px; height: 7px; border: 3px solid #fff; border-radius: 50% 50% 0 0; }
-  .art-black .eye-closed.left { left: 24px; top: 45px; }
-  .art-black .eye-closed.right { left: 50px; top: 45px; }
+  .art-black .eye { background: #111; width: 16px; height: 16px; box-shadow: none; }
+  .art-black .eye-pupil { background: #fff; width: 8px; height: 8px; }
+  .art-black .eye.l { left: 16px; top: 38px; }
+  .art-black .eye.r { left: 42px; top: 38px; }
+  .art-black .eye-closed { width: 16px; height: 8px; border-color: #fff; }
+  .art-black .eye-closed.l { left: 16px; top: 38px; }
+  .art-black .eye-closed.r { left: 42px; top: 38px; }
   .art-black .mouth { left: 44px; top: 70px; width: 12px; height: 3px; background: #fff; }
-  .art-black .mouth.smile-shape { width: 20px; height: 10px; background: transparent; border-bottom: 3.5px solid #fff; border-radius: 0 0 20px 20px; }
-  .art-black .mouth.frown-shape { width: 20px; height: 10px; background: transparent; border-top: 3.5px solid #fff; border-radius: 20px 20px 0 0; }
-  .art-black .mouth.o-small { width: 8px; height: 8px; border-radius: 50%; }
-  .art-black .mouth.o-big { width: 11px; height: 11px; border-radius: 50%; }
 
   /* ======================= ЖЁЛТЫЙ ======================= */
   .art-yellow { left: 275px; width: 82px; height: 140px; background: #fbbf24; border-radius: 42px 42px 0 0; z-index: 2; }
-  .art-yellow .eye-open { width: 7px; height: 7px; background: #111; border-radius: 50%; }
-  .art-yellow .eye-open.left { left: 22px; top: 50px; }
-  .art-yellow .eye-open.right { left: 44px; top: 50px; }
-  .art-yellow .eye-closed { width: 12px; height: 6px; border: 3px solid #111; border-radius: 50% 50% 0 0; }
-  .art-yellow .eye-closed.left { left: 22px; top: 50px; }
-  .art-yellow .eye-closed.right { left: 44px; top: 50px; }
+  .art-yellow .eye { width: 14px; height: 14px; }
+  .art-yellow .eye-pupil { width: 7px; height: 7px; }
+  .art-yellow .eye.l { left: 15px; top: 42px; }
+  .art-yellow .eye.r { left: 37px; top: 42px; }
+  .art-yellow .eye-closed { width: 14px; height: 7px; }
+  .art-yellow .eye-closed.l { left: 15px; top: 42px; }
+  .art-yellow .eye-closed.r { left: 37px; top: 42px; }
   .art-yellow .mouth { left: 41px; top: 72px; width: 10px; height: 3px; }
-  .art-yellow .mouth.smile-shape { width: 18px; height: 9px; background: transparent; border-bottom: 3px solid #111; border-radius: 0 0 18px 18px; }
-  .art-yellow .mouth.frown-shape { width: 18px; height: 9px; background: transparent; border-top: 3px solid #111; border-radius: 18px 18px 0 0; }
-  .art-yellow .mouth.o-small { width: 7px; height: 7px; border-radius: 50%; }
-  .art-yellow .mouth.o-big { width: 10px; height: 10px; border-radius: 50%; }
 
   /* ============= СОСТОЯНИЯ ============= */
+  /* CURIOUS */
+  .auth-art[data-state="curious"] .eye { width: 20px; height: 20px; }
+  .auth-art[data-state="curious"] .eye-pupil { width: 10px; height: 10px; }
+  .auth-art[data-state="curious"] .mouth { width: 10px; height: 10px; border-radius: 50%; background: #111; }
+  .auth-art[data-state="curious"] .art-black .mouth { background: #fff; }
 
-  /* CURIOUS — лёгкое удивление */
-  .auth-art[data-state="curious"] .eye-open { width: 10px !important; height: 10px !important; }
-  .auth-art[data-state="curious"] .art-violet .eye-open,
-  .auth-art[data-state="curious"] .art-black .eye-open { width: 9px !important; height: 9px !important; }
-  .auth-art[data-state="curious"] .mouth { width: 9px !important; height: 9px !important; border-radius: 50% !important; background: #111 !important; }
+  /* PASSWORD */
+  .auth-art[data-state="password"] .eye { width: 22px; height: 22px; }
+  .auth-art[data-state="password"] .eye-pupil { width: 11px; height: 11px; }
+  .auth-art[data-state="password"] .mouth { width: 11px; height: 11px; border-radius: 50%; background: #111; }
+  .auth-art[data-state="password"] .art-black .mouth { background: #fff; }
+  .auth-art[data-state="password"] .art-violet { transform: translate3d(0, -6px, 0); }
+  .auth-art[data-state="password"] .art-yellow { transform: translate3d(0, -4px, 0); }
 
-  /* PASSWORD — сильно удивлены, пытаются подглядеть */
-  .auth-art[data-state="password"] .eye-open { width: 12px !important; height: 12px !important; }
-  .auth-art[data-state="password"] .art-violet .eye-open,
-  .auth-art[data-state="password"] .art-black .eye-open { width: 10px !important; height: 10px !important; }
-  .auth-art[data-state="password"] .mouth { width: 12px !important; height: 12px !important; border-radius: 50% !important; background: #111 !important; }
-  .auth-art[data-state="password"] .art-violet { transform: translateY(-6px); }
-  .auth-art[data-state="password"] .art-yellow { transform: translateY(-4px); }
-  .auth-art[data-state="password"] .art-char { transition: transform 0.4s ease; }
-
-  /* REVEALED — закрыли глаза, не смотрим */
-  .auth-art[data-state="revealed"] .eye-open { opacity: 0 !important; }
+  /* REVEALED */
+  .auth-art[data-state="revealed"] .eye { opacity: 0; }
   .auth-art[data-state="revealed"] .eye-closed {
-    opacity: 1 !important;
-    border-radius: 0 !important;
-    border: none !important;
-    height: 3px !important;
-    width: 14px !important;
-    background: #111 !important;
-    transform: translate(-50%, -50%) !important;
+    opacity: 1;
+    border: none;
+    height: 3px;
+    width: 20px;
+    background: #111;
+    border-radius: 3px;
   }
-  .auth-art[data-state="revealed"] .art-black .eye-closed { background: #fff !important; }
-  .auth-art[data-state="revealed"] .mouth { width: 12px !important; height: 3px !important; border-radius: 2px !important; background: #111 !important; }
+  .auth-art[data-state="revealed"] .art-black .eye-closed { background: #fff; }
+  .auth-art[data-state="revealed"] .mouth { width: 12px; height: 3px; border-radius: 2px; background: #111; }
+  .auth-art[data-state="revealed"] .art-black .mouth { background: #fff; }
 
-  /* READY — все улыбаются, глаза закрыты дугами */
-  .auth-art[data-state="ready"] .eye-open { opacity: 0 !important; }
-  .auth-art[data-state="ready"] .eye-closed {
-    opacity: 1 !important;
-    transform: translate(-50%, -50%) !important;
-  }
+  /* READY */
+  .auth-art[data-state="ready"] .eye { opacity: 0; }
+  .auth-art[data-state="ready"] .eye-closed { opacity: 1; }
   .auth-art[data-state="ready"] .mouth {
-    width: 24px !important; height: 12px !important;
-    background: transparent !important;
-    border-bottom: 3.5px solid #111 !important;
-    border-radius: 0 0 24px 24px !important;
-    border-top: none !important; border-left: none !important; border-right: none !important;
+    width: 26px; height: 13px;
+    background: transparent;
+    border-bottom: 3.5px solid #111;
+    border-radius: 0 0 26px 26px;
+    border-top: none; border-left: none; border-right: none;
   }
-  .auth-art[data-state="ready"] .art-black .mouth { border-bottom-color: #fff !important; }
+  .auth-art[data-state="ready"] .art-black .mouth { border-bottom-color: #fff; }
   .auth-art[data-state="ready"] .art-char { animation: happyBounce 0.7s ease; }
   @keyframes happyBounce {
-    0% { transform: translateY(0); }
-    40% { transform: translateY(-8px); }
-    70% { transform: translateY(-2px); }
-    100% { transform: translateY(0); }
+    0% { transform: translate3d(0, 0, 0); }
+    40% { transform: translate3d(0, -8px, 0); }
+    70% { transform: translate3d(0, -2px, 0); }
+    100% { transform: translate3d(0, 0, 0); }
   }
 
-  /* SAD — расстроились */
-  .auth-art[data-state="sad"] .eye-open {
-    /* глаза смотрят вниз — задаётся через JS */
-  }
+  /* SAD */
   .auth-art[data-state="sad"] .mouth {
-    width: 22px !important; height: 11px !important;
-    background: transparent !important;
-    border-top: 3.5px solid #111 !important;
-    border-radius: 22px 22px 0 0 !important;
-    border-bottom: none !important; border-left: none !important; border-right: none !important;
+    width: 24px; height: 12px;
+    background: transparent;
+    border-top: 3.5px solid #111;
+    border-radius: 24px 24px 0 0;
+    border-bottom: none; border-left: none; border-right: none;
   }
-  .auth-art[data-state="sad"] .art-black .mouth { border-top-color: #fff !important; }
+  .auth-art[data-state="sad"] .art-black .mouth { border-top-color: #fff; }
   .auth-art[data-state="sad"] .art-char { animation: sadDrop 0.5s ease; }
   @keyframes sadDrop {
-    0% { transform: translateY(0); }
-    50% { transform: translateY(4px); }
-    100% { transform: translateY(0); }
+    0% { transform: translate3d(0, 0, 0); }
+    50% { transform: translate3d(0, 4px, 0); }
+    100% { transform: translate3d(0, 0, 0); }
   }
 
   /* ============= ФОРМА ============= */
@@ -484,7 +475,7 @@ onAuthStateChanged(auth, () => {
   .auth-field input {
     width: 100%; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 12px;
     font-size: 15px; font-weight: 600; color: #1e1b4b;
-    background: #fff; margin: 0; transition: all 0.15s;
+    background: #fff; margin: 0; transition: border-color 0.15s, box-shadow 0.15s;
   }
   .auth-field input:focus { border-color: var(--violet); box-shadow: 0 0 0 4px rgba(124,58,237,0.12); outline: none; }
   .pass-wrap { position: relative; }
@@ -512,26 +503,6 @@ onAuthStateChanged(auth, () => {
   .auth-links { margin-top: 26px; }
   .auth-links a { color: var(--violet); font-size: 13px; font-weight: 600; text-decoration: none; }
   .auth-links a:hover { text-decoration: underline; }
-
-  @media print {
-    body * { visibility: hidden; }
-    body { background: #fff !important; }
-    .print-form, .print-form * { visibility: visible; }
-    .print-form { display: block !important; position: absolute; top: 0; left: 0; width: 100%; padding: 20px; background: #fff; color: #000; font-family: 'Times New Roman', serif; }
-    .pf-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px double #000; padding-bottom: 12px; margin-bottom: 20px; }
-    .pf-school { font-size: 20pt; font-weight: bold; }
-    .pf-logo { font-size: 36pt; }
-    .pf-title { font-size: 16pt; font-weight: bold; text-align: center; margin: 20px 0; }
-    .pf-subtitle { font-size: 12pt; text-align: center; margin-bottom: 24px; color: #444; }
-    .pf-info { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; font-size: 12pt; }
-    .pf-info b { display: inline-block; min-width: 130px; }
-    .print-form table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 10pt; }
-    .print-form th, .print-form td { border: 1px solid #333; padding: 6px; text-align: left; }
-    .print-form th { background: #f0f0f0; font-weight: bold; }
-    .pf-score { text-align: center; font-size: 28pt; font-weight: bold; margin: 20px 0; padding: 16px; border: 2px solid #000; }
-    .pf-signature { margin-top: 40px; display: flex; justify-content: space-between; font-size: 12pt; }
-    .pf-signature div { border-bottom: 1px solid #000; min-width: 250px; padding-bottom: 2px; }
-  }
 </style>
 </head>
 <body>
@@ -551,8 +522,7 @@ onAuthStateChanged(auth, () => {
 
 <script>
 /* ==================================================================
-   KVANT-QUIZ — FULL VERSION
-   • Анимированный вход учителя с персонажами, следящими за мышью
+   KVANT-QUIZ — v5 (оптимизация)
    ================================================================== */
 const DEFAULT_BASE_POINTS = 5;
 const DEFAULT_SPEED_TIERS = [
@@ -566,7 +536,6 @@ const OLD_RESULTS_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const MAX_NAME_LEN = 25;
 const MAX_IMG_SIZE_KB = 400;
 const FIGURES = ['⬤', '⬛', '▲', '★'];
-const SCHOOL_NAME = 'Кванториум';
 const TIME_PER_QUESTION = 20;
 
 const DEFAULT_TESTS = {
@@ -607,6 +576,7 @@ const app = document.getElementById('app');
 let currentUser = null;
 let testsCache = {};
 let classesCache = {};
+let directionsCache = {};
 let activeUnsubs = [];
 function trackUnsub(fn) { if (typeof fn === 'function') activeUnsubs.push(fn); }
 function clearAllUnsubs() { activeUnsubs.forEach(fn => { try { fn(); } catch (e) {} }); activeUnsubs = []; }
@@ -622,7 +592,7 @@ let teachersUsersCache = {};
 let teachersStatsCache = { sessions: {}, results: {} };
 let allResultsCache = [];
 
-/* ============ ХЕЛПЕРЫ БАЛЛОВ ============ */
+/* ============ ХЕЛПЕРЫ ============ */
 function round1(n) { return Math.round(Number(n) * 10) / 10; }
 function round2(n) { return Math.round(Number(n) * 100) / 100; }
 function formatScore(n) {
@@ -642,16 +612,6 @@ function getSpeedTiers(test) {
       timeSec: Math.max(0, Math.round(Number(t.timeSec) || 0)),
       bonus: round1(t.bonus)
     })).filter(t => t.timeSec > 0 && t.bonus > 0).sort((a, b) => a.timeSec - b.timeSec);
-  }
-  if (test.speedBonusPct != null && test.speedBonusPct > 0) {
-    const base = getBasePoints(test);
-    const maxBonus = round1(base * test.speedBonusPct / 100);
-    const total = Number(test.timePerQuestion) || 20;
-    return [
-      { timeSec: Math.round(total * 0.75), bonus: round1(maxBonus * 0.8) },
-      { timeSec: Math.round(total * 0.50), bonus: round1(maxBonus * 0.5) },
-      { timeSec: Math.round(total * 0.25), bonus: round1(maxBonus * 0.2) }
-    ].sort((a, b) => a.timeSec - b.timeSec);
   }
   return JSON.parse(JSON.stringify(DEFAULT_SPEED_TIERS));
 }
@@ -683,28 +643,28 @@ function interpretScore(score, maxScore) {
   const pct = maxScore > 0 ? Math.round((score || 0) / maxScore * 100) : 0;
   return interpretPct(pct);
 }
-
-/* ============ ОБРАБОТЧИК ============ */
 function onClick(id, handler) {
   const el = document.getElementById(id);
   if (el) el.onclick = handler;
   return el;
 }
 
-/* ============ УТИЛИТЫ ============ */
+/* Быстрый escapeHtml через один regex + map (быстрее чем цепочка replace) */
+const HTML_ESC_MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => HTML_ESC_MAP[c]);
+}
+function escapeXml(s) {
+  return String(s).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&apos;'})[c]);
+}
+function escapeAttr(s) { return escapeHtml(s); }
+
 const NAME_REGEX = /^[А-Яа-яЁёA-Za-z\-\s]+$/;
 function isValidName(s) {
   const t = String(s).trim();
   if (t.length === 0 || t.length > MAX_NAME_LEN) return false;
   return NAME_REGEX.test(t);
 }
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
-}
-function escapeXml(s) {
-  return String(s).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&apos;'})[c]);
-}
-function escapeAttr(s) { return escapeHtml(s); }
 function genSessionCode() { return String(Math.floor(100000 + Math.random() * 900000)); }
 function genId(prefix) { return (prefix||'id') + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7); }
 function sanitizeSheetName(name, idx) {
@@ -796,6 +756,29 @@ function buildExcelFilename(testTitle, shortName, prefix) {
   const clean = sanitizeFilename(base, 40);
   const stamp = shortDateStamp();
   return prefix ? `${prefix}_${clean}_${stamp}.xls` : `${clean}_${stamp}.xls`;
+}
+
+/* ============ НАПРАВЛЕНИЯ / КЛАССЫ — помощники ============ */
+function getTeacherDirections(uid) {
+  const result = [];
+  for (const [id, d] of Object.entries(directionsCache)) {
+    if (d && Array.isArray(d.teachers) && d.teachers.includes(uid)) result.push([id, d]);
+  }
+  return result;
+}
+function getClassesByDirection(dirId) {
+  const result = [];
+  for (const [id, c] of Object.entries(classesCache)) {
+    if (c && c.directionId === dirId) result.push([id, c]);
+  }
+  return result;
+}
+function getClassesWithoutDirection() {
+  const result = [];
+  for (const [id, c] of Object.entries(classesCache)) {
+    if (c && !c.directionId) result.push([id, c]);
+  }
+  return result;
 }
 
 /* ==================================================================
@@ -1000,6 +983,12 @@ async function loadClasses() {
     classesCache = snap.val() || {};
   } catch (e) { classesCache = {}; }
 }
+async function loadDirections() {
+  try {
+    const snap = await window.FB.get(window.FB.ref(window.FB.db, 'directions'));
+    directionsCache = snap.val() || {};
+  } catch (e) { directionsCache = {}; }
+}
 async function seedTestsIfEmpty() {
   const snap = await window.FB.get(window.FB.ref(window.FB.db, 'tests'));
   if (snap.exists()) return false;
@@ -1014,6 +1003,7 @@ function renderTopNav(role, active) {
     <div class="nav-links">
       ${role === 'developer' ? `
         <button data-nav="tests" class="${active==='tests'?'active':''}">📚 Тесты</button>
+        <button data-nav="directions" class="${active==='directions'?'active':''}">🎯 Направления</button>
         <button data-nav="classes" class="${active==='classes'?'active':''}">👥 Классы</button>
         <button data-nav="teachers" class="${active==='teachers'?'active':''}">👨‍🏫 Учителя</button>
       ` : `
@@ -1041,15 +1031,15 @@ function bindTopNav() {
     b.onclick = () => {
       const nav = b.dataset.nav;
       if (nav === 'help') { openHelpChat(); return; }
-      const id = nav === 'tests' ? 'testsPanel' : nav === 'classes' ? 'classesPanel' : nav === 'teachers' ? 'teachersPanel' : 'sessionsList';
-      const el = document.getElementById(id);
+      const map = { tests: 'testsPanel', directions: 'directionsPanel', classes: 'classesPanel', teachers: 'teachersPanel', sessions: 'sessionsList' };
+      const el = document.getElementById(map[nav]);
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
   });
 }
 
 /* ==================================================================
-   АВТОРИЗАЦИЯ
+   АВТОРИЗАЦИЯ (сплит + анимированные персонажи) — ОПТИМИЗИРОВАННАЯ
    ================================================================== */
 function renderAuth(expectedRole) {
   clearAllUnsubs();
@@ -1059,7 +1049,6 @@ function renderAuth(expectedRole) {
     document.body.style.padding = '0';
 
     if (isDev) {
-      // Разработчик — старая простая форма
       app.innerHTML = `<div style="max-width:440px;margin:60px auto;background:#fff;border-radius:24px;padding:36px 32px;box-shadow:0 20px 60px rgba(124,58,237,0.12);">
         <h1 style="text-align:center;">🛠 Вход разработчика</h1>
         <p class="hint" style="text-align:center;margin-bottom:24px;">Панель управления системой</p>
@@ -1104,37 +1093,36 @@ function renderAuth(expectedRole) {
       return;
     }
 
-    // ============ УЧИТЕЛЬ: анимированный экран ============
     app.innerHTML = `
       <div class="auth-split">
         <div class="auth-art" id="authArt" data-state="neutral">
           <div class="art-scene">
             <div class="art-char art-violet">
-              <div class="eye eye-open left"></div>
-              <div class="eye eye-open right"></div>
-              <div class="eye eye-closed left"></div>
-              <div class="eye eye-closed right"></div>
+              <div class="eye l"><div class="eye-pupil"></div></div>
+              <div class="eye r"><div class="eye-pupil"></div></div>
+              <div class="eye-closed l"></div>
+              <div class="eye-closed r"></div>
               <div class="mouth"></div>
             </div>
             <div class="art-char art-yellow">
-              <div class="eye eye-open left"></div>
-              <div class="eye eye-open right"></div>
-              <div class="eye eye-closed left"></div>
-              <div class="eye eye-closed right"></div>
+              <div class="eye l"><div class="eye-pupil"></div></div>
+              <div class="eye r"><div class="eye-pupil"></div></div>
+              <div class="eye-closed l"></div>
+              <div class="eye-closed r"></div>
               <div class="mouth"></div>
             </div>
             <div class="art-char art-black">
-              <div class="eye eye-open left"></div>
-              <div class="eye eye-open right"></div>
-              <div class="eye eye-closed left"></div>
-              <div class="eye eye-closed right"></div>
+              <div class="eye l"><div class="eye-pupil"></div></div>
+              <div class="eye r"><div class="eye-pupil"></div></div>
+              <div class="eye-closed l"></div>
+              <div class="eye-closed r"></div>
               <div class="mouth"></div>
             </div>
             <div class="art-char art-orange">
-              <div class="eye eye-open left"></div>
-              <div class="eye eye-open right"></div>
-              <div class="eye eye-closed left"></div>
-              <div class="eye eye-closed right"></div>
+              <div class="eye l"><div class="eye-pupil"></div></div>
+              <div class="eye r"><div class="eye-pupil"></div></div>
+              <div class="eye-closed l"></div>
+              <div class="eye-closed r"></div>
               <div class="mouth"></div>
             </div>
           </div>
@@ -1169,7 +1157,9 @@ function renderAuth(expectedRole) {
         </div>
       </div>`;
 
+    /* ====== ОПТИМИЗИРОВАННАЯ АНИМАЦИЯ ====== */
     const artEl = document.getElementById('authArt');
+    const scene = artEl.querySelector('.art-scene');
     const nameInput = document.getElementById('loginName');
     const passInput = document.getElementById('loginPass');
     const passToggle = document.getElementById('passToggle');
@@ -1177,69 +1167,128 @@ function renderAuth(expectedRole) {
     const errEl = document.getElementById('loginError');
 
     const isMobile = window.matchMedia('(max-width: 800px)').matches;
+
+    // Кэш позиций персонажей — обновляется при инициализации и resize
+    let charBoxes = [];
+    // Кэш позиции поля пароля
+    let passRect = { left: 0, right: 0, top: 0, bottom: 0 };
+    // Кэш списка зрачков (NodeList → Array)
+    const allPupils = Array.from(artEl.querySelectorAll('.eye-pupil'));
+
+    function measureArt() {
+      const sceneRect = scene.getBoundingClientRect();
+      const chars = Array.from(scene.querySelectorAll('.art-char'));
+      charBoxes = chars.map(ch => {
+        const r = ch.getBoundingClientRect();
+        return {
+          el: ch,
+          cx: r.left + r.width / 2 - sceneRect.left,
+          cy: r.top + r.height * 0.3 - sceneRect.top
+        };
+      });
+    }
+
+    function measurePass() {
+      const r = passInput.getBoundingClientRect();
+      passRect.left = r.left;
+      passRect.right = r.right;
+      passRect.top = r.top;
+      passRect.bottom = r.bottom;
+    }
+
+    // Замер один раз после рендера
+    requestAnimationFrame(() => { measureArt(); measurePass(); });
+
+    // ResizeObserver — эффективнее чем window.resize
+    if (!isMobile && 'ResizeObserver' in window) {
+      const ro = new ResizeObserver(() => {
+        measureArt();
+        measurePass();
+      });
+      ro.observe(scene);
+      ro.observe(passInput);
+    }
+
     let currentState = 'neutral';
     let sadLock = false;
-    let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
-    let rafPending = false;
+    let mouseX = 0, mouseY = 0;
+    let mouseOverPass = false;
+    let rafId = null;
 
-    // ============ СЛЕЖКА ГЛАЗ ЗА МЫШЬЮ ============
+    // ============ ЕДИНЫЙ ЦИКЛ ОБНОВЛЕНИЯ ============
     function updateEyes() {
+      rafId = null;
       if (isMobile || sadLock) return;
       if (currentState === 'ready' || currentState === 'revealed') return;
+      if (charBoxes.length === 0) return;
 
-      const chars = artEl.querySelectorAll('.art-char');
-      chars.forEach(ch => {
-        const rect = ch.getBoundingClientRect();
-        // центр "глаз" — верхняя треть фигуры
-        const cx = rect.left + rect.width / 2;
-        const cy = rect.top + rect.height * 0.3;
-        const dx = mouseX - cx;
-        const dy = mouseY - cy;
-        const dist = Math.hypot(dx, dy) || 1;
-        const maxOffset = 3.5;
-        const strength = Math.min(1, dist / 250);
-        let ox = (dx / dist) * maxOffset * strength;
-        let oy = (dy / dist) * maxOffset * strength;
+      const isPasswordArea = (document.activeElement === passInput) || mouseOverPass;
+      const isRevealed = passInput.type === 'text' && passInput.value.length > 0;
+      if (isRevealed) return;
 
-        // ограничение по осям
-        ox = Math.max(-3.5, Math.min(3.5, ox));
-        oy = Math.max(-3.5, Math.min(3.5, oy));
+      const sceneRect = scene.getBoundingClientRect();
+      const localMouseX = mouseX - sceneRect.left;
+      const localMouseY = mouseY - sceneRect.top;
 
-        ch.querySelectorAll('.eye').forEach(eye => {
-          eye.style.setProperty('--ex', ox.toFixed(2) + 'px');
-          eye.style.setProperty('--ey', oy.toFixed(2) + 'px');
-        });
-      });
+      for (let i = 0; i < charBoxes.length; i++) {
+        const box = charBoxes[i];
+        const dx = localMouseX - box.cx;
+        const dy = localMouseY - box.cy;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+
+        let ox, oy;
+        if (isPasswordArea) {
+          const awayX = -dx / dist;
+          const awayY = -dy / dist * 0.4;
+          ox = awayX * 5.5;
+          oy = awayY * 5.5;
+        } else {
+          const strength = Math.min(1, dist / 260);
+          const maxOffset = 4.5;
+          ox = (dx / dist) * maxOffset * strength;
+          oy = (dy / dist) * maxOffset * strength;
+        }
+
+        ox = Math.max(-6, Math.min(6, ox));
+        oy = Math.max(-6, Math.min(6, oy));
+        const oxStr = ox.toFixed(1) + 'px';
+        const oyStr = oy.toFixed(1) + 'px';
+        box.el.style.setProperty('--ex', oxStr);
+        box.el.style.setProperty('--ey', oyStr);
+      }
     }
 
-    document.addEventListener('mousemove', (e) => {
+    // Единый обработчик mousemove — пассивный
+    const onMouseMove = (e) => {
       mouseX = e.clientX;
       mouseY = e.clientY;
-      if (rafPending) return;
-      rafPending = true;
-      requestAnimationFrame(() => {
-        rafPending = false;
-        updateEyes();
-      });
-    });
+      // Проверка попадания в поле пароля — через кэш
+      mouseOverPass = (
+        mouseX >= passRect.left && mouseX <= passRect.right &&
+        mouseY >= passRect.top && mouseY <= passRect.bottom
+      );
+      if (!rafId) rafId = requestAnimationFrame(updateEyes);
+    };
+    document.addEventListener('mousemove', onMouseMove, { passive: true });
 
-    // Для мобильных — не следим
-    if (isMobile) {
-      artEl.querySelectorAll('.eye').forEach(el => {
-        el.style.setProperty('--ex', '0px');
-        el.style.setProperty('--ey', '0px');
-      });
-    }
+    // Отмена rAF при скрытии вкладки — не жжём CPU в фоне
+    const onVis = () => {
+      if (document.hidden && rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+    };
+    document.addEventListener('visibilitychange', onVis);
 
-    // ============ ОБНОВЛЕНИЕ СОСТОЯНИЯ ============
+    // ============ СОСТОЯНИЯ ============
     function updateState() {
       const hasName = nameInput.value.trim().length > 0;
       const hasPass = passInput.value.length > 0;
-      const isRevealed = passInput.type === 'text';
+      const isRevealed = passInput.type === 'text' && hasPass;
 
       let state = 'neutral';
       if (sadLock) state = 'sad';
-      else if (isRevealed && hasPass) state = 'revealed';
+      else if (isRevealed) state = 'revealed';
       else if (hasName && hasPass) state = 'ready';
       else if (hasPass) state = 'password';
       else if (hasName) state = 'curious';
@@ -1249,31 +1298,26 @@ function renderAuth(expectedRole) {
         artEl.setAttribute('data-state', state);
       }
 
-      // Обновляем следящие глаза (если нужно)
       if (!isMobile && state !== 'ready' && state !== 'revealed' && !sadLock) {
-        updateEyes();
+        if (!rafId) rafId = requestAnimationFrame(updateEyes);
       }
     }
 
     function setSad(on) {
       sadLock = on;
       if (on) {
-        // глаза смотрят вниз
-        artEl.querySelectorAll('.eye').forEach(eye => {
-          eye.style.setProperty('--ex', '0px');
-          eye.style.setProperty('--ey', '3px');
-        });
+        for (const pupil of allPupils) {
+          pupil.style.setProperty('--ex', '0px');
+          pupil.style.setProperty('--ey', '3.5px');
+        }
       }
       updateState();
     }
 
-    // ============ СЛУШАТЕЛИ ============
-    nameInput.addEventListener('input', updateState);
-    nameInput.addEventListener('focus', () => {
-      if (!sadLock) { /* ничего, если не sad */ }
-    });
-    passInput.addEventListener('input', () => { setSad(false); updateState(); });
-    nameInput.addEventListener('input', () => { setSad(false); });
+    nameInput.addEventListener('input', () => { sadLock = false; updateState(); });
+    passInput.addEventListener('input', () => { sadLock = false; updateState(); });
+    passInput.addEventListener('focus', () => { if (!rafId) rafId = requestAnimationFrame(updateEyes); });
+    passInput.addEventListener('blur', () => setTimeout(() => { if (!rafId) rafId = requestAnimationFrame(updateEyes); }, 100));
 
     passToggle.onclick = () => {
       const isPass = passInput.type === 'password';
@@ -1290,13 +1334,12 @@ function renderAuth(expectedRole) {
       const nameRaw = nameInput.value.trim();
       const pass = passInput.value;
       errEl.textContent = '';
-
       if (!nameRaw || !pass) { errEl.textContent = 'Заполните ИО и пароль'; return; }
-
-      setSad(false);
+      sadLock = false;
+      updateState();
 
       let email = '';
-      if (nameRaw.includes('@')) {
+      if (nameRaw.indexOf('@') !== -1) {
         email = nameRaw;
       } else {
         try {
@@ -1327,15 +1370,7 @@ function renderAuth(expectedRole) {
           profile = snap.val();
           if (profile) setCachedProfile(cred.user.uid, profile);
         }
-        if (!profile) {
-          errEl.textContent = 'Профиль не найден';
-          setSad(true);
-          await window.FB.signOut(window.FB.auth);
-          loginBtn.disabled = false;
-          loginBtn.textContent = 'Войти →';
-          return;
-        }
-        if (profile.role !== 'teacher') {
+        if (!profile || profile.role !== 'teacher') {
           errEl.textContent = 'Это не аккаунт учителя';
           setSad(true);
           await window.FB.signOut(window.FB.auth);
@@ -1344,7 +1379,6 @@ function renderAuth(expectedRole) {
           return;
         }
         currentUser = { uid: cred.user.uid, email: profile.email || email, role: profile.role, name: profile.name || '' };
-        // Успех! Показываем "ready" на секунду и уходим
         sadLock = false;
         currentState = 'ready';
         artEl.setAttribute('data-state', 'ready');
@@ -1360,15 +1394,12 @@ function renderAuth(expectedRole) {
         else if (c === 'auth/invalid-credential') errEl.textContent = 'Неверное ИО или пароль';
         else if (c === 'auth/too-many-requests') errEl.textContent = 'Слишком много попыток';
         else errEl.textContent = 'Ошибка: ' + (e.message || 'неизвестная');
-
-        // персонажи расстроились
         setSad(true);
         loginBtn.disabled = false;
         loginBtn.textContent = 'Войти →';
       }
     }
 
-    // первичная отрисовка
     updateState();
     nameInput.focus();
   });
@@ -1454,7 +1485,7 @@ async function renderDeveloperHome() {
   if (!currentUser || currentUser.role !== 'developer') { renderAuth('developer'); return; }
   document.body.style.padding = '';
   await seedTestsIfEmpty();
-  await loadClasses();
+  await Promise.all([loadDirections(), loadClasses(), loadTeachersData()]);
   document.body.className = 'theme-developer';
 
   app.innerHTML = `
@@ -1472,8 +1503,18 @@ async function renderDeveloperHome() {
       <div id="testsManageArea"><p class="hint"><span class="loading-spinner"></span>Загрузка…</p></div>
     </div>
 
+    <div class="panel" id="directionsPanel">
+      <div class="panel-head"><h3>🎯 Направления (учителя)</h3>
+        <div class="summary-actions" style="margin:0;">
+          <button id="addDirectionBtn" class="green">➕ Создать направление</button>
+          <button id="refreshDirectionsBtn" class="refresh">🔄 Обновить</button>
+        </div>
+      </div>
+      <div id="directionsArea"><p class="hint"><span class="loading-spinner"></span>Загрузка…</p></div>
+    </div>
+
     <div class="panel" id="classesPanel">
-      <div class="panel-head"><h3>👥 Классы</h3>
+      <div class="panel-head"><h3>👥 Классы (внутри направлений)</h3>
         <div class="summary-actions" style="margin:0;">
           <button id="addClassBtn" class="green">➕ Создать класс</button>
           <button id="refreshClassesBtn" class="refresh">🔄 Обновить</button>
@@ -1509,20 +1550,23 @@ async function renderDeveloperHome() {
     </div>`;
 
   bindTopNav();
-  onClick('addTestBtn',         () => openTestEditor(null));
-  onClick('refreshTestsBtn',    async () => { await loadTests(); renderDeveloperTestsList(); });
-  onClick('addClassBtn',        () => openClassEditor(null));
-  onClick('refreshClassesBtn',  async () => { await loadClasses(); renderClassesList(); });
-  onClick('addTeacherBtn',      () => openCreateTeacherModal());
-  onClick('refreshTeachersBtn', () => renderTeachersList());
-  onClick('exportSchoolBtn',    exportWholeSchool);
-  onClick('clearOldResultsBtn', clearOldResults);
-  onClick('clearAllResultsBtn', clearAllResults);
+  onClick('addTestBtn',            () => openTestEditor(null));
+  onClick('refreshTestsBtn',       async () => { await loadTests(); renderDeveloperTestsList(); });
+  onClick('addDirectionBtn',       () => openDirectionEditor(null));
+  onClick('refreshDirectionsBtn',  async () => { await loadDirections(); await loadTeachersData(); renderDirectionsList(); });
+  onClick('addClassBtn',           () => openClassEditor(null));
+  onClick('refreshClassesBtn',     async () => { await loadClasses(); await loadDirections(); renderClassesList(); });
+  onClick('addTeacherBtn',         () => openCreateTeacherModal());
+  onClick('refreshTeachersBtn',    () => renderTeachersList());
+  onClick('exportSchoolBtn',       exportWholeSchool);
+  onClick('clearOldResultsBtn',    clearOldResults);
+  onClick('clearAllResultsBtn',    clearAllResults);
 
   try { rebuildTeacherLookup();     } catch (e) {}
   try { cleanupOldSessions();       } catch (e) {}
   try { renderDeveloperMetrics();   } catch (e) {}
   try { renderDeveloperTestsList(); } catch (e) {}
+  try { renderDirectionsList();     } catch (e) {}
   try { renderClassesList();        } catch (e) {}
   try { renderTeachersList();       } catch (e) {}
   try { subscribeAllSessions();     } catch (e) {}
@@ -1549,21 +1593,24 @@ async function renderDeveloperMetrics() {
   const el = document.getElementById('metricsLine');
   if (!el) return;
   try {
-    const [testsSnap, sessionsSnap, resultsSnap, usersSnap, classesSnap] = await Promise.all([
+    const [testsSnap, sessionsSnap, resultsSnap, usersSnap, classesSnap, dirsSnap] = await Promise.all([
       window.FB.get(window.FB.ref(window.FB.db, 'tests')),
       window.FB.get(window.FB.ref(window.FB.db, 'sessions')),
       window.FB.get(window.FB.ref(window.FB.db, 'results')),
       window.FB.get(window.FB.ref(window.FB.db, 'users')),
-      window.FB.get(window.FB.ref(window.FB.db, 'classes'))
+      window.FB.get(window.FB.ref(window.FB.db, 'classes')),
+      window.FB.get(window.FB.ref(window.FB.db, 'directions'))
     ]);
     const tests = testsSnap.val() || {};
     const sessions = sessionsSnap.val() || {};
     const results = resultsSnap.val() || {};
     const users = usersSnap.val() || {};
     const classes = classesSnap.val() || {};
+    const dirs = dirsSnap.val() || {};
     const teachers = Object.values(users).filter(u => u.role === 'teacher').length;
     el.innerHTML = `
       <span>📚 Тестов: <b>${Object.keys(tests).length}</b></span>
+      <span>🎯 Направлений: <b>${Object.keys(dirs).length}</b></span>
       <span>👥 Классов: <b>${Object.keys(classes).length}</b></span>
       <span>👨‍🏫 Учителей: <b>${teachers}</b></span>
       <span>🎫 Сессий: <b>${Object.keys(sessions).length}</b></span>
@@ -1571,6 +1618,7 @@ async function renderDeveloperMetrics() {
   } catch (e) { el.innerHTML = `<span>Ошибка: ${escapeHtml(e.message)}</span>`; }
 }
 
+/* ============ ТЕСТЫ ============ */
 function renderDeveloperTestsList() {
   const el = document.getElementById('testsManageArea');
   if (!el) return;
@@ -1615,39 +1663,150 @@ function renderDeveloperTestsList() {
   });
 }
 
-/* ============ КЛАССЫ ============ */
-async function renderClassesList() {
-  const el = document.getElementById('classesArea');
+/* ============ НАПРАВЛЕНИЯ ============ */
+async function renderDirectionsList() {
+  const el = document.getElementById('directionsArea');
   if (!el) return;
   if (Object.keys(teachersUsersCache).length === 0) {
     try { await loadTeachersData(); } catch (e) {}
   }
-  const classes = Object.entries(classesCache);
-  if (classes.length === 0) { el.innerHTML = `<p class="hint">Классов пока нет.</p>`; return; }
+  const dirs = Object.entries(directionsCache);
+  if (dirs.length === 0) { el.innerHTML = `<p class="hint">Направлений пока нет. Создайте первое направление — например, «БПЛА» или «Робототехника».</p>`; return; }
 
-  el.innerHTML = `<div class="class-list">${classes.map(([id, c]) => {
-    const teacherNames = (Array.isArray(c.teachers) ? c.teachers : [])
+  el.innerHTML = `<div class="class-list">${dirs.map(([id, d]) => {
+    const teacherNames = (Array.isArray(d.teachers) ? d.teachers : [])
       .map(uid => teachersUsersCache[uid]?.name || teachersUsersCache[uid]?.email)
       .filter(Boolean);
-    const testTitles = (Array.isArray(c.tests) ? c.tests : [])
-      .map(tid => testsCache[tid]?.title)
-      .filter(Boolean);
-    const studentCount = (c.students || []).length;
+    const classCount = getClassesByDirection(id).length;
     return `
       <div class="class-card">
         <div class="cc-head">
-          <div class="cc-name">${escapeHtml(c.name)}</div>
-          ${studentCount > 0 ? `<div class="cc-count">${studentCount} уч.</div>` : ''}
+          <div class="cc-name">🎯 ${escapeHtml(d.name)}</div>
+          ${classCount > 0 ? `<div class="cc-count">${classCount} кл.</div>` : ''}
         </div>
-        <div class="cc-students">${studentCount > 0 ? escapeHtml((c.students || []).join(', ')) : '<i>Пусто</i>'}</div>
-        ${teacherNames.length ? `<div style="font-size:11px;color:#7c3aed;font-weight:700;margin-bottom:4px;">👨‍🏫 ${escapeHtml(teacherNames.join(', '))}</div>` : ''}
-        ${testTitles.length ? `<div style="font-size:11px;color:#16a34a;font-weight:700;margin-bottom:8px;">📚 ${escapeHtml(testTitles.join(', '))}</div>` : ''}
+        <div style="font-size:12px;color:#64748b;font-weight:700;margin-bottom:8px;">
+          ${teacherNames.length ? `👨‍🏫 ${escapeHtml(teacherNames.join(', '))}` : '<i>Учителя не назначены</i>'}
+        </div>
         <div class="cc-actions">
-          <button class="small" data-edit-class="${id}">✏ Изменить</button>
-          <button class="small danger" data-del-class="${id}">🗑</button>
+          <button class="small" data-edit-dir="${id}">✏ Изменить</button>
+          <button class="small danger" data-del-dir="${id}">🗑</button>
         </div>
       </div>`;
   }).join('')}</div>`;
+
+  el.querySelectorAll('[data-edit-dir]').forEach(b => b.onclick = () => openDirectionEditor(b.dataset.editDir, directionsCache[b.dataset.editDir]));
+  el.querySelectorAll('[data-del-dir]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.delDir;
+    const d = directionsCache[id];
+    const clsIn = getClassesByDirection(id);
+    if (clsIn.length > 0) {
+      if (!confirm(`В направлении «${d.name}» есть ${clsIn.length} класс(ов). Удалить направление и все его классы?`)) return;
+      for (const [cid] of clsIn) {
+        await window.FB.remove(window.FB.ref(window.FB.db, `classes/${cid}`));
+        delete classesCache[cid];
+      }
+    } else {
+      if (!confirm(`Удалить направление «${d.name}»?`)) return;
+    }
+    await window.FB.remove(window.FB.ref(window.FB.db, `directions/${id}`));
+    delete directionsCache[id];
+    renderDirectionsList();
+    renderClassesList();
+  });
+}
+
+async function openDirectionEditor(dirId, dirData) {
+  const isNew = !dirId;
+  const initial = dirData || { name: '', teachers: [] };
+  await loadTeachersData();
+
+  const teachers = Object.entries(teachersUsersCache)
+    .filter(([_, u]) => u && u.role === 'teacher')
+    .map(([uid, u]) => ({ uid, name: u.name || u.email || '—' }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+
+  const initialTeachers = Array.isArray(initial.teachers) ? initial.teachers : [];
+
+  const m = openModal(`<div class="modal-body">
+    <h2>${isNew ? '➕ Новое направление' : '✏ Редактирование направления'}</h2>
+    <p class="hint">Направление — тематическая группа (например, «БПЛА», «Робототехника»). В неё добавляются учителя. Затем внутри направления создаются классы.</p>
+
+    <label class="label">Название направления</label>
+    <input type="text" id="dirName" value="${escapeHtml(initial.name)}" placeholder="БПЛА">
+
+    <label class="label">👨‍🏫 Учителя направления</label>
+    <div id="dirTeachersBox" style="max-height:220px;overflow-y:auto;border:2px solid #e2e8f0;border-radius:12px;padding:10px;margin-bottom:14px;background:#fff;">
+      ${teachers.length === 0
+        ? '<p class="hint" style="margin:0;">Учителей пока нет. Создайте их в разделе «Учителя».</p>'
+        : teachers.map(t => `
+          <label style="display:flex;align-items:center;gap:8px;padding:6px 4px;cursor:pointer;font-weight:600;font-size:14px;">
+            <input type="checkbox" value="${escapeAttr(t.uid)}" ${initialTeachers.includes(t.uid) ? 'checked' : ''}
+              style="width:18px;height:18px;accent-color:var(--violet);cursor:pointer;">
+            ${escapeHtml(t.name)}
+          </label>`).join('')}
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:14px;">
+      <button id="saveDir" class="green" style="flex:1;">💾 Сохранить</button>
+      <button class="back" id="closeDir">Отмена</button>
+    </div>
+  </div>`, 600);
+
+  m.$('#closeDir').onclick = () => m.close();
+  m.$('#saveDir').onclick = async () => {
+    const name = m.$('#dirName').value.trim();
+    if (!name) { alert('Укажите название'); return; }
+    const teachersSel = Array.from(m.$$('#dirTeachersBox input[type=checkbox]:checked')).map(i => i.value);
+    const id = dirId || genId('dir');
+    const payload = { name, teachers: teachersSel, updatedAt: Date.now() };
+    if (isNew) { payload.createdAt = Date.now(); payload.createdBy = currentUser.uid; }
+    try {
+      if (isNew) await window.FB.set(window.FB.ref(window.FB.db, `directions/${id}`), payload);
+      else await window.FB.update(window.FB.ref(window.FB.db, `directions/${id}`), payload);
+      directionsCache[id] = payload;
+      renderDirectionsList();
+      renderDeveloperMetrics();
+      m.close();
+    } catch (e) { alert('Ошибка: ' + e.message); }
+  };
+}
+
+/* ============ КЛАССЫ ============ */
+async function renderClassesList() {
+  const el = document.getElementById('classesArea');
+  if (!el) return;
+  if (Object.keys(directionsCache).length === 0) {
+    try { await loadDirections(); } catch (e) {}
+  }
+  const classes = Object.entries(classesCache);
+  if (classes.length === 0) { el.innerHTML = `<p class="hint">Классов пока нет. Сначала создайте направление, потом — класс внутри него.</p>`; return; }
+
+  const byDir = {};
+  const noDir = [];
+  classes.forEach(([id, c]) => {
+    if (c.directionId && directionsCache[c.directionId]) {
+      if (!byDir[c.directionId]) byDir[c.directionId] = [];
+      byDir[c.directionId].push([id, c]);
+    } else {
+      noDir.push([id, c]);
+    }
+  });
+
+  const parts = [];
+  for (const [dirId, arr] of Object.entries(byDir)) {
+    const d = directionsCache[dirId];
+    parts.push(`<div style="margin-bottom:20px;">
+      <h3 style="font-size:14px;color:var(--violet);margin:0 0 10px;">🎯 ${escapeHtml(d.name)}</h3>
+      <div class="class-list">${arr.map(([id, c]) => classCardHTML(id, c)).join('')}</div>
+    </div>`);
+  }
+  if (noDir.length > 0) {
+    parts.push(`<div style="margin-bottom:20px;">
+      <h3 style="font-size:14px;color:var(--muted);margin:0 0 10px;">Без направления</h3>
+      <div class="class-list">${noDir.map(([id, c]) => classCardHTML(id, c)).join('')}</div>
+    </div>`);
+  }
+  el.innerHTML = parts.join('');
 
   el.querySelectorAll('[data-edit-class]').forEach(b => b.onclick = () => openClassEditor(b.dataset.editClass, classesCache[b.dataset.editClass]));
   el.querySelectorAll('[data-del-class]').forEach(b => b.onclick = async () => {
@@ -1659,14 +1818,34 @@ async function renderClassesList() {
   });
 }
 
+function classCardHTML(id, c) {
+  const testTitles = (Array.isArray(c.tests) ? c.tests : [])
+    .map(tid => testsCache[tid]?.title)
+    .filter(Boolean);
+  const studentCount = (c.students || []).length;
+  return `
+    <div class="class-card">
+      <div class="cc-head">
+        <div class="cc-name">${escapeHtml(c.name)}</div>
+        ${studentCount > 0 ? `<div class="cc-count">${studentCount} уч.</div>` : ''}
+      </div>
+      <div class="cc-students">${studentCount > 0 ? escapeHtml((c.students || []).join(', ')) : '<i>Пусто</i>'}</div>
+      ${testTitles.length ? `<div style="font-size:11px;color:#16a34a;font-weight:700;margin-bottom:8px;">📚 ${escapeHtml(testTitles.join(', '))}</div>` : '<div style="font-size:11px;color:#94a3b8;font-weight:700;margin-bottom:8px;">📚 Тесты не выбраны</div>'}
+      <div class="cc-actions">
+        <button class="small" data-edit-class="${id}">✏ Изменить</button>
+        <button class="small danger" data-del-class="${id}">🗑</button>
+      </div>
+    </div>`;
+}
+
 async function openClassEditor(classId, classData) {
   const isNew = !classId;
-  const initial = classData || { name: '', students: [], teachers: [], tests: [] };
-  await loadTeachersData();
+  const initial = classData || { name: '', students: [], directionId: '', tests: [] };
+  await loadDirections();
+  await loadTests();
 
-  const teachers = Object.entries(teachersUsersCache)
-    .filter(([_, u]) => u && u.role === 'teacher')
-    .map(([uid, u]) => ({ uid, name: u.name || u.email || '—' }))
+  const dirs = Object.entries(directionsCache)
+    .map(([id, d]) => ({ id, name: d.name || '—' }))
     .sort((a, b) => a.name.localeCompare(b.name, 'ru'));
 
   const tests = Object.entries(testsCache)
@@ -1674,32 +1853,25 @@ async function openClassEditor(classId, classData) {
     .map(([id, t]) => ({ id, title: t.title || '—' }))
     .sort((a, b) => a.title.localeCompare(b.title, 'ru'));
 
-  const initialTeachers = Array.isArray(initial.teachers) ? initial.teachers : [];
   const initialTests = Array.isArray(initial.tests) ? initial.tests : [];
 
   const m = openModal(`<div class="modal-body">
-    <h2>${isNew ? '➕ Новый класс' : '✏ Редактирование'}</h2>
+    <h2>${isNew ? '➕ Новый класс' : '✏ Редактирование класса'}</h2>
 
-    <label class="label">Название</label>
+    <label class="label">Название класса</label>
     <input type="text" id="className" value="${escapeHtml(initial.name)}" placeholder="10А">
+
+    <label class="label">🎯 Направление</label>
+    <select id="classDirection">
+      <option value="">— Без направления —</option>
+      ${dirs.map(d => `<option value="${escapeAttr(d.id)}" ${initial.directionId === d.id ? 'selected' : ''}>${escapeHtml(d.name)}</option>`).join('')}
+    </select>
 
     <label class="label">Ученики (по одному в строке)</label>
     <textarea id="classStudents" style="min-height:130px;">${escapeHtml((initial.students || []).join('\n'))}</textarea>
 
-    <label class="label">👨‍🏫 Учителя (кто ведёт этот класс)</label>
-    <div id="classTeachersBox" style="max-height:180px;overflow-y:auto;border:2px solid #e2e8f0;border-radius:12px;padding:10px;margin-bottom:14px;background:#fff;">
-      ${teachers.length === 0
-        ? '<p class="hint" style="margin:0;">Учителей пока нет. Создайте их в разделе «Учителя».</p>'
-        : teachers.map(t => `
-          <label style="display:flex;align-items:center;gap:8px;padding:6px 4px;cursor:pointer;font-weight:600;font-size:14px;">
-            <input type="checkbox" value="${escapeAttr(t.uid)}" ${initialTeachers.includes(t.uid) ? 'checked' : ''}
-              style="width:18px;height:18px;accent-color:var(--violet);cursor:pointer;">
-            ${escapeHtml(t.name)}
-          </label>`).join('')}
-    </div>
-
     <label class="label">📚 Тесты для этого класса</label>
-    <div id="classTestsBox" style="max-height:180px;overflow-y:auto;border:2px solid #e2e8f0;border-radius:12px;padding:10px;margin-bottom:14px;background:#fff;">
+    <div id="classTestsBox" style="max-height:220px;overflow-y:auto;border:2px solid #e2e8f0;border-radius:12px;padding:10px;margin-bottom:14px;background:#fff;">
       ${tests.length === 0
         ? '<p class="hint" style="margin:0;">Опубликованных тестов пока нет.</p>'
         : tests.map(t => `
@@ -1710,7 +1882,7 @@ async function openClassEditor(classId, classData) {
           </label>`).join('')}
     </div>
 
-    <p class="hint" style="margin-top:-4px;">Если ни один тест не выбран — учителю будут доступны все опубликованные тесты.</p>
+    <p class="hint" style="margin-top:-4px;">Если тесты не выбраны — учителю будут доступны все опубликованные тесты.</p>
 
     <div style="display:flex;gap:10px;margin-top:14px;">
       <button id="saveClass" class="green" style="flex:1;">💾 Сохранить</button>
@@ -1722,17 +1894,24 @@ async function openClassEditor(classId, classData) {
   m.$('#saveClass').onclick = async () => {
     const name = m.$('#className').value.trim();
     if (!name) { alert('Укажите название'); return; }
+    const directionId = m.$('#classDirection').value || null;
     const students = m.$('#classStudents').value.split('\n').map(s => s.trim()).filter(s => s.length > 0);
-    const teachersSel = Array.from(m.$$('#classTeachersBox input[type=checkbox]:checked')).map(i => i.value);
     const testsSel = Array.from(m.$$('#classTestsBox input[type=checkbox]:checked')).map(i => i.value);
     const id = classId || genId('cls');
-    const payload = { name, students, teachers: teachersSel, tests: testsSel, updatedAt: Date.now() };
+    const payload = { name, students, tests: testsSel, updatedAt: Date.now() };
+    if (directionId) payload.directionId = directionId;
     if (isNew) { payload.createdAt = Date.now(); payload.createdBy = currentUser.uid; }
     try {
       if (isNew) await window.FB.set(window.FB.ref(window.FB.db, `classes/${id}`), payload);
-      else await window.FB.update(window.FB.ref(window.FB.db, `classes/${id}`), payload);
-      classesCache[id] = payload;
+      else {
+        if (!directionId) payload.directionId = null;
+        await window.FB.update(window.FB.ref(window.FB.db, `classes/${id}`), payload);
+      }
+      const cached = { ...payload };
+      if (!directionId) delete cached.directionId;
+      classesCache[id] = { ...(classesCache[id] || {}), ...cached };
       renderClassesList();
+      renderDeveloperMetrics();
       m.close();
     } catch (e) { alert('Ошибка: ' + e.message); }
   };
@@ -1759,18 +1938,15 @@ async function renderTeachersList() {
   const teachers = Object.entries(teachersUsersCache).filter(([_, u]) => u && u.role === 'teacher').map(([uid, u]) => ({ uid, ...u }));
   if (teachers.length === 0) { el.innerHTML = `<p class="hint">Учителей нет.</p>`; return; }
   const stats = {};
-  teachers.forEach(t => stats[t.uid] = { sessionsTotal: 0, studentsTotal: 0, resultsTotal: 0, avgScore: 0, lastActivityAt: 0 });
+  teachers.forEach(t => stats[t.uid] = { sessionsTotal: 0, resultsTotal: 0, avgScore: 0 });
   Object.values(teachersStatsCache.sessions).forEach(s => {
     if (!s || !s.teacherId || !stats[s.teacherId]) return;
     stats[s.teacherId].sessionsTotal++;
-    stats[s.teacherId].studentsTotal += Object.keys(s.students || {}).length;
-    if (s.createdAt > stats[s.teacherId].lastActivityAt) stats[s.teacherId].lastActivityAt = s.createdAt;
   });
   Object.values(teachersStatsCache.results).forEach(r => {
     if (!r || !r.teacherId || !stats[r.teacherId]) return;
     stats[r.teacherId].resultsTotal++;
     stats[r.teacherId]._s = (stats[r.teacherId]._s || 0) + (r.score || 0);
-    if (r.timestamp > stats[r.teacherId].lastActivityAt) stats[r.teacherId].lastActivityAt = r.timestamp;
   });
   Object.keys(stats).forEach(uid => {
     stats[uid].avgScore = stats[uid].resultsTotal > 0 ? round1((stats[uid]._s || 0) / stats[uid].resultsTotal) : 0;
@@ -1780,6 +1956,7 @@ async function renderTeachersList() {
     ${teachers.map(t => {
       const st = stats[t.uid];
       const initials = (String(t.name || t.email || '?')[0] || '?').toUpperCase();
+      const myDirs = getTeacherDirections(t.uid).map(([_, d]) => d.name).filter(Boolean);
       return `<div class="student-card" style="padding:16px;">
         <div style="display:flex;gap:10px;margin-bottom:10px;">
           <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a855f7);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:18px;">${initials}</div>
@@ -1802,6 +1979,7 @@ async function renderTeachersList() {
             <div style="font-size:9px;color:#64748b;font-weight:800;">СР. БАЛЛ</div>
           </div>
         </div>
+        ${myDirs.length ? `<div style="font-size:11px;color:#7c3aed;font-weight:700;margin-bottom:8px;">🎯 ${escapeHtml(myDirs.join(', '))}</div>` : ''}
         <button class="small danger" data-teacher-del="${t.uid}" style="width:100%;">🗑 Удалить профиль</button>
       </div>`;
     }).join('')}
@@ -1814,16 +1992,15 @@ async function renderTeachersList() {
       await window.FB.remove(window.FB.ref(window.FB.db, `teacher_lookup/${nameLookupKey(t.name)}`)).catch(() => {});
     }
     try {
-      const clsSnap = await window.FB.get(window.FB.ref(window.FB.db, 'classes'));
-      const cls = clsSnap.val() || {};
-      for (const [cid, c] of Object.entries(cls)) {
-        if (Array.isArray(c.teachers) && c.teachers.includes(uid)) {
-          const newT = c.teachers.filter(x => x !== uid);
-          await window.FB.update(window.FB.ref(window.FB.db, `classes/${cid}`), { teachers: newT });
-          if (classesCache[cid]) classesCache[cid].teachers = newT;
+      await loadDirections();
+      for (const [did, d] of Object.entries(directionsCache)) {
+        if (Array.isArray(d.teachers) && d.teachers.includes(uid)) {
+          const newT = d.teachers.filter(x => x !== uid);
+          await window.FB.update(window.FB.ref(window.FB.db, `directions/${did}`), { teachers: newT });
+          if (directionsCache[did]) directionsCache[did].teachers = newT;
         }
       }
-    } catch (e) { console.warn('cleanup teacher from classes:', e); }
+    } catch (e) { console.warn('cleanup teacher from directions:', e); }
     await window.FB.remove(window.FB.ref(window.FB.db, `users/${uid}`));
     renderTeachersList();
   });
@@ -1851,8 +2028,8 @@ function openCreateTeacherModal() {
     </div>
 
     <div class="anti-cheat-note" style="margin-top:14px;">
-      ⚠️ На указанный email придёт письмо для смены пароля.<br>
-      Учитель входит по адресу <code>?mode=teacher</code> — по <b>ИО</b> и паролю.
+      ⚠️ Учитель входит по адресу <code>?mode=teacher</code> — по <b>ИО</b> и паролю.<br>
+      Не забудьте добавить его в нужное <b>Направление</b>.
     </div>
   </div>`, 560);
 
@@ -1891,12 +2068,9 @@ function openCreateTeacherModal() {
       catch (mailErr) { console.warn('Не удалось отправить письмо:', mailErr); }
 
       m.close();
-      alert(
-        `✅ Учитель создан!\n\nИмя: ${name}\nEmail: ${email}\nПароль: ${pass}\n\n` +
+      alert(`✅ Учитель создан!\n\nИмя: ${name}\nEmail: ${email}\nПароль: ${pass}\n\n` +
         `Вход: ?mode=teacher\nЛогин: ввести ИО «${name}»\n\n` +
-        (emailSent ? `📧 На почту отправлено письмо для установки своего пароля.\n\n`
-                   : `⚠️ Письмо отправить не удалось. Передайте пароль лично.\n\n`)
-      );
+        (emailSent ? `📧 На почту отправлено письмо для смены пароля.` : `⚠️ Письмо отправить не удалось.`));
       renderTeachersList();
       renderDeveloperMetrics();
     } catch (e) {
@@ -1912,7 +2086,7 @@ function openCreateTeacherModal() {
 }
 
 /* ==================================================================
-   РЕДАКТОР ТЕСТА
+   РЕДАКТОР ТЕСТА (без изменений)
    ================================================================== */
 function openTestEditor(testId, testData) {
   const isNew = !testId;
@@ -2460,37 +2634,66 @@ async function cleanupOldSessions() {
 }
 
 /* ==================================================================
-   УЧИТЕЛЬ: КАБИНЕТ
+   УЧИТЕЛЬ: КАБИНЕТ — с выбором направления
    ================================================================== */
 async function renderTeacherHome() {
   clearAllUnsubs();
   if (!currentUser || currentUser.role !== 'teacher') { renderAuth('teacher'); return; }
   document.body.style.padding = '';
-  await loadTests();
-  await loadClasses();
+  await Promise.all([loadTests(), loadDirections(), loadClasses()]);
   document.body.className = 'theme-teacher';
 
-  const myClasses = Object.entries(classesCache).filter(([_, c]) => {
-    if (!Array.isArray(c.teachers) || c.teachers.length === 0) return true;
-    return c.teachers.includes(currentUser.uid);
-  });
+  const myDirs = getTeacherDirections(currentUser.uid);
+  const hasDirs = myDirs.length > 0;
 
-  const publishedTests = Object.entries(testsCache).filter(([_, t]) => !t.status || t.status === 'published');
-  const allTestsOptions = publishedTests.length === 0
-    ? `<option value="">— Нет доступных тестов —</option>`
-    : publishedTests.map(([id, t]) => `<option value="${id}">${escapeHtml(t.title.slice(0, 70))} · макс ${formatScore(getMaxScore(t))} б.</option>`).join('');
+  let directionSelectorHTML = '';
+  if (hasDirs) {
+    if (myDirs.length > 1) {
+      directionSelectorHTML = `
+        <div class="select-wrap" style="margin-bottom:14px;">
+          <label style="display:block;color:#fff;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">🎯 Направление</label>
+          <select id="newSessionDirection">
+            ${myDirs.map(([id, d]) => `<option value="${escapeAttr(id)}">${escapeHtml(d.name)}</option>`).join('')}
+          </select>
+        </div>`;
+    } else {
+      directionSelectorHTML = `<input type="hidden" id="newSessionDirection" value="${escapeAttr(myDirs[0][0])}">`;
+    }
+  } else {
+    directionSelectorHTML = `<input type="hidden" id="newSessionDirection" value="">`;
+  }
 
-  const classOptions = `<option value="">Без класса</option>` +
-    myClasses.map(([id, c]) => `<option value="${id}">${escapeHtml(c.name)}${(c.students || []).length > 0 ? ` (${(c.students || []).length} уч.)` : ''}</option>`).join('');
+  function computeClassesForDirection(dirId) {
+    if (!dirId) {
+      const noDir = getClassesWithoutDirection();
+      if (noDir.length > 0) return noDir;
+      return Object.entries(classesCache);
+    }
+    return getClassesByDirection(dirId);
+  }
+
+  const initialDirId = hasDirs ? myDirs[0][0] : '';
+  const initialClasses = computeClassesForDirection(initialDirId);
+
+  const classOptions = initialClasses.length === 0
+    ? `<option value="">— Нет классов —</option>`
+    : `<option value="">Без класса</option>` + initialClasses.map(([id, c]) =>
+        `<option value="${id}">${escapeHtml(c.name)}${(c.students || []).length > 0 ? ` (${(c.students || []).length} уч.)` : ''}</option>`
+      ).join('');
 
   app.innerHTML = `
     ${renderTopNav('teacher', 'sessions')}
     <h1 style="font-size:22px;">👨‍🏫 Кабинет учителя</h1>
     <div class="big-action">
       <h2>🚀 Запустить тест</h2>
-      <p>Выберите режим: <b>🏠 Лобби</b> — все ждут и стартуем вместе, <b>👤 Индивидуальный</b> — каждый проходит сам.</p>
-      <div class="select-wrap"><select id="newSessionClass">${classOptions}</select></div>
-      <div class="select-wrap" style="margin-top:-6px;"><select id="newSessionTest">${allTestsOptions}</select></div>
+      <p>${hasDirs ? (myDirs.length > 1 ? 'Выберите направление, затем класс и тест.' : 'Выберите класс и тест.') : 'Выберите класс и тест.'}</p>
+      ${directionSelectorHTML}
+      <div class="select-wrap">
+        <select id="newSessionClass">${classOptions}</select>
+      </div>
+      <div class="select-wrap" style="margin-top:-6px;">
+        <select id="newSessionTest"><option value="">— Выберите класс —</option></select>
+      </div>
       <div class="select-wrap">
         <select id="newSessionMode">
           <option value="lobby">🏠 Лобби — ждём всех, стартуем вместе</option>
@@ -2513,23 +2716,42 @@ async function renderTeacherHome() {
 
   bindTopNav();
 
-  const modeSel = document.getElementById('newSessionMode');
-  const autoWrap = document.getElementById('autoWrap');
-  modeSel.onchange = () => { autoWrap.style.display = modeSel.value === 'lobby' ? 'block' : 'none'; };
-
+  const dirSel = document.getElementById('newSessionDirection');
   const classSel = document.getElementById('newSessionClass');
   const testSel = document.getElementById('newSessionTest');
-  classSel.onchange = () => {
+  const modeSel = document.getElementById('newSessionMode');
+  const autoWrap = document.getElementById('autoWrap');
+
+  modeSel.onchange = () => { autoWrap.style.display = modeSel.value === 'lobby' ? 'block' : 'none'; };
+
+  function refreshClassList() {
+    const dirId = dirSel ? dirSel.value : '';
+    const cls = computeClassesForDirection(dirId);
+    classSel.innerHTML = cls.length === 0
+      ? `<option value="">— Нет классов —</option>`
+      : `<option value="">Без класса</option>` + cls.map(([id, c]) =>
+          `<option value="${id}">${escapeHtml(c.name)}${(c.students || []).length > 0 ? ` (${(c.students || []).length} уч.)` : ''}</option>`
+        ).join('');
+    testSel.innerHTML = `<option value="">— Выберите класс —</option>`;
+  }
+
+  function refreshTestList() {
     const cid = classSel.value;
-    if (!cid) { testSel.innerHTML = allTestsOptions; return; }
+    if (!cid) { testSel.innerHTML = `<option value="">— Выберите класс —</option>`; return; }
     const cls = classesCache[cid];
     const allowed = (cls && Array.isArray(cls.tests)) ? cls.tests : [];
-    if (allowed.length === 0) { testSel.innerHTML = allTestsOptions; return; }
-    const filtered = publishedTests.filter(([id]) => allowed.includes(id));
+    const published = Object.entries(testsCache).filter(([_, t]) => !t.status || t.status === 'published');
+    const filtered = allowed.length > 0
+      ? published.filter(([id]) => allowed.includes(id))
+      : published;
     testSel.innerHTML = filtered.length === 0
-      ? `<option value="">— Нет тестов для этого класса —</option>`
+      ? `<option value="">— Нет тестов —</option>`
       : filtered.map(([id, t]) => `<option value="${id}">${escapeHtml(t.title.slice(0, 70))} · макс ${formatScore(getMaxScore(t))} б.</option>`).join('');
-  };
+  }
+
+  if (dirSel) dirSel.onchange = refreshClassList;
+  classSel.onchange = refreshTestList;
+  if (initialClasses.length > 0) refreshTestList();
 
   onClick('createSessionBtn', createSession);
   try { cleanupOldSessions(); } catch (e) {}
@@ -2538,10 +2760,12 @@ async function renderTeacherHome() {
 
 async function createSession() {
   const testId = document.getElementById('newSessionTest').value;
-  if (!testId) { alert('Нет доступных тестов.'); return; }
+  if (!testId) { alert('Выберите класс и тест.'); return; }
   const test = testsCache[testId];
   const classId = document.getElementById('newSessionClass').value || null;
   const cls = classId ? classesCache[classId] : null;
+  const dirId = document.getElementById('newSessionDirection')?.value || '';
+  const dir = dirId ? directionsCache[dirId] : null;
   const sessionMode = document.getElementById('newSessionMode').value;
   const autoAdvance = sessionMode === 'lobby' && document.getElementById('newSessionAuto').value === 'auto';
   const code = genSessionCode();
@@ -2557,6 +2781,7 @@ async function createSession() {
       testQuestionCount: (test.questions || []).length
     };
     if (classId) { payload.classId = classId; payload.className = cls?.name || ''; }
+    if (dirId && dir) { payload.directionId = dirId; payload.directionName = dir.name || ''; }
     await window.FB.set(window.FB.ref(window.FB.db, `sessions/${code}`), payload);
     location.href = `?mode=teacher&session=${code}`;
   } catch (e) { alert('Не удалось создать: ' + e.message); }
@@ -2581,6 +2806,7 @@ async function renderTeacherSession() {
   clearAllUnsubs();
   if (autoAdvanceInterval) { clearInterval(autoAdvanceInterval); autoAdvanceInterval = null; }
   if (!currentUser || currentUser.role !== 'teacher') { renderAuth('teacher'); return; }
+  document.body.style.padding = '';
   document.body.className = 'theme-teacher';
   const code = sessionCode;
   const snap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
@@ -2891,9 +3117,6 @@ function renderTeacherPanel(s, test, code) {
       <p style="text-align:center;font-size:13px;color:#64748b;margin-top:14px;font-weight:600;">
         ${waiting > 0 ? `📖 Читают вводный текст: ${waiting}` : 'Все приступили к тесту'}
         ${terminated > 0 ? `<br><b style="color:#ef4444;">🚫 Прервано античитом: ${terminated}</b>` : ''}
-      </p>
-      <p style="text-align:center;font-size:12px;color:#94a3b8;margin-top:6px;">
-        Каждый ученик проходит сам. Кнопки управления не нужны.
       </p>`;
     return;
   }
@@ -3084,7 +3307,7 @@ function renderTeacherStudentsList(s, test) {
 }
 
 /* ==================================================================
-   УЧЕНИК: ВВОД КОДА
+   УЧЕНИК: ВВОД КОДА + СЕССИЯ
    ================================================================== */
 function renderStudentEnterCode() {
   clearAllUnsubs();
@@ -3124,9 +3347,6 @@ function renderStudentEnterCode() {
   };
 }
 
-/* ==================================================================
-   УЧЕНИК: СЕССИЯ
-   ================================================================== */
 async function renderStudentSession() {
   clearAllUnsubs();
   document.body.className = 'theme-student';
@@ -3195,6 +3415,7 @@ async function renderStudentSession() {
     const maxScore = getMaxScore(test);
     const isIndividual = s.mode === 'individual';
     const classInfo = s.classId ? `<p class="student-sub" style="color:#7c3aed;">Класс: <b>${escapeHtml(s.className || '')}</b></p>` : '';
+    const dirInfo = s.directionName ? `<p class="student-sub" style="color:#7c3aed;">Направление: <b>${escapeHtml(s.directionName)}</b></p>` : '';
     const modeNote = isIndividual
       ? `<div style="text-align:center;margin-bottom:14px;"><span class="badge" style="background:#fce7f3;color:#be185d;">👤 Индивидуальный режим</span></div>`
       : `<div style="text-align:center;margin-bottom:14px;"><span class="badge" style="background:#dbeafe;color:#1d4ed8;">🏠 Режим Лобби</span></div>`;
@@ -3204,6 +3425,7 @@ async function renderStudentSession() {
         <div class="student-card-hero">
           <h1 class="student-title">${escapeHtml(test.title)}</h1>
           <p class="student-sub">Код сессии: <b style="color:#10b981;">${code}</b></p>
+          ${dirInfo}
           ${classInfo}
           ${modeNote}
           <label>Имя</label>
@@ -3362,7 +3584,7 @@ function renderStudentScreen(s, code) {
   if (phase === 'lobby' || myRec.status === 'waiting') {
     sss.innerHTML = topbar + `
       <div class="sss-hero">
-        <div style="font-size:64px;margin-bottom:12px;animation:pulse 2s infinite;">⏳</div>
+        <div style="font-size:64px;margin-bottom:12px;">⏳</div>
         <h2 style="color:var(--violet);margin:0 0 8px;">Ожидаем учителя</h2>
         <p style="color:var(--muted);font-weight:600;">Тест начнётся, как только учитель запустит первый вопрос</p>
         <div class="waiting-dots" style="margin-top:18px;"><span></span><span></span><span></span></div>
@@ -3706,6 +3928,7 @@ function openModal(innerHTML, maxWidth, wide) {
 /* ============ ЗАПУСК ============ */
 function boot() {
   loadTests();
+  loadDirections();
   if (mode === 'developer') {
     document.body.className = 'theme-developer';
     window.FB.auth.onAuthStateChanged(async (user) => {
