@@ -984,6 +984,7 @@ function renderTopNav(role, active) {
       ${role === 'developer' ? `
         <button data-nav="tests" class="${active==='tests'?'active':''}">📚 Тесты</button>
         <button data-nav="classes" class="${active==='classes'?'active':''}">👥 Классы</button>
+        <button data-nav="teachers" class="${active==='teachers'?'active':''}">👨‍🏫 Учителя</button>
       ` : `
         <button data-nav="sessions" class="${active==='sessions'?'active':''}">🎫 Мои тесты</button>
       `}
@@ -1009,8 +1010,12 @@ function bindTopNav() {
     b.onclick = () => {
       const nav = b.dataset.nav;
       if (nav === 'help') { openHelpChat(); return; }
-      const el = document.getElementById(nav === 'tests' ? 'testsPanel' : nav === 'classes' ? 'classesPanel' : 'sessionsList');
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            const el = document.getElementById(
+        nav === 'tests' ? 'testsPanel'
+        : nav === 'classes' ? 'classesPanel'
+        : nav === 'teachers' ? 'teachersPanel'
+        : 'sessionsList'
+      );
     };
   });
 }
@@ -1152,18 +1157,7 @@ async function renderDeveloperHome() {
     <h1 style="font-size:22px;">🛠 Панель разработчика</h1>
     <div class="kpi-line" id="metricsLine"><span><span class="loading-spinner"></span>Загрузка…</span></div>
 
-    <div class="panel" id="testsPanel">
-      <div class="panel-head">
-        <h3>📚 Управление тестами</h3>
-        <div class="summary-actions" style="margin:0;">
-          <button id="addTestBtn" class="green">➕ Новый тест</button>
-          <button id="refreshTestsBtn" class="refresh">🔄 Обновить</button>
-        </div>
-      </div>
-      <div id="testsManageArea"><p class="hint"><span class="loading-spinner"></span>Загрузка…</p></div>
-    </div>
-
-    <div class="panel" id="classesPanel">
+        <div class="panel" id="classesPanel">
       <div class="panel-head">
         <h3>👥 Классы</h3>
         <div class="summary-actions" style="margin:0;">
@@ -1172,6 +1166,17 @@ async function renderDeveloperHome() {
         </div>
       </div>
       <div id="classesArea"><p class="hint"><span class="loading-spinner"></span>Загрузка…</p></div>
+    </div>
+
+    <div class="panel" id="teachersPanel">
+      <div class="panel-head">
+        <h3>👨‍🏫 Учителя и их статистика</h3>
+        <div class="summary-actions" style="margin:0;">
+          <button id="addTeacherBtn" class="green">➕ Создать учителя</button>
+          <button id="refreshTeachersBtn" class="refresh">🔄 Обновить</button>
+        </div>
+      </div>
+      <div id="teachersArea"><p class="hint"><span class="loading-spinner"></span>Загрузка…</p></div>
     </div>
 
     <div class="panel">
@@ -1196,6 +1201,8 @@ async function renderDeveloperHome() {
   document.getElementById('refreshTestsBtn').onclick = async () => { await loadTests(); renderDeveloperTestsList(); };
   document.getElementById('addClassBtn').onclick = () => openClassEditor(null);
   document.getElementById('refreshClassesBtn').onclick = async () => { await loadClasses(); renderClassesList(); };
+  document.getElementById('addTeacherBtn').onclick = () => openCreateTeacherModal();
+  document.getElementById('refreshTeachersBtn').onclick = () => renderTeachersList();
   document.getElementById('exportSchoolBtn').onclick = exportWholeSchool;
   document.getElementById('clearOldResultsBtn').onclick = clearOldResults;
   document.getElementById('clearAllResultsBtn').onclick = clearAllResults;
@@ -1204,6 +1211,7 @@ async function renderDeveloperHome() {
   renderDeveloperMetrics();
   renderDeveloperTestsList();
   renderClassesList();
+  renderTeachersList();
   subscribeAllSessions();
   subscribeAllResults();
 }
@@ -1327,6 +1335,314 @@ function openClassEditor(classId, classData) {
 }
 
 /* ============ РЕДАКТОР ТЕСТА ============ */
+
+/* ============ УЧИТЕЛЯ: список + статистика + создание ============ */
+
+// Кэш для учителей и результатов (для статистики)
+let teachersUsersCache = {};
+let teachersStatsCache = { sessions: {}, results: {} };
+
+async function loadTeachersData() {
+  try {
+    const [usersSnap, sessionsSnap, resultsSnap] = await Promise.all([
+      window.FB.get(window.FB.ref(window.FB.db, 'users')),
+      window.FB.get(window.FB.ref(window.FB.db, 'sessions')),
+      window.FB.get(window.FB.ref(window.FB.db, 'results'))
+    ]);
+    teachersUsersCache = usersSnap.val() || {};
+    teachersStatsCache.sessions = sessionsSnap.val() || {};
+    teachersStatsCache.results = resultsSnap.val() || {};
+  } catch (e) {
+    console.error('loadTeachersData:', e);
+    teachersUsersCache = {};
+    teachersStatsCache = { sessions: {}, results: {} };
+  }
+}
+
+async function renderTeachersList() {
+  const el = document.getElementById('teachersArea');
+  if (!el) return;
+  el.innerHTML = `<p class="hint"><span class="loading-spinner"></span>Загрузка статистики…</p>`;
+
+  await loadTeachersData();
+
+  const users = teachersUsersCache;
+  const teachers = Object.entries(users)
+    .filter(([_, u]) => u && u.role === 'teacher')
+    .map(([uid, u]) => ({ uid, ...u }));
+
+  if (teachers.length === 0) {
+    el.innerHTML = `<p class="hint">Учителей пока нет. Нажмите «Создать учителя».</p>`;
+    return;
+  }
+
+  // Считаем статистику по каждому учителю
+  const sessions = teachersStatsCache.sessions || {};
+  const results = teachersStatsCache.results || {};
+
+  const stats = {};
+  teachers.forEach(t => {
+    stats[t.uid] = {
+      sessionsTotal: 0,
+      sessionsActive: 0,
+      studentsTotal: 0,
+      resultsTotal: 0,
+      avgScore: 0,
+      lastActivityAt: 0
+    };
+  });
+
+  // Сессии
+  Object.values(sessions).forEach(s => {
+    if (!s || !s.teacherId) return;
+    if (!stats[s.teacherId]) return;
+    stats[s.teacherId].sessionsTotal++;
+    if (s.status === 'active') stats[s.teacherId].sessionsActive++;
+    const studentCount = Object.keys(s.students || {}).length;
+    stats[s.teacherId].studentsTotal += studentCount;
+    if (s.createdAt && s.createdAt > stats[s.teacherId].lastActivityAt) {
+      stats[s.teacherId].lastActivityAt = s.createdAt;
+    }
+  });
+
+  // Результаты
+  Object.values(results).forEach(r => {
+    if (!r || !r.teacherId) return;
+    if (!stats[r.teacherId]) return;
+    stats[r.teacherId].resultsTotal++;
+    stats[r.teacherId]._sumScore = (stats[r.teacherId]._sumScore || 0) + (r.score || 0);
+    if (r.timestamp && r.timestamp > stats[r.teacherId].lastActivityAt) {
+      stats[r.teacherId].lastActivityAt = r.timestamp;
+    }
+  });
+
+  // Средний балл
+  Object.keys(stats).forEach(uid => {
+    const st = stats[uid];
+    st.avgScore = st.resultsTotal > 0 ? Math.round((st._sumScore || 0) / st.resultsTotal) : 0;
+    delete st._sumScore;
+  });
+
+  // Сортируем: сначала активные, потом по email
+  teachers.sort((a, b) => {
+    const aAct = stats[a.uid].lastActivityAt || 0;
+    const bAct = stats[b.uid].lastActivityAt || 0;
+    return bAct - aAct;
+  });
+
+  el.innerHTML = `
+    <div class="students-grid" style="grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));">
+      ${teachers.map(t => {
+        const st = stats[t.uid];
+        const initials = (String(t.email || '?')[0] || '?').toUpperCase();
+        const lastAct = st.lastActivityAt ? formatDate(st.lastActivityAt) : '—';
+        return `
+          <div class="student-card" style="padding:16px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+              <div style="width:44px;height:44px;border-radius:50%;
+                background:linear-gradient(135deg,#7c3aed,#a855f7);
+                display:flex;align-items:center;justify-content:center;
+                color:#fff;font-weight:900;font-size:18px;flex-shrink:0;">${initials}</div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-weight:800;color:var(--ink);font-size:14px;
+                  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+                  title="${escapeHtml(t.email || '')}">${escapeHtml(t.email || '—')}</div>
+                <div style="font-size:11px;color:var(--muted);font-weight:700;margin-top:2px;">
+                  ${t.role === 'teacher' ? '👨‍🏫 Учитель' : escapeHtml(t.role || '')}
+                  ${t.createdAt ? ' · с ' + formatDateShort(t.createdAt) : ''}
+                </div>
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+              <div style="background:#f8fafc;border-radius:10px;padding:8px 10px;text-align:center;">
+                <div style="font-size:20px;font-weight:900;color:var(--violet);line-height:1;">${st.sessionsTotal}</div>
+                <div style="font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:0.05em;margin-top:3px;">Сессий</div>
+              </div>
+              <div style="background:#f8fafc;border-radius:10px;padding:8px 10px;text-align:center;">
+                <div style="font-size:20px;font-weight:900;color:var(--green);line-height:1;">${st.resultsTotal}</div>
+                <div style="font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:0.05em;margin-top:3px;">Прохождений</div>
+              </div>
+              <div style="background:#f8fafc;border-radius:10px;padding:8px 10px;text-align:center;">
+                <div style="font-size:20px;font-weight:900;color:var(--blue);line-height:1;">${st.studentsTotal}</div>
+                <div style="font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:0.05em;margin-top:3px;">Учеников</div>
+              </div>
+              <div style="background:#f8fafc;border-radius:10px;padding:8px 10px;text-align:center;">
+                <div style="font-size:20px;font-weight:900;color:var(--yellow);line-height:1;">${st.avgScore}</div>
+                <div style="font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:0.05em;margin-top:3px;">Ср. балл</div>
+              </div>
+            </div>
+
+            ${st.sessionsActive > 0
+              ? `<div style="font-size:11px;font-weight:800;color:#10b981;margin-bottom:6px;">● ${st.sessionsActive} активных сессий</div>`
+              : ''}
+
+            <div style="font-size:11px;color:#94a3b8;font-weight:600;margin-bottom:10px;">
+              Последняя активность: ${lastAct}
+            </div>
+
+            <div style="display:flex;gap:6px;">
+              <button class="small back" data-teacher-view="${t.uid}" style="flex:1;">📊 Детали</button>
+              <button class="small danger" data-teacher-del="${t.uid}" title="Удалить из базы">🗑</button>
+            </div>
+          </div>`;
+      }).join('')}
+    </div>`;
+
+  el.querySelectorAll('[data-teacher-view]').forEach(b => {
+    b.onclick = () => showTeacherDetails(b.dataset.teacherView);
+  });
+  el.querySelectorAll('[data-teacher-del]').forEach(b => {
+    b.onclick = async () => {
+      const uid = b.dataset.teacherDel;
+      const t = teachers.find(x => x.uid === uid);
+      if (!confirm(`Удалить профиль учителя «${t.email}»?\n\n⚠️ Аккаунт в Firebase Auth останется, но перестанет пускать в кабинет.`)) return;
+      await window.FB.remove(window.FB.ref(window.FB.db, `users/${uid}`));
+      renderTeachersList();
+      renderDeveloperMetrics();
+    };
+  });
+}
+
+function showTeacherDetails(uid) {
+  const t = teachersUsersCache[uid];
+  if (!t) { alert('Учитель не найден'); return; }
+
+  const sessions = Object.values(teachersStatsCache.sessions || {}).filter(s => s && s.teacherId === uid);
+  const results = Object.values(teachersStatsCache.results || {}).filter(r => r && r.teacherId === uid);
+
+  const sessionsRows = sessions
+    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+    .slice(0, 20)
+    .map(s => `<tr>
+      <td>${escapeHtml(formatDate(s.createdAt || 0))}</td>
+      <td style="font-family:monospace;font-size:12px;">${escapeHtml(Object.entries(teachersStatsCache.sessions).find(([k, v]) => v === s)?.[0] || '—')}</td>
+      <td>${escapeHtml((s.testTitle || '').slice(0, 40))}</td>
+      <td style="text-align:center;">${Object.keys(s.students || {}).length}</td>
+      <td style="text-align:center;">
+        <span class="badge ${s.status === 'active' ? 'published' : 'draft'}">${s.status || '—'}</span>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:#94a3b8;">Нет сессий</td></tr>';
+
+  const resultsRows = results
+    .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+    .slice(0, 30)
+    .map(r => `<tr>
+      <td>${escapeHtml(r.date || '')}</td>
+      <td>${escapeHtml((r.testTitle || '').slice(0, 35))}</td>
+      <td>${escapeHtml(r.studentName || '')}</td>
+      <td style="text-align:center;"><b>${r.score || 0}</b></td>
+    </tr>`).join('') || '<tr><td colspan="4" style="text-align:center;color:#94a3b8;">Нет результатов</td></tr>';
+
+  const m = openModal(`<div class="modal-body">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+      <h2 style="margin:0;">👨‍🏫 ${escapeHtml(t.email || '')}</h2>
+      <button class="small back" id="tClose">Закрыть</button>
+    </div>
+
+    <div class="kpi-grid" style="grid-template-columns:repeat(4, 1fr);">
+      <div class="kpi"><div class="icon">🎫</div><div class="n">${sessions.length}</div><div class="t">Сессий</div></div>
+      <div class="kpi"><div class="icon">📈</div><div class="n">${results.length}</div><div class="t">Прохождений</div></div>
+      <div class="kpi"><div class="icon">👥</div><div class="n">${sessions.reduce((sum, s) => sum + Object.keys(s.students || {}).length, 0)}</div><div class="t">Учеников</div></div>
+      <div class="kpi"><div class="icon">⭐</div><div class="n">${results.length ? Math.round(results.reduce((s, r) => s + (r.score || 0), 0) / results.length) : 0}</div><div class="t">Ср. балл</div></div>
+    </div>
+
+    <h3 style="margin-top:20px;">🎫 Последние сессии</h3>
+    <table>
+      <thead><tr><th>Дата</th><th>Код</th><th>Тест</th><th style="width:80px;">Уч.</th><th style="width:100px;">Статус</th></tr></thead>
+      <tbody>${sessionsRows}</tbody>
+    </table>
+
+    <h3 style="margin-top:20px;">📊 Последние результаты</h3>
+    <table>
+      <thead><tr><th>Дата</th><th>Тест</th><th>Ученик</th><th style="width:70px;">Балл</th></tr></thead>
+      <tbody>${resultsRows}</tbody>
+    </table>
+  </div>`, 900);
+  m.$('#tClose').onclick = () => m.close();
+}
+
+function openCreateTeacherModal() {
+  const m = openModal(`<div class="modal-body">
+    <h2 style="margin:0 0 8px;">➕ Новый учитель</h2>
+    <p class="hint" style="margin-bottom:18px;">Аккаунт создастся в Firebase Auth. Пароль можно передать учителю лично — он потом сменит.</p>
+
+    <label class="label">Email</label>
+    <input type="email" id="newTeacherEmail" placeholder="teacher@school.ru" autocomplete="off">
+
+    <label class="label">Пароль (минимум 6 символов)</label>
+    <input type="text" id="newTeacherPass" placeholder="Временный пароль" autocomplete="off">
+
+    <label class="label">Имя (необязательно)</label>
+    <input type="text" id="newTeacherName" placeholder="Иван Петрович" autocomplete="off">
+
+    <p id="newTeacherError" style="color:#ef4444;font-size:13px;font-weight:700;min-height:18px;margin:6px 0;"></p>
+
+    <div style="display:flex;gap:10px;margin-top:14px;">
+      <button id="saveTeacher" class="green" style="flex:1;">💾 Создать аккаунт</button>
+      <button class="back" id="closeTeacher">Отмена</button>
+    </div>
+
+    <div class="anti-cheat-note" style="margin-top:14px;">
+      ⚠️ После создания учитель сможет войти на странице <code>?mode=teacher</code> со своим email и паролем.
+    </div>
+  </div>`, 560);
+
+  m.$('#closeTeacher').onclick = () => m.close();
+
+  m.$('#saveTeacher').onclick = async () => {
+    const email = m.$('#newTeacherEmail').value.trim();
+    const pass = m.$('#newTeacherPass').value;
+    const name = m.$('#newTeacherName').value.trim();
+    const err = m.$('#newTeacherError');
+    err.textContent = '';
+
+    if (!email) { err.textContent = 'Укажите email'; return; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { err.textContent = 'Некорректный email'; return; }
+    if (pass.length < 6) { err.textContent = 'Пароль минимум 6 символов'; return; }
+
+    const btn = m.$('#saveTeacher');
+    btn.disabled = true;
+    btn.textContent = 'Создаём…';
+
+    try {
+      // Создаём пользователя в Firebase Auth
+      const cred = await window.FB.createUserWithEmailAndPassword(window.FB.auth, email, pass);
+      const uid = cred.user.uid;
+
+      // Создаём профиль в БД
+      await window.FB.set(window.FB.ref(window.FB.db, `users/${uid}`), {
+        email,
+        role: 'teacher',
+        name: name || '',
+        createdAt: Date.now(),
+        createdBy: currentUser ? currentUser.uid : null
+      });
+
+      // Не разлогиниваем текущего разработчика!
+      // Firebase при createUserWithEmailAndPassword подменяет currentUser —
+      // поэтому сразу возвращаемся на dev-аккаунт нельзя, но при следующем
+      // открытии страницы разработчик войдёт заново. В рамках сессии ок.
+
+      m.close();
+      alert(`✅ Учитель создан!\n\nEmail: ${email}\nПароль: ${pass}\n\nПередайте их учителю.`);
+
+      // Обновляем список
+      renderTeachersList();
+      renderDeveloperMetrics();
+    } catch (e) {
+      const c = e && e.code;
+      if (c === 'auth/email-already-in-use') err.textContent = 'Этот email уже используется';
+      else if (c === 'auth/invalid-email') err.textContent = 'Некорректный email';
+      else if (c === 'auth/weak-password') err.textContent = 'Слишком слабый пароль';
+      else err.textContent = 'Ошибка: ' + (e.message || 'неизвестная');
+
+      btn.disabled = false;
+      btn.textContent = '💾 Создать аккаунт';
+    }
+  };
+}
+
 function openTestEditor(testId, testData) {
   const isNew = !testId;
   const initial = testData || {
