@@ -688,6 +688,7 @@ let antiCheatActive = false, antiCheatRef = null;
 let antiCheatTabSwitches = 0, antiCheatCopyAttempts = 0;
 let syncState = {}; // student's local sync state
 let syncTimerInterval = null;
+let autoAdvanceInterval = null;   // ← добавили
 
 /* ============ УТИЛИТЫ ============ */
 function shuffleArray(arr) {
@@ -2151,6 +2152,7 @@ function subscribeTeacherSessions() {
    ================================================================== */
 async function renderTeacherSession() {
   clearAllUnsubs();
+  if (autoAdvanceInterval) { clearInterval(autoAdvanceInterval); autoAdvanceInterval = null; }
   if (!currentUser || currentUser.role !== 'teacher') { renderAuth('teacher'); return; }
   document.body.className = 'theme-teacher';
   const code = sessionCode;
@@ -2204,8 +2206,9 @@ async function renderTeacherSession() {
     const results = Object.values(session.students || {}).filter(x => x.result).map(x => x.result);
     exportStudentsWorkbook(results, session.testTitle, session.testId);
   };
-  document.getElementById('closeBtn').onclick = async () => {
+   document.getElementById('closeBtn').onclick = async () => {
     if (!confirm(`Закрыть сессию ${code}?`)) return;
+    if (autoAdvanceInterval) { clearInterval(autoAdvanceInterval); autoAdvanceInterval = null; }
     await window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}`), { status: 'closed', closedAt: Date.now() });
     location.href = '?mode=teacher';
   };
@@ -2220,7 +2223,87 @@ function subscribeTeacherSessionLive(code, test) {
     renderTeacherSyncPanel(s, test, code);
     renderTeacherStudentsList(s, test);
   }));
+  // Запускаем сторожевой таймер авто-перехода
+  startAutoAdvance(code, test);
 }
+
+/* === АВТОМАТИЧЕСКИЙ ПЕРЕХОД МЕЖДУ ФАЗАМИ === */
+function startAutoAdvance(code, test) {
+  if (autoAdvanceInterval) { clearInterval(autoAdvanceInterval); autoAdvanceInterval = null; }
+
+  autoAdvanceInterval = setInterval(async () => {
+    try {
+      const snap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
+      const s = snap.val();
+      if (!s) return;
+      if (!s.autoAdvance) return;                 // режим ручной — ничего не делаем
+      if (s.status !== 'active') return;          // сессия закрыта
+      if (s.phase === 'finished' || s.phase === 'lobby') return;
+
+      const idx = typeof s.currentQuestion === 'number' ? s.currentQuestion : -1;
+
+      // ===== ФАЗА QUESTION =====
+      if (s.phase === 'question' && idx >= 0) {
+        const q = test.questions[idx];
+        if (!q) return;
+        const timeTotal = (q.time || test.timePerQuestion || TIME_PER_QUESTION) * 1000;
+        const elapsed = Date.now() - (s.questionStartedAt || 0);
+
+        // Все ли ответили?
+        const studentsArr = Object.values(s.students || {});
+        const allAnswered = studentsArr.length > 0 &&
+          studentsArr.every(st => st.answers && st.answers[idx]);
+
+        // Время вышло ИЛИ все ответили
+        if (elapsed >= timeTotal || allAnswered) {
+          // Небольшая задержка, чтобы последний ответ успел «прочитаться» UI
+          if (elapsed >= timeTotal - 200) {
+            await revealQuestion(code, idx, test);
+          }
+        }
+      }
+
+      // ===== ФАЗА RESULTS =====
+      if (s.phase === 'results') {
+        const delaySec = s.autoAdvanceDelaySec || 5;
+        const elapsed = Date.now() - (s.revealedAt || 0);
+		        // Обновляем обратный отсчёт в UI
+        const cdEl = document.getElementById('autoCountdown');
+        if (cdEl) {
+          const remain = Math.max(0, Math.ceil(delaySec - elapsed / 1000));
+          cdEl.textContent = remain;
+        }
+        if (elapsed >= delaySec * 1000) {
+          const nextIdx = idx + 1;
+          if (nextIdx < test.questions.length) {
+            await startQuestion(code, nextIdx, test);
+          } else {
+            await showLeaderboard(code);
+          }
+        }
+      }
+
+      // ===== ФАЗА LEADERBOARD =====
+      if (s.phase === 'leaderboard') {
+        const delaySec = s.autoAdvanceDelaySec || 5;
+        const elapsed = Date.now() - (s.leaderboardAt || 0);
+        if (elapsed >= delaySec * 1000) {
+          const nextIdx = idx + 1;
+          if (nextIdx < test.questions.length) {
+            await startQuestion(code, nextIdx, test);
+          } else {
+            await finishSession(code);
+          }
+        }
+      }
+    } catch (e) {
+      // Тихо игнорируем — не спамим алертами
+      console.warn('autoAdvance tick:', e);
+    }
+  }, 500);
+}
+
+
 
 function renderTeacherSyncPanel(s, test, code) {
   const phase = s.phase || 'lobby';
@@ -2311,6 +2394,12 @@ function renderTeacherSyncPanel(s, test, code) {
             </div>`;
           }).join('')}
         </div>
+        ${s.autoAdvance
+          ? `<div style="margin:14px auto;padding:10px 20px;background:#fef3c7;border-radius:12px;
+              color:#b45309;font-weight:800;font-size:15px;display:inline-block;">
+              ⏱ Следующий вопрос через <span id="autoCountdown">${s.autoAdvanceDelaySec || 5}</span> сек
+            </div>`
+          : ''}
         <div class="sync-controls">
           ${idx + 1 < test.questions.length
             ? `<button class="primary" id="nextBtn">➡ Следующий вопрос (${idx + 2}/${test.questions.length})</button>`
