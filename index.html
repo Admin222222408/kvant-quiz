@@ -11,7 +11,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, set, push, onValue, update, remove, get, child, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCYS2nXu7C1UtGOhnXKU1QO0lKxNotqlrc",
@@ -28,7 +28,7 @@ const db = getDatabase(fbApp);
 const auth = getAuth(fbApp);
 
 window.FB = { db, auth, ref, set, push, onValue, update, remove, get, child, serverTimestamp,
-  signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, ready: false };
+  signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail, ready: false };
 
 onAuthStateChanged(auth, () => {
   if (!window.FB.ready) {
@@ -327,10 +327,14 @@ onAuthStateChanged(auth, () => {
 
 <script>
 /* ==================================================================
-   KVANT-QUIZ
-   Новое:
-   • Античит реально прерывает тест (жёсткий / мягкий)
+   KVANT-QUIZ — FULL VERSION
+   Изменения:
+   • Античит работает (жёсткий и мягкий)
    • Два режима сессии: 🏠 Лобби / 👤 Индивидуальный
+   • Авто-переход сразу, когда все ответили
+   • Без бонусов в индивидуальном режиме
+   • Создание учителя с ИО + письмо на почту
+   • Везде отображается ИО вместо email
    ================================================================== */
 const DEFAULT_BASE_POINTS = 5;
 const DEFAULT_SPEED_TIERS = [
@@ -354,11 +358,7 @@ const DEFAULT_TESTS = {
     status: 'published',
     antiCheatMode: 'soft',
     basePoints: 5,
-    speedBonusTiers: [
-      { timeSec: 15, bonus: 3 },
-      { timeSec: 10, bonus: 2 },
-      { timeSec: 5,  bonus: 1 }
-    ],
+    speedBonusTiers: JSON.parse(JSON.stringify(DEFAULT_SPEED_TIERS)),
     intro: 'Ознакомьтесь с материалом. Как только нажмёте «Начать», тест запустится.',
     questions: [
       { q: "Как называется коптер с 8 моторами?", options: ["Пентакоптер","Октокоптер","Трикоптер","Гексакоптер"], correct: 1, image: '', time: null },
@@ -372,11 +372,7 @@ const DEFAULT_TESTS = {
     status: 'published',
     antiCheatMode: 'soft',
     basePoints: 5,
-    speedBonusTiers: [
-      { timeSec: 15, bonus: 3 },
-      { timeSec: 10, bonus: 2 },
-      { timeSec: 5,  bonus: 1 }
-    ],
+    speedBonusTiers: JSON.parse(JSON.stringify(DEFAULT_SPEED_TIERS)),
     intro: '',
     questions: [
       { q: "На какую основу крепятся все элементы дрона?", options: ["Полётный контроллер","Рама","Клей","ESC"], correct: 1, image: '', time: null },
@@ -580,7 +576,7 @@ function buildExcelFilename(testTitle, shortName, prefix) {
 }
 
 /* ==================================================================
-   АНТИЧИТ — рабочий: прерывает тест
+   АНТИЧИТ
    ================================================================== */
 function enableAntiCheat(studentRef, antiCheatMode, onTerminate) {
   antiCheatActive = true;
@@ -615,8 +611,7 @@ function onVisibilityChange() {
 }
 function onWindowBlur() {
   if (!antiCheatActive || !antiCheatRef || acTerminated) return;
-  if (document.hidden) return; // visibilitychange сработает
-  // Небольшая задержка, чтобы не срабатывало при клике на свои элементы
+  if (document.hidden) return;
   if (acBlurTimeout) clearTimeout(acBlurTimeout);
   acBlurTimeout = setTimeout(() => {
     if (document.hidden) return;
@@ -703,7 +698,9 @@ function studentSheetHTML(rec) {
     const pointsCell = a.correct ? `<b>${formatScore(a.points || 0)}</b>` : '0';
     rows += `<tr><td class="c">${i+1}</td><td>${escapeHtml(a.questionText)}</td><td>${escapeHtml(a.correctText)}</td><td>${ans}</td><td class="c">${verdict}</td><td class="c">${pointsCell}</td><td class="c">${bonusCell}</td></tr>`;
   });
-  const tRow = rec.teacherEmail ? `<tr><td colspan="2" class="summary-label">Учитель</td><td colspan="5" class="summary-value">${escapeHtml(rec.teacherEmail)}</td></tr>` : '';
+  const tRow = (rec.teacherName || rec.teacherEmail)
+    ? `<tr><td colspan="2" class="summary-label">Учитель</td><td colspan="5" class="summary-value">${escapeHtml(rec.teacherName || rec.teacherEmail)}</td></tr>`
+    : '';
   const maxScore = rec.maxScore || 100;
   const scoreStr = `${formatScore(rec.score)} / ${formatScore(maxScore)}`;
   return `<table>
@@ -719,6 +716,8 @@ function studentSheetHTML(rec) {
     <tr><td colspan="7" style="height:12px;border:none;"></td></tr>
     <tr><th class="c">#</th><th>Вопрос</th><th>Правильный ответ</th><th>Ответ ученика</th><th class="c">Итог</th><th class="c">Балл</th><th class="c">Бонус</th></tr>
     ${rows}
+    <tr><td colspan="7" style="height:16px;border:none;"></td></tr>
+    <tr><td colspan="7" style="border:none;padding:6px 8px;text-align:left;">Подпись учителя: _______________________ &nbsp;&nbsp; Дата: _______________________</td></tr>
   </table>`;
 }
 function downloadBlob(content, filename, mime) {
@@ -746,7 +745,7 @@ function exportFlatSummary(results, title, filename) {
     const ms = r.maxScore || 100;
     return `<tr>
       <td class="c">${results.length - i}</td>
-      <td>${escapeHtml(r.date)}</td><td>${escapeHtml(r.teacherEmail || '')}</td>
+      <td>${escapeHtml(r.date)}</td><td>${escapeHtml(r.teacherName || r.teacherEmail || '')}</td>
       <td>${escapeHtml(r.testTitle || '')}</td><td>${escapeHtml(r.studentName || '')}</td>
       <td class="c ok">${r.correct}</td><td class="c bad">${r.wrong}</td>
       <td class="c"><b>${formatScore(r.score)}</b></td>
@@ -763,34 +762,6 @@ function exportFlatSummary(results, title, filename) {
   <th class="c">Верно</th><th class="c">Неверно</th><th class="c">Балл</th><th class="c">Макс</th><th>Оценка</th></tr>
   ${rows}</table></body></html>`.trim();
   downloadBlob(html, filename, 'application/vnd.ms-excel;charset=utf-8;');
-}
-function printStudentResult(rec) {
-  const existing = document.getElementById('printForm');
-  if (existing) existing.remove();
-  const form = document.createElement('div');
-  form.id = 'printForm';
-  form.className = 'print-form';
-  let rows = '';
-  (rec.answers || []).forEach((a, i) => {
-    rows += `<tr><td style="text-align:center;">${i+1}</td><td>${escapeHtml(a.questionText)}</td><td>${escapeHtml(a.correctText)}</td><td>${a.selectedText ? escapeHtml(a.selectedText) : '—'}</td><td style="text-align:center;">${a.correct ? '✓' : '✗'}</td></tr>`;
-  });
-  const maxScore = rec.maxScore || 100;
-  form.innerHTML = `
-    <div class="pf-header"><div class="pf-school">${escapeHtml(SCHOOL_NAME)}</div><div class="pf-logo">🎓</div></div>
-    <div class="pf-title">${escapeHtml(rec.testTitle)}</div>
-    <div class="pf-subtitle">Результат прохождения теста</div>
-    <div class="pf-info">
-      <div><b>Ученик:</b> ${escapeHtml(rec.studentName)}</div>
-      <div><b>Дата:</b> ${escapeHtml(rec.date)}</div>
-      <div><b>Учитель:</b> ${escapeHtml(rec.teacherEmail || '—')}</div>
-      <div><b>Баллов:</b> ${formatScore(rec.score)} / ${formatScore(maxScore)}</div>
-    </div>
-    <table><thead><tr><th style="width:40px;">#</th><th>Вопрос</th><th>Правильный ответ</th><th>Ответ ученика</th><th style="width:60px;">Итог</th></tr></thead><tbody>${rows}</tbody></table>
-    <div class="pf-score">${formatScore(rec.score)} / ${formatScore(maxScore)}</div>
-    <div style="text-align:center;font-size:12pt;font-style:italic;margin-bottom:24px;">${escapeHtml(interpretScore(rec.score, maxScore))}</div>
-    <div class="pf-signature"><div>Подпись учителя</div><div>Дата</div></div>`;
-  document.body.appendChild(form);
-  setTimeout(() => { window.print(); setTimeout(() => form.remove(), 500); }, 100);
 }
 
 /* ============ ЗАГРУЗКА ============ */
@@ -828,8 +799,8 @@ function renderTopNav(role, active) {
       <button data-nav="help" class="${active==='help'?'active':''}">💬 Помощь</button>
     </div>
     <div class="nav-user">
-      <div class="avatar-sm">${getInitial(currentUser?.email)}</div>
-      <span>${escapeHtml(currentUser?.email || '')}</span>
+      <div class="avatar-sm">${getInitial(currentUser?.name || currentUser?.email)}</div>
+      <span>${escapeHtml(currentUser?.name || currentUser?.email || '')}</span>
       <button class="small back" id="logoutBtn">Выйти</button>
     </div>
   </div>`;
@@ -891,7 +862,7 @@ function renderAuth(expectedRole) {
         if (!profile) { err.textContent = 'Профиль не найден'; await window.FB.signOut(window.FB.auth); return; }
         if (isDev && profile.role !== 'developer') { err.textContent = 'Это не аккаунт разработчика'; await window.FB.signOut(window.FB.auth); return; }
         if (!isDev && profile.role !== 'teacher') { err.textContent = 'Это не аккаунт учителя'; await window.FB.signOut(window.FB.auth); return; }
-        currentUser = { uid: cred.user.uid, email: profile.email || email, role: profile.role };
+        currentUser = { uid: cred.user.uid, email: profile.email || email, role: profile.role, name: profile.name || '' };
         if (profile.role === 'developer') renderDeveloperHome();
         else renderTeacherHome();
       } catch (e) {
@@ -980,7 +951,7 @@ async function sendHelpMsg(m) {
 }
 
 /* ==================================================================
-   ПАНЕЛЬ РАЗРАБОТЧИКА (без изменений)
+   ПАНЕЛЬ РАЗРАБОТЧИКА
    ================================================================== */
 async function renderDeveloperHome() {
   clearAllUnsubs();
@@ -1216,13 +1187,13 @@ async function renderTeachersList() {
   el.innerHTML = `<div class="students-grid" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr));">
     ${teachers.map(t => {
       const st = stats[t.uid];
-      const initials = (String(t.email || '?')[0] || '?').toUpperCase();
+      const initials = (String(t.name || t.email || '?')[0] || '?').toUpperCase();
       return `<div class="student-card" style="padding:16px;">
         <div style="display:flex;gap:10px;margin-bottom:10px;">
           <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a855f7);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:18px;">${initials}</div>
           <div style="flex:1;min-width:0;">
-            <div style="font-weight:800;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(t.email || '')}</div>
-            <div style="font-size:11px;color:#64748b;font-weight:700;">👨‍🏫 Учитель</div>
+            <div style="font-weight:800;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(t.name || t.email || '')}">${escapeHtml(t.name || '—')}</div>
+            <div style="font-size:11px;color:#64748b;font-weight:700;">${escapeHtml(t.email || '')} · 👨‍🏫</div>
           </div>
         </div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;">
@@ -1246,51 +1217,98 @@ async function renderTeachersList() {
   el.querySelectorAll('[data-teacher-del]').forEach(b => b.onclick = async () => {
     const uid = b.dataset.teacherDel;
     const t = teachers.find(x => x.uid === uid);
-    if (!confirm(`Удалить профиль учителя «${t.email}»?`)) return;
+    if (!confirm(`Удалить профиль учителя «${t.name || t.email}»?`)) return;
     await window.FB.remove(window.FB.ref(window.FB.db, `users/${uid}`));
     renderTeachersList();
   });
 }
+
 function openCreateTeacherModal() {
   const m = openModal(`<div class="modal-body">
-    <h2>➕ Новый учитель</h2>
-    <label class="label">Email</label>
-    <input type="email" id="ntEmail" placeholder="teacher@school.ru">
-    <label class="label">Пароль (мин. 6)</label>
-    <input type="text" id="ntPass" placeholder="Временный пароль">
-    <label class="label">Имя</label>
-    <input type="text" id="ntName" placeholder="Иван Петрович">
-    <p id="ntErr" style="color:#ef4444;font-weight:700;min-height:18px;"></p>
+    <h2 style="margin:0 0 8px;">➕ Новый учитель</h2>
+    <p class="hint" style="margin-bottom:18px;">Аккаунт создастся в Firebase Auth. На указанный email придёт письмо для установки пароля.</p>
+
+    <label class="label">Email (логин)</label>
+    <input type="email" id="newTeacherEmail" placeholder="teacher@school.ru" autocomplete="off">
+
+    <label class="label">Пароль (минимум 6 символов)</label>
+    <input type="text" id="newTeacherPass" placeholder="Временный пароль" autocomplete="off">
+
+    <label class="label">Имя Отчество (отображается вместо почты)</label>
+    <input type="text" id="newTeacherName" placeholder="Иванов Иван" autocomplete="off">
+
+    <p id="newTeacherError" style="color:#ef4444;font-size:13px;font-weight:700;min-height:18px;margin:6px 0;"></p>
+
     <div style="display:flex;gap:10px;margin-top:14px;">
-      <button id="ntSave" class="green" style="flex:1;">💾 Создать</button>
-      <button class="back" id="ntClose">Отмена</button>
+      <button id="saveTeacher" class="green" style="flex:1;">💾 Создать аккаунт</button>
+      <button class="back" id="closeTeacher">Отмена</button>
+    </div>
+
+    <div class="anti-cheat-note" style="margin-top:14px;">
+      ⚠️ На указанный email придёт письмо со ссылкой для установки своего пароля.<br>
+      Учитель входит по адресу <code>?mode=teacher</code>.
     </div>
   </div>`, 560);
-  m.$('#ntClose').onclick = () => m.close();
-  m.$('#ntSave').onclick = async () => {
-    const email = m.$('#ntEmail').value.trim();
-    const pass = m.$('#ntPass').value;
-    const name = m.$('#ntName').value.trim();
-    const err = m.$('#ntErr');
+
+  m.$('#closeTeacher').onclick = () => m.close();
+  m.$('#saveTeacher').onclick = async () => {
+    const email = m.$('#newTeacherEmail').value.trim();
+    const pass = m.$('#newTeacherPass').value;
+    const name = m.$('#newTeacherName').value.trim();
+    const err = m.$('#newTeacherError');
     err.textContent = '';
-    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { err.textContent = 'Некорректный email'; return; }
-    if (pass.length < 6) { err.textContent = 'Пароль ≥ 6 символов'; return; }
-    const btn = m.$('#ntSave');
-    btn.disabled = true; btn.textContent = 'Создаём…';
+
+    if (!email) { err.textContent = 'Укажите email'; return; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { err.textContent = 'Некорректный email'; return; }
+    if (pass.length < 6) { err.textContent = 'Пароль минимум 6 символов'; return; }
+    if (!name) { err.textContent = 'Укажите имя и отчество'; return; }
+
+    const btn = m.$('#saveTeacher');
+    btn.disabled = true;
+    btn.textContent = 'Создаём…';
+
     try {
       const cred = await window.FB.createUserWithEmailAndPassword(window.FB.auth, email, pass);
-      await window.FB.set(window.FB.ref(window.FB.db, `users/${cred.user.uid}`), {
-        email, role: 'teacher', name: name || '', createdAt: Date.now(), createdBy: currentUser.uid
+      const uid = cred.user.uid;
+
+      await window.FB.set(window.FB.ref(window.FB.db, `users/${uid}`), {
+        email,
+        name,
+        role: 'teacher',
+        createdAt: Date.now(),
+        createdBy: currentUser ? currentUser.uid : null
       });
+
+      let emailSent = false;
+      try {
+        await window.FB.sendPasswordResetEmail(window.FB.auth, email);
+        emailSent = true;
+      } catch (mailErr) {
+        console.warn('Не удалось отправить письмо:', mailErr);
+      }
+
       m.close();
-      alert(`✅ Учитель создан!\n\nEmail: ${email}\nПароль: ${pass}`);
+      alert(
+        `✅ Учитель создан!\n\n` +
+        `Имя: ${name}\n` +
+        `Email: ${email}\n` +
+        `Пароль: ${pass}\n\n` +
+        (emailSent
+          ? `📧 На почту отправлено письмо для установки своего пароля.\n\n`
+          : `⚠️ Письмо отправить не удалось. Передайте пароль лично.\n\n`) +
+        `Передайте учителю данные для входа.`
+      );
+
       renderTeachersList();
+      renderDeveloperMetrics();
     } catch (e) {
       const c = e && e.code;
-      if (c === 'auth/email-already-in-use') err.textContent = 'Email уже используется';
-      else if (c === 'auth/weak-password') err.textContent = 'Слабый пароль';
-      else err.textContent = 'Ошибка: ' + (e.message || '');
-      btn.disabled = false; btn.textContent = '💾 Создать';
+      if (c === 'auth/email-already-in-use') err.textContent = 'Этот email уже используется';
+      else if (c === 'auth/invalid-email') err.textContent = 'Некорректный email';
+      else if (c === 'auth/weak-password') err.textContent = 'Слишком слабый пароль';
+      else err.textContent = 'Ошибка: ' + (e.message || 'неизвестная');
+      btn.disabled = false;
+      btn.textContent = '💾 Создать аккаунт';
     }
   };
 }
@@ -1307,7 +1325,7 @@ function openTestEditor(testId, testData) {
         bonus: round1(t.bonus)
       })).filter(t => t.timeSec > 0 && t.bonus > 0).sort((a, b) => b.timeSec - a.timeSec);
     }
-    return JSON.parse(JSON.stringify(DEFAULT_SPEED_TIERS));
+    return JSON.parse(JSON.stringify(DEFAULT_SPEED_TIERS)).sort((a, b) => b.timeSec - a.timeSec);
   })();
   const initial = testData || {
     title: '', shortName: '', intro: '', introImage: '', timePerQuestion: 20,
@@ -1418,24 +1436,21 @@ function openTestEditor(testId, testData) {
         <label class="field-label">🏷 Короткое имя Excel</label>
         <input type="text" id="setShortName" value="${escapeHtml(settings.shortName)}" maxlength="30">
         <label class="field-label">📖 Вводный текст (для индивидуального режима)</label>
-        <textarea id="setIntro" style="min-height:100px;" placeholder="Ученик увидит текст перед началом">${escapeHtml(settings.intro)}</textarea>
+        <textarea id="setIntro" style="min-height:100px;">${escapeHtml(settings.intro)}</textarea>
       </div>
-
       <div class="editor-settings-section">
         <h4><span class="step-num">2</span> Обложка</h4>
         <input type="text" id="setIntroImage" value="${escapeHtml(settings.introImage)}" placeholder="URL картинки">
         <input type="file" id="setIntroFile" accept="image/*">
         <div class="cover-preview" id="coverPreview">${settings.introImage ? `<img src="${escapeAttr(settings.introImage)}">` : '🖼 Превью'}</div>
       </div>
-
       <div class="editor-settings-section">
         <h4><span class="step-num">3</span> ⏱ Время на вопрос</h4>
         <label class="field-label">По умолчанию (сек)</label>
         <input type="number" id="setTime" min="5" max="300" value="${settings.timePerQuestion}">
       </div>
-
       <div class="editor-settings-section">
-        <h4><span class="step-num">4</span> 🎯 Система баллов</h4>
+        <h4><span class="step-num">4</span> 🎯 Система баллов (только для Лобби)</h4>
         <label class="field-label">Баллов за правильный ответ</label>
         <input type="number" id="setBasePoints" min="0.1" max="1000" step="0.1" value="${settings.basePoints}">
         <div style="border-top:2px dashed #e2e8f0;padding-top:14px;margin-top:14px;">
@@ -1455,16 +1470,13 @@ function openTestEditor(testId, testData) {
           <div id="tiersBox">${renderTierRows()}</div>
         </div>
       </div>
-
       <div class="editor-settings-section">
         <h4><span class="step-num">5</span> 🛡 Античит</h4>
         <select id="setAntiCheat">
-          <option value="hard" ${settings.antiCheatMode === 'hard' ? 'selected' : ''}>🔒 Жёсткий — прерывать сразу при уходе</option>
+          <option value="hard" ${settings.antiCheatMode === 'hard' ? 'selected' : ''}>🔒 Жёсткий — прерывать сразу</option>
           <option value="soft" ${settings.antiCheatMode === 'soft' ? 'selected' : ''}>⚠️ Мягкий — 1 предупреждение, потом прерывание</option>
         </select>
-        <p class="hint" style="margin:6px 0 0;">Античит работает в обоих режимах (Лобби и Индивидуальный).</p>
       </div>
-
       <div class="editor-settings-section" style="background:#f5f3ff;border-color:#c4b5fd;">
         <div style="font-weight:800;color:var(--violet);margin-bottom:10px;">📊 Итог</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
@@ -1730,7 +1742,7 @@ function subscribeAllSessions() {
     const data = snapshot.val() || {};
     const list = Object.entries(data).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
     if (list.length === 0) { el.innerHTML = `<p class="hint">Пока нет сессий.</p>`; return; }
-    el.innerHTML = list.map(([code, s]) => sessionRowHTML(code, s, s.teacherEmail || '')).join('');
+    el.innerHTML = list.map(([code, s]) => sessionRowHTML(code, s, s.teacherName || s.teacherEmail || '')).join('');
     bindSessionActions(el);
   }));
 }
@@ -1800,7 +1812,7 @@ function renderResultsWithFilter() {
     <table><thead><tr><th>Дата</th><th>Учитель</th><th>Тест</th><th>Ученик</th><th>Верно</th><th>Неверно</th><th>Балл</th></tr></thead><tbody>
     ${allResultsCache.slice(0, 100).map(r => `<tr>
       <td>${escapeHtml(r.date)}</td>
-      <td>${escapeHtml(r.teacherEmail || '')}</td>
+      <td>${escapeHtml(r.teacherName || r.teacherEmail || '')}</td>
       <td>${escapeHtml((r.testTitle || '').slice(0, 30))}</td>
       <td>${escapeHtml(r.studentName)}</td>
       <td class="ok">${r.correct}</td>
@@ -1911,7 +1923,7 @@ async function createSession() {
   const test = testsCache[testId];
   const classId = document.getElementById('newSessionClass').value || null;
   const cls = classId ? classesCache[classId] : null;
-  const sessionMode = document.getElementById('newSessionMode').value; // 'lobby' | 'individual'
+  const sessionMode = document.getElementById('newSessionMode').value;
   const autoAdvance = sessionMode === 'lobby' && document.getElementById('newSessionAuto').value === 'auto';
   const code = genSessionCode();
   try {
@@ -1920,6 +1932,7 @@ async function createSession() {
       testTitle: test.title,
       teacherId: currentUser.uid,
       teacherEmail: currentUser.email,
+      teacherName: currentUser.name || currentUser.email,
       createdAt: Date.now(),
       status: 'active',
       mode: sessionMode,
@@ -2074,6 +2087,7 @@ function buildSessionResults(session, test) {
       total,
       teacherId: session.teacherId,
       teacherEmail: session.teacherEmail,
+      teacherName: session.teacherName || session.teacherEmail,
       sessionCode: sessionCode || '',
       tabSwitches: st.tabSwitches || 0,
       copyAttempts: st.copyAttempts || 0,
@@ -2115,7 +2129,7 @@ async function exportSessionSummary(code, test) {
     const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
 <head><meta charset="UTF-8"><style>${excelStyles()}</style></head><body><table>
   <tr><td colspan="6" class="title">${escapeHtml(session.testTitle || 'Тест')} — сводная</td></tr>
-  <tr><td colspan="3" class="header-meta"><b>Учитель:</b> ${escapeHtml(session.teacherEmail || '—')}</td>
+  <tr><td colspan="3" class="header-meta"><b>Учитель:</b> ${escapeHtml(session.teacherName || session.teacherEmail || '—')}</td>
       <td colspan="3" class="header-meta"><b>Дата:</b> ${escapeHtml(formatDate(Date.now()))}</td></tr>
   <tr><td colspan="3" class="header-meta"><b>Учеников:</b> ${students.length}</td>
       <td colspan="3" class="header-meta"><b>Максимум:</b> ${formatScore(maxScore)}</td></tr>
@@ -2156,7 +2170,7 @@ function startAutoAdvance(code, test) {
       const snap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
       const s = snap.val();
       if (!s) return;
-      if (s.mode === 'individual') return; // Авто-переход только в Лобби
+      if (s.mode === 'individual') return;
       if (!s.autoAdvance || s.status !== 'active') return;
       if (s.phase === 'finished' || s.phase === 'lobby') return;
       const idx = s.currentQuestion;
@@ -2168,7 +2182,12 @@ function startAutoAdvance(code, test) {
         const elapsed = Date.now() - (s.questionStartedAt || 0);
         const arr = Object.values(s.students || {});
         const allAns = arr.length > 0 && arr.every(st => st.answers && st.answers[idx]);
-        if ((elapsed >= tTotal || allAns) && elapsed >= tTotal - 200) {
+        // Если ВСЕ ответили — сразу переходим к результатам (минимум 1.5 сек после старта)
+        if (allAns && elapsed >= 1500) {
+          await window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}`), { phase: 'results', revealedAt: Date.now() });
+        }
+        // Иначе — по истечении таймера
+        else if (elapsed >= tTotal) {
           await window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}`), { phase: 'results', revealedAt: Date.now() });
         }
       }
@@ -2227,7 +2246,6 @@ function renderTeacherPanel(s, test, code) {
     return;
   }
 
-  // ============ Лобби ============
   const phase = s.phase || 'lobby';
   const phaseText = document.getElementById('phaseText');
   if (phaseText) {
@@ -2450,7 +2468,7 @@ function renderStudentEnterCode() {
 }
 
 /* ==================================================================
-   УЧЕНИК: СЕССИЯ — Lobby / Individual
+   УЧЕНИК: СЕССИЯ
    ================================================================== */
 async function renderStudentSession() {
   clearAllUnsubs();
@@ -2477,6 +2495,7 @@ async function renderStudentSession() {
       test,
       testId: s.testId,
       teacherEmail: s.teacherEmail,
+      teacherName: s.teacherName || s.teacherEmail,
       sessionMode: s.mode || 'lobby',
       answersByQ: (myRec && myRec.answers) || {},
       score: (myRec && myRec.score) || 0,
@@ -2508,7 +2527,6 @@ async function renderStudentSession() {
       return;
     }
 
-    // Восстанавливаем существующего ученика (F5 в середине теста)
     if (myRec) {
       enableAntiCheat(
         window.FB.ref(window.FB.db, `sessions/${code}/students/${myId}`),
@@ -2519,7 +2537,6 @@ async function renderStudentSession() {
       return;
     }
 
-    // Регистрация
     const maxScore = getMaxScore(test);
     const isIndividual = s.mode === 'individual';
     const classInfo = s.classId ? `<p class="student-sub" style="color:#7c3aed;">Класс: <b>${escapeHtml(s.className || '')}</b></p>` : '';
@@ -2618,6 +2635,7 @@ async function joinSession(code, test, sessionData) {
     syncState.studentName = studentName;
     syncState.sessionMode = sessionData.mode || 'lobby';
     syncState.status = isIndividual ? 'intro' : 'waiting';
+    syncState.teacherName = sessionData.teacherName || sessionData.teacherEmail;
 
     enableAntiCheat(
       studentRef,
@@ -2644,9 +2662,6 @@ function subscribeStudentSession(code) {
   }));
 }
 
-/* ==================================================================
-   ЭКРАН УЧЕНИКА
-   ================================================================== */
 function renderStudentScreen(s, code) {
   const test = syncState.test;
   if (!test) return;
@@ -2668,7 +2683,6 @@ function renderStudentScreen(s, code) {
       <span>${showScore ? '⭐ ' + formatScore(syncState.score) + ' б.' : '🎮 Играем'}</span>
     </div>`;
 
-  // ============== ИНДИВИДУАЛЬНЫЙ РЕЖИМ ==============
   if (isIndividual) {
     if (myRec.status === 'intro') {
       sss.innerHTML = topbar + `
@@ -2708,16 +2722,13 @@ function renderStudentScreen(s, code) {
     }
 
     if (myRec.status === 'terminated') {
-      // Уже обработано при загрузке
       return;
     }
 
-    // Неизвестный статус — ждём
     sss.innerHTML = topbar + `<div class="sss-hero"><div style="font-size:64px;">⏳</div><h2>Загрузка…</h2></div>`;
     return;
   }
 
-  // ============== ЛОББИ РЕЖИМ ==============
   const phase = s.phase || 'lobby';
   const idx = typeof s.currentQuestion === 'number' ? s.currentQuestion : -1;
   const myAnswer = syncState.answersByQ[idx];
@@ -2891,7 +2902,6 @@ function renderIndividualQuestion(sss, topbar, test, idx, code) {
     if (rem <= 5) el.parentElement.classList.add('warning');
     if (rem <= 0) {
       clearInterval(syncTimerInterval);
-      // Время вышло — фиксируем ответ как «нет ответа»
       submitAnswer(code, idx, null, timeTotal, 'individual');
     }
   }, 500);
@@ -2937,7 +2947,10 @@ async function submitAnswer(code, idx, oi, timeTotal, sessionMode) {
   const timeSpentSec = timeSpentMs / 1000;
 
   const base = getBasePoints(test);
-  const speedBonus = isCorrect ? calcSpeedBonus(test, timeSpentSec, timeTotal) : 0;
+  // Бонусы за скорость — только в режиме Лобби
+  const speedBonus = (isCorrect && sessionMode === 'lobby')
+    ? calcSpeedBonus(test, timeSpentSec, timeTotal)
+    : 0;
   const points = isCorrect ? round1(base + speedBonus) : 0;
 
   if (isCorrect) syncState.currentStreak = (syncState.currentStreak || 0) + 1;
@@ -2978,7 +2991,6 @@ async function submitAnswer(code, idx, oi, timeTotal, sessionMode) {
     syncState.maxStreak = newMaxStreak;
 
     if (sessionMode === 'individual') {
-      // Сразу к следующему вопросу
       setTimeout(() => {
         if (idx + 1 >= test.questions.length) {
           finishStudentIndividual(code);
@@ -2993,8 +3005,6 @@ async function submitAnswer(code, idx, oi, timeTotal, sessionMode) {
           renderIndividualQuestion(root, topbar, test, idx + 1, code);
         }
       }, 600);
-    } else {
-      // Лобби — ждём учителя, показали «Ответ принят»
     }
   } catch (e) { console.error('submitAnswer:', e); }
 }
@@ -3011,7 +3021,6 @@ async function finishStudentIndividual(code) {
       finishedAt: Date.now(),
       score, correctCount: correct, wrongCount: wrong
     });
-    // Пишем в общий results
     const answers = Object.values(syncState.answersByQ || {});
     const resultRecord = {
       studentName: syncState.studentName,
@@ -3023,6 +3032,7 @@ async function finishStudentIndividual(code) {
       maxScore: getMaxScore(test),
       correct, wrong, total,
       teacherEmail: syncState.teacherEmail,
+      teacherName: syncState.teacherName || syncState.teacherEmail,
       sessionCode: code,
       mode: 'individual',
       answers: answers.map(a => ({
@@ -3036,9 +3046,6 @@ async function finishStudentIndividual(code) {
   } catch (e) { console.error('finishStudentIndividual:', e); }
 }
 
-/* ==================================================================
-   ПРЕРЫВАНИЕ АНТИЧИТОМ
-   ================================================================== */
 async function terminateStudent(reason, message) {
   if (!syncState || !syncState.studentId) return;
   const test = syncState.test;
@@ -3071,6 +3078,7 @@ async function terminateStudent(reason, message) {
       maxScore: getMaxScore(test),
       correct, wrong, total, answeredQuestions: answered,
       teacherEmail: syncState.teacherEmail,
+      teacherName: syncState.teacherName || syncState.teacherEmail,
       sessionCode: syncState.code,
       tabSwitches: antiCheatTabSwitches,
       copyAttempts: antiCheatCopyAttempts,
@@ -3085,7 +3093,6 @@ async function terminateStudent(reason, message) {
     await window.FB.set(newRef, resultRecord);
   } catch (e) { console.error('terminateStudent:', e); }
 
-  // Рисуем экран «Тест прерван»
   const root = document.getElementById('sss') || document.getElementById('app');
   if (root) {
     root.innerHTML = `
@@ -3133,7 +3140,7 @@ function boot() {
           if (profile) setCachedProfile(user.uid, profile);
         }
         if (profile && profile.role === 'developer') {
-          currentUser = { uid: user.uid, email: profile.email || user.email, role: 'developer' };
+          currentUser = { uid: user.uid, email: profile.email || user.email, role: 'developer', name: profile.name || '' };
           if (sessionCode) renderTeacherSession(); else renderDeveloperHome();
           return;
         }
@@ -3151,7 +3158,7 @@ function boot() {
           if (profile) setCachedProfile(user.uid, profile);
         }
         if (profile && profile.role === 'teacher') {
-          currentUser = { uid: user.uid, email: profile.email || user.email, role: 'teacher' };
+          currentUser = { uid: user.uid, email: profile.email || user.email, role: 'teacher', name: profile.name || '' };
           if (sessionCode) renderTeacherSession(); else renderTeacherHome();
           return;
         }
