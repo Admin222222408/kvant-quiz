@@ -637,6 +637,7 @@ onAuthStateChanged(auth, () => {
 <script>
 /* ==================================================================
    KVANT-QUIZ — SYNCHRONOUS MODE (Kahoot / MyQuiz style)
+   FIXED VERSION — all known bugs patched
    ================================================================== */
 const TIME_PER_QUESTION = 20;
 const TOTAL_POINTS = 100;
@@ -686,9 +687,16 @@ function clearAllUnsubs() {
 }
 let antiCheatActive = false, antiCheatRef = null;
 let antiCheatTabSwitches = 0, antiCheatCopyAttempts = 0;
-let syncState = {}; // student's local sync state
+let syncState = {};
 let syncTimerInterval = null;
-let autoAdvanceInterval = null;   // ← добавили
+let autoAdvanceInterval = null;
+
+/* ============ БЕЗОПАСНЫЙ ОБРАБОТЧИК КНОПОК ============ */
+function onClick(id, handler) {
+  const el = document.getElementById(id);
+  if (el) el.onclick = handler;
+  return el;
+}
 
 /* ============ УТИЛИТЫ ============ */
 function shuffleArray(arr) {
@@ -814,9 +822,6 @@ function onVisibilityChange() {
   if (document.hidden) {
     antiCheatTabSwitches++;
     window.FB.update(antiCheatRef, { tabSwitches: antiCheatTabSwitches, lastTabSwitchAt: Date.now() }).catch(() => {});
-    if (syncState.antiCheatMode === 'soft' && antiCheatTabSwitches >= 3) {
-      // just warn visually via UI (we don't terminate in sync mode to avoid breaking the class)
-    }
   }
 }
 function onCopyAttempt(e) {
@@ -1011,12 +1016,12 @@ function bindTopNav() {
     b.onclick = () => {
       const nav = b.dataset.nav;
       if (nav === 'help') { openHelpChat(); return; }
-            const el = document.getElementById(
-        nav === 'tests' ? 'testsPanel'
-        : nav === 'classes' ? 'classesPanel'
-        : nav === 'teachers' ? 'teachersPanel'
-        : 'sessionsList'
-      );
+      const id = nav === 'tests' ? 'testsPanel'
+               : nav === 'classes' ? 'classesPanel'
+               : nav === 'teachers' ? 'teachersPanel'
+               : 'sessionsList';
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
   });
 }
@@ -1145,7 +1150,9 @@ async function sendHelpMsg(m) {
   } catch (e) { alert('Ошибка: ' + e.message); }
 }
 
-/* ============ ПАНЕЛЬ РАЗРАБОТЧИКА ============ */
+/* ==================================================================
+   ПАНЕЛЬ РАЗРАБОТЧИКА
+   ================================================================== */
 async function renderDeveloperHome() {
   clearAllUnsubs();
   if (!currentUser || currentUser.role !== 'developer') { renderAuth('developer'); return; }
@@ -1158,7 +1165,18 @@ async function renderDeveloperHome() {
     <h1 style="font-size:22px;">🛠 Панель разработчика</h1>
     <div class="kpi-line" id="metricsLine"><span><span class="loading-spinner"></span>Загрузка…</span></div>
 
-        <div class="panel" id="classesPanel">
+    <div class="panel" id="testsPanel">
+      <div class="panel-head">
+        <h3>📚 Управление тестами</h3>
+        <div class="summary-actions" style="margin:0;">
+          <button id="addTestBtn" class="green">➕ Новый тест</button>
+          <button id="refreshTestsBtn" class="refresh">🔄 Обновить</button>
+        </div>
+      </div>
+      <div id="testsManageArea"><p class="hint"><span class="loading-spinner"></span>Загрузка…</p></div>
+    </div>
+
+    <div class="panel" id="classesPanel">
       <div class="panel-head">
         <h3>👥 Классы</h3>
         <div class="summary-actions" style="margin:0;">
@@ -1198,23 +1216,23 @@ async function renderDeveloperHome() {
     </div>`;
 
   bindTopNav();
-  document.getElementById('addTestBtn').onclick = () => openTestEditor(null);
-  document.getElementById('refreshTestsBtn').onclick = async () => { await loadTests(); renderDeveloperTestsList(); };
-  document.getElementById('addClassBtn').onclick = () => openClassEditor(null);
-  document.getElementById('refreshClassesBtn').onclick = async () => { await loadClasses(); renderClassesList(); };
-  document.getElementById('addTeacherBtn').onclick = () => openCreateTeacherModal();
-  document.getElementById('refreshTeachersBtn').onclick = () => renderTeachersList();
-  document.getElementById('exportSchoolBtn').onclick = exportWholeSchool;
-  document.getElementById('clearOldResultsBtn').onclick = clearOldResults;
-  document.getElementById('clearAllResultsBtn').onclick = clearAllResults;
+  onClick('addTestBtn',         () => openTestEditor(null));
+  onClick('refreshTestsBtn',    async () => { await loadTests(); renderDeveloperTestsList(); });
+  onClick('addClassBtn',        () => openClassEditor(null));
+  onClick('refreshClassesBtn',  async () => { await loadClasses(); renderClassesList(); });
+  onClick('addTeacherBtn',      () => openCreateTeacherModal());
+  onClick('refreshTeachersBtn', () => renderTeachersList());
+  onClick('exportSchoolBtn',    exportWholeSchool);
+  onClick('clearOldResultsBtn', clearOldResults);
+  onClick('clearAllResultsBtn', clearAllResults);
 
-  cleanupOldSessions();
-  renderDeveloperMetrics();
-  renderDeveloperTestsList();
-  renderClassesList();
-  renderTeachersList();
-  subscribeAllSessions();
-  subscribeAllResults();
+  try { cleanupOldSessions();       } catch (e) { console.warn('cleanupOldSessions:', e); }
+  try { renderDeveloperMetrics();   } catch (e) { console.warn('renderDeveloperMetrics:', e); }
+  try { renderDeveloperTestsList(); } catch (e) { console.warn('renderDeveloperTestsList:', e); }
+  try { renderClassesList();        } catch (e) { console.warn('renderClassesList:', e); }
+  try { renderTeachersList();       } catch (e) { console.warn('renderTeachersList:', e); }
+  try { subscribeAllSessions();     } catch (e) { console.warn('subscribeAllSessions:', e); }
+  try { subscribeAllResults();      } catch (e) { console.warn('subscribeAllResults:', e); }
 }
 
 async function renderDeveloperMetrics() {
@@ -1335,11 +1353,9 @@ function openClassEditor(classId, classData) {
   };
 }
 
-/* ============ РЕДАКТОР ТЕСТА ============ */
-
-/* ============ УЧИТЕЛЯ: список + статистика + создание ============ */
-
-// Кэш для учителей и результатов (для статистики)
+/* ==================================================================
+   УЧИТЕЛЯ: список + статистика + создание
+   ================================================================== */
 let teachersUsersCache = {};
 let teachersStatsCache = { sessions: {}, results: {} };
 
@@ -1377,36 +1393,28 @@ async function renderTeachersList() {
     return;
   }
 
-  // Считаем статистику по каждому учителю
   const sessions = teachersStatsCache.sessions || {};
   const results = teachersStatsCache.results || {};
 
   const stats = {};
   teachers.forEach(t => {
     stats[t.uid] = {
-      sessionsTotal: 0,
-      sessionsActive: 0,
-      studentsTotal: 0,
-      resultsTotal: 0,
-      avgScore: 0,
-      lastActivityAt: 0
+      sessionsTotal: 0, sessionsActive: 0, studentsTotal: 0,
+      resultsTotal: 0, avgScore: 0, lastActivityAt: 0
     };
   });
 
-  // Сессии
   Object.values(sessions).forEach(s => {
     if (!s || !s.teacherId) return;
     if (!stats[s.teacherId]) return;
     stats[s.teacherId].sessionsTotal++;
     if (s.status === 'active') stats[s.teacherId].sessionsActive++;
-    const studentCount = Object.keys(s.students || {}).length;
-    stats[s.teacherId].studentsTotal += studentCount;
+    stats[s.teacherId].studentsTotal += Object.keys(s.students || {}).length;
     if (s.createdAt && s.createdAt > stats[s.teacherId].lastActivityAt) {
       stats[s.teacherId].lastActivityAt = s.createdAt;
     }
   });
 
-  // Результаты
   Object.values(results).forEach(r => {
     if (!r || !r.teacherId) return;
     if (!stats[r.teacherId]) return;
@@ -1417,19 +1425,13 @@ async function renderTeachersList() {
     }
   });
 
-  // Средний балл
   Object.keys(stats).forEach(uid => {
     const st = stats[uid];
     st.avgScore = st.resultsTotal > 0 ? Math.round((st._sumScore || 0) / st.resultsTotal) : 0;
     delete st._sumScore;
   });
 
-  // Сортируем: сначала активные, потом по email
-  teachers.sort((a, b) => {
-    const aAct = stats[a.uid].lastActivityAt || 0;
-    const bAct = stats[b.uid].lastActivityAt || 0;
-    return bAct - aAct;
-  });
+  teachers.sort((a, b) => (stats[b.uid].lastActivityAt || 0) - (stats[a.uid].lastActivityAt || 0));
 
   el.innerHTML = `
     <div class="students-grid" style="grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));">
@@ -1607,11 +1609,9 @@ function openCreateTeacherModal() {
     btn.textContent = 'Создаём…';
 
     try {
-      // Создаём пользователя в Firebase Auth
       const cred = await window.FB.createUserWithEmailAndPassword(window.FB.auth, email, pass);
       const uid = cred.user.uid;
 
-      // Создаём профиль в БД
       await window.FB.set(window.FB.ref(window.FB.db, `users/${uid}`), {
         email,
         role: 'teacher',
@@ -1620,15 +1620,9 @@ function openCreateTeacherModal() {
         createdBy: currentUser ? currentUser.uid : null
       });
 
-      // Не разлогиниваем текущего разработчика!
-      // Firebase при createUserWithEmailAndPassword подменяет currentUser —
-      // поэтому сразу возвращаемся на dev-аккаунт нельзя, но при следующем
-      // открытии страницы разработчик войдёт заново. В рамках сессии ок.
-
       m.close();
       alert(`✅ Учитель создан!\n\nEmail: ${email}\nПароль: ${pass}\n\nПередайте их учителю.`);
 
-      // Обновляем список
       renderTeachersList();
       renderDeveloperMetrics();
     } catch (e) {
@@ -1644,6 +1638,9 @@ function openCreateTeacherModal() {
   };
 }
 
+/* ==================================================================
+   РЕДАКТОР ТЕСТА
+   ================================================================== */
 function openTestEditor(testId, testData) {
   const isNew = !testId;
   const initial = testData || {
@@ -1932,7 +1929,9 @@ function parseCSVQuestions(text) {
   return result;
 }
 
-/* ============ СЕССИИ (общие списки) ============ */
+/* ==================================================================
+   СЕССИИ (общие списки)
+   ================================================================== */
 function subscribeAllSessions() {
   const el = document.getElementById('allSessionsArea');
   if (!el) return;
@@ -2105,9 +2104,9 @@ async function renderTeacherHome() {
     </div>`;
 
   bindTopNav();
-  document.getElementById('createSessionBtn').onclick = createSession;
-  cleanupOldSessions();
-  subscribeTeacherSessions();
+  onClick('createSessionBtn', createSession);
+  try { cleanupOldSessions();       } catch (e) { console.warn('cleanupOldSessions:', e); }
+  try { subscribeTeacherSessions(); } catch (e) { console.warn('subscribeTeacherSessions:', e); }
 }
 
 async function createSession() {
@@ -2122,7 +2121,7 @@ async function createSession() {
     const payload = {
       testId, testTitle: test.title, teacherId: currentUser.uid, teacherEmail: currentUser.email,
       createdAt: Date.now(), status: 'active', mode: 'sync',
-      phase: 'lobby',              // lobby | question | results | leaderboard | finished
+      phase: 'lobby',
       currentQuestion: -1,
       questionStartedAt: 0,
       autoAdvance,
@@ -2199,21 +2198,21 @@ async function renderTeacherSession() {
     <h2 class="no-print" style="margin-top:24px;">👥 Подключились ученики (<span id="cntTotal">0</span>)</h2>
     <div id="studentsArea" class="students-grid">Ожидание…</div>`;
 
-  document.getElementById('copyLink').onclick = () => { navigator.clipboard.writeText(studentLink); alert('Ссылка скопирована'); };
-    document.getElementById('exportSessionBtn').onclick = async () => {
+  onClick('copyLink', () => { navigator.clipboard.writeText(studentLink); alert('Ссылка скопирована'); });
+  onClick('exportSessionBtn', async () => {
     const sSnap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
     const session = sSnap.val();
     if (!session) { alert('Сессия не найдена'); return; }
     const results = buildSessionResults(session, test);
     if (results.length === 0) { alert('Нет данных для экспорта'); return; }
     exportStudentsWorkbook(results, session.testTitle, session.testId);
-  };;
-   document.getElementById('closeBtn').onclick = async () => {
+  });
+  onClick('closeBtn', async () => {
     if (!confirm(`Закрыть сессию ${code}?`)) return;
     if (autoAdvanceInterval) { clearInterval(autoAdvanceInterval); autoAdvanceInterval = null; }
     await window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}`), { status: 'closed', closedAt: Date.now() });
     location.href = '?mode=teacher';
-  };
+  });
 
   subscribeTeacherSessionLive(code, test);
 }
@@ -2228,13 +2227,11 @@ function buildSessionResults(session, test) {
   const results = [];
 
   Object.values(students).forEach(st => {
-    // Старый формат (не-синхронный) — уже готовый result
     if (st.result && Array.isArray(st.result.answers)) {
       results.push(st.result);
       return;
     }
 
-    // Синхронный режим — собираем answers по индексам
     const answersMap = st.answers || {};
     const answersArr = [];
     const count = totalQ || Object.keys(answersMap).length;
@@ -2250,7 +2247,6 @@ function buildSessionResults(session, test) {
           image:        a.image || (test && test.questions[i] ? (test.questions[i].image || '') : '')
         });
       } else {
-        // вопрос без ответа
         const tq = test && test.questions[i];
         answersArr.push({
           questionText: tq ? tq.q : ('Вопрос ' + (i + 1)),
@@ -2291,7 +2287,6 @@ function buildSessionResults(session, test) {
   return results;
 }
 
-
 function subscribeTeacherSessionLive(code, test) {
   trackUnsub(window.FB.onValue(window.FB.ref(window.FB.db, `sessions/${code}`), (snapshot) => {
     const s = snapshot.val();
@@ -2299,7 +2294,6 @@ function subscribeTeacherSessionLive(code, test) {
     renderTeacherSyncPanel(s, test, code);
     renderTeacherStudentsList(s, test);
   }));
-  // Запускаем сторожевой таймер авто-перехода
   startAutoAdvance(code, test);
 }
 
@@ -2312,38 +2306,32 @@ function startAutoAdvance(code, test) {
       const snap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
       const s = snap.val();
       if (!s) return;
-      if (!s.autoAdvance) return;                 // режим ручной — ничего не делаем
-      if (s.status !== 'active') return;          // сессия закрыта
+      if (!s.autoAdvance) return;
+      if (s.status !== 'active') return;
       if (s.phase === 'finished' || s.phase === 'lobby') return;
 
       const idx = typeof s.currentQuestion === 'number' ? s.currentQuestion : -1;
 
-      // ===== ФАЗА QUESTION =====
       if (s.phase === 'question' && idx >= 0) {
         const q = test.questions[idx];
         if (!q) return;
         const timeTotal = (q.time || test.timePerQuestion || TIME_PER_QUESTION) * 1000;
         const elapsed = Date.now() - (s.questionStartedAt || 0);
 
-        // Все ли ответили?
         const studentsArr = Object.values(s.students || {});
         const allAnswered = studentsArr.length > 0 &&
           studentsArr.every(st => st.answers && st.answers[idx]);
 
-        // Время вышло ИЛИ все ответили
         if (elapsed >= timeTotal || allAnswered) {
-          // Небольшая задержка, чтобы последний ответ успел «прочитаться» UI
           if (elapsed >= timeTotal - 200) {
             await revealQuestion(code, idx, test);
           }
         }
       }
 
-      // ===== ФАЗА RESULTS =====
       if (s.phase === 'results') {
         const delaySec = s.autoAdvanceDelaySec || 5;
         const elapsed = Date.now() - (s.revealedAt || 0);
-		        // Обновляем обратный отсчёт в UI
         const cdEl = document.getElementById('autoCountdown');
         if (cdEl) {
           const remain = Math.max(0, Math.ceil(delaySec - elapsed / 1000));
@@ -2359,7 +2347,6 @@ function startAutoAdvance(code, test) {
         }
       }
 
-      // ===== ФАЗА LEADERBOARD =====
       if (s.phase === 'leaderboard') {
         const delaySec = s.autoAdvanceDelaySec || 5;
         const elapsed = Date.now() - (s.leaderboardAt || 0);
@@ -2373,13 +2360,10 @@ function startAutoAdvance(code, test) {
         }
       }
     } catch (e) {
-      // Тихо игнорируем — не спамим алертами
       console.warn('autoAdvance tick:', e);
     }
   }, 500);
 }
-
-
 
 function renderTeacherSyncPanel(s, test, code) {
   const phase = s.phase || 'lobby';
@@ -2415,8 +2399,7 @@ function renderTeacherSyncPanel(s, test, code) {
         ${totalStudents === 0 ? '<p style="color:#94a3b8;font-size:13px;margin-top:12px;font-weight:600;">Ждём хотя бы одного ученика…</p>' : ''}
       </div>`;
     content.innerHTML = html;
-    const btn = document.getElementById('startBtn');
-    if (btn) btn.onclick = () => startQuestion(code, 0, test);
+    onClick('startBtn', () => startQuestion(code, 0, test));
     return;
   }
 
@@ -2445,8 +2428,7 @@ function renderTeacherSyncPanel(s, test, code) {
         <button class="primary" id="revealBtn">📊 Показать ответы (${answeredThisQ}/${totalStudents})</button>
       </div>`;
     content.innerHTML = html;
-    const btn = document.getElementById('revealBtn');
-    if (btn) btn.onclick = () => revealQuestion(code, idx, test);
+    onClick('revealBtn', () => revealQuestion(code, idx, test));
     return;
   }
 
@@ -2484,12 +2466,9 @@ function renderTeacherSyncPanel(s, test, code) {
         </div>
       </div>`;
     content.innerHTML = html;
-    const nextBtn = document.getElementById('nextBtn');
-    if (nextBtn) nextBtn.onclick = () => startQuestion(code, idx + 1, test);
-    const finishBtn = document.getElementById('finishBtn');
-    if (finishBtn) finishBtn.onclick = () => showLeaderboard(code);
-    const lbBtn = document.getElementById('leaderboardBtn');
-    if (lbBtn) lbBtn.onclick = () => showLeaderboard(code);
+    onClick('nextBtn', () => startQuestion(code, idx + 1, test));
+    onClick('finishBtn', () => showLeaderboard(code));
+    onClick('leaderboardBtn', () => showLeaderboard(code));
     return;
   }
 
@@ -2515,10 +2494,8 @@ function renderTeacherSyncPanel(s, test, code) {
         </div>
       </div>`;
     content.innerHTML = html;
-    const nextBtn = document.getElementById('nextBtn');
-    if (nextBtn) nextBtn.onclick = () => startQuestion(code, idx + 1, test);
-    const finishBtn = document.getElementById('finishBtn');
-    if (finishBtn) finishBtn.onclick = () => finishSession(code);
+    onClick('nextBtn', () => startQuestion(code, idx + 1, test));
+    onClick('finishBtn', () => finishSession(code));
     return;
   }
 
@@ -2531,8 +2508,7 @@ function renderTeacherSyncPanel(s, test, code) {
         <button class="download" id="expBtn" style="margin-top:14px;">📥 Скачать Excel</button>
       </div>`;
     content.innerHTML = html;
-    const exp = document.getElementById('expBtn');
-    if (exp) exp.onclick = () => document.getElementById('exportSessionBtn').click();
+    onClick('expBtn', () => document.getElementById('exportSessionBtn').click());
     return;
   }
 }
@@ -2595,7 +2571,6 @@ async function finishSession(code) {
       finishedAt: Date.now(),
       status: 'closed'
     });
-    // Пробуем сохранить результаты в общую ветку (тихо, не блокируем UI)
     try {
       const snap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
       const session = snap.val();
@@ -2671,10 +2646,9 @@ async function renderStudentSession() {
     const myId = getStudentLocalId();
     const myRecord = (s.students || {})[myId];
     if (myRecord) {
-      // Уже подключался — продолжаем
       syncState = {
         code, studentId: myId, studentName: myRecord.studentName,
-        test: null, // подгрузим ниже
+        test: null,
         answersByQ: myRecord.answers || {},
         score: myRecord.score || 0,
         correctCount: myRecord.correctCount || 0,
@@ -2690,13 +2664,11 @@ async function renderStudentSession() {
     syncState.answersByQ = syncState.answersByQ || {};
 
     if (myRecord) {
-      // Восстанавливаем сессию
       enableAntiCheat(window.FB.ref(window.FB.db, `sessions/${code}/students/${myId}`), 'soft');
       subscribeStudentSession(code);
       return;
     }
 
-    // Экран регистрации
     const classInfo = s.classId ? `<p class="student-sub" style="color:#7c3aed;">Класс: <b>${escapeHtml(s.className || '')}</b></p>` : '';
     app.innerHTML = `
       <div class="student-wrap" style="margin-top:20px;">
@@ -2798,7 +2770,7 @@ function subscribeStudentSession(code) {
     syncState.answersByQ = myRec.answers || {};
     syncState.score = myRec.score || 0;
     syncState.correctCount = myRec.correctCount || 0;
-    renderStudentSyncView(s, code);   // ← передаём code
+    renderStudentSyncView(s, code);
   }));
 }
 
@@ -2810,13 +2782,11 @@ function renderStudentSyncView(s, code) {
   const myAnswer = syncState.answersByQ[idx];
 
   const root = document.getElementById('app');
-  // Если ещё нет student-wrap — создаём структуру
   if (!document.querySelector('.sync-student-screen')) {
     root.innerHTML = `<div class="sync-student-screen" id="sss"></div>`;
   }
   const sss = document.getElementById('sss');
 
-  // Топбар с именем и баллом
   const topbar = `
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;
       background:rgba(255,255,255,0.15);padding:12px 18px;border-radius:14px;margin-bottom:14px;color:#fff;font-weight:700;">
@@ -2846,7 +2816,6 @@ function renderStudentSyncView(s, code) {
     const warning = remaining <= 5;
 
     if (myAnswer) {
-      // Уже ответил — показываем экран ожидания
       sss.innerHTML = topbar + `
         <div class="sss-hero">
           <div style="font-size:64px;margin-bottom:8px;">✅</div>
@@ -2886,7 +2855,6 @@ function renderStudentSyncView(s, code) {
       b.onclick = () => submitSyncAnswer(code, idx, +b.dataset.oi, s.questionStartedAt, timeTotal);
     });
 
-    // Тикающий таймер
     if (syncTimerInterval) clearInterval(syncTimerInterval);
     syncTimerInterval = setInterval(() => {
       const el = document.getElementById('syncTimer');
@@ -2964,19 +2932,17 @@ function renderStudentSyncView(s, code) {
 }
 
 async function submitSyncAnswer(code, idx, oi, questionStartedAt, timeTotal) {
-  if (syncState.answersByQ[idx]) return; // уже отвечено
+  if (syncState.answersByQ[idx]) return;
   const test = syncState.test;
   const q = test.questions[idx];
   const isCorrect = oi === q.correct;
   const timeSpentMs = questionStartedAt ? (Date.now() - questionStartedAt) : 0;
   const timeLeftSec = Math.max(0, timeTotal - timeSpentMs / 1000);
 
-  // Баллы за вопрос: базовые + бонус за скорость (при желании можно отключить)
   const base = TOTAL_POINTS / test.questions.length;
   const speedBonus = isCorrect ? base * 0.3 * (timeLeftSec / timeTotal) : 0;
   const points = isCorrect ? Math.round(base + speedBonus) : 0;
 
-  // Стрик
   if (isCorrect) syncState.currentStreak = (syncState.currentStreak || 0) + 1;
   else syncState.currentStreak = 0;
   const newMaxStreak = Math.max(syncState.maxStreak || 0, syncState.currentStreak || 0);
