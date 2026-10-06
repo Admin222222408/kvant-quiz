@@ -339,6 +339,7 @@ onAuthStateChanged(auth, () => {
    • Создание учителя через secondaryAuth (разработчик не вылетает)
    • Вход учителя по ИО (teacher_lookup)
    • Экспорт индивидуальной таблицы ученика
+   • Классы привязываются к учителям и тестам
    ================================================================== */
 const DEFAULT_BASE_POINTS = 5;
 const DEFAULT_SPEED_TIERS = [
@@ -1150,25 +1151,58 @@ function renderDeveloperTestsList() {
     if (!confirm(`Удалить тест «${testsCache[id].title}»?`)) return;
     await window.FB.remove(window.FB.ref(window.FB.db, `tests/${id}`));
     delete testsCache[id];
+    // Чистим id теста из классов
+    try {
+      const clsSnap = await window.FB.get(window.FB.ref(window.FB.db, 'classes'));
+      const cls = clsSnap.val() || {};
+      for (const [cid, c] of Object.entries(cls)) {
+        if (Array.isArray(c.tests) && c.tests.includes(id)) {
+          const newT = c.tests.filter(x => x !== id);
+          await window.FB.update(window.FB.ref(window.FB.db, `classes/${cid}`), { tests: newT });
+          if (classesCache[cid]) classesCache[cid].tests = newT;
+        }
+      }
+    } catch (e) { console.warn('cleanup test from classes:', e); }
     renderDeveloperTestsList();
   });
 }
 
 /* ============ КЛАССЫ ============ */
-function renderClassesList() {
+async function renderClassesList() {
   const el = document.getElementById('classesArea');
   if (!el) return;
+
+  // Свежие данные по учителям, чтобы показать их имена
+  if (Object.keys(teachersUsersCache).length === 0) {
+    try { await loadTeachersData(); } catch (e) {}
+  }
+
   const classes = Object.entries(classesCache);
   if (classes.length === 0) { el.innerHTML = `<p class="hint">Классов пока нет.</p>`; return; }
-  el.innerHTML = `<div class="class-list">${classes.map(([id, c]) => `
-    <div class="class-card">
-      <div class="cc-head"><div class="cc-name">${escapeHtml(c.name)}</div><div class="cc-count">${(c.students || []).length} уч.</div></div>
-      <div class="cc-students">${(c.students || []).length ? escapeHtml((c.students || []).join(', ')) : '<i>Пусто</i>'}</div>
-      <div class="cc-actions">
-        <button class="small" data-edit-class="${id}">✏ Изменить</button>
-        <button class="small danger" data-del-class="${id}">🗑</button>
-      </div>
-    </div>`).join('')}</div>`;
+
+  el.innerHTML = `<div class="class-list">${classes.map(([id, c]) => {
+    const teacherNames = (Array.isArray(c.teachers) ? c.teachers : [])
+      .map(uid => teachersUsersCache[uid]?.name || teachersUsersCache[uid]?.email)
+      .filter(Boolean);
+    const testTitles = (Array.isArray(c.tests) ? c.tests : [])
+      .map(tid => testsCache[tid]?.title)
+      .filter(Boolean);
+    return `
+      <div class="class-card">
+        <div class="cc-head">
+          <div class="cc-name">${escapeHtml(c.name)}</div>
+          <div class="cc-count">${(c.students || []).length} уч.</div>
+        </div>
+        <div class="cc-students">${(c.students || []).length ? escapeHtml((c.students || []).join(', ')) : '<i>Пусто</i>'}</div>
+        ${teacherNames.length ? `<div style="font-size:11px;color:#7c3aed;font-weight:700;margin-bottom:4px;">👨‍🏫 ${escapeHtml(teacherNames.join(', '))}</div>` : ''}
+        ${testTitles.length ? `<div style="font-size:11px;color:#16a34a;font-weight:700;margin-bottom:8px;">📚 ${escapeHtml(testTitles.join(', '))}</div>` : ''}
+        <div class="cc-actions">
+          <button class="small" data-edit-class="${id}">✏ Изменить</button>
+          <button class="small danger" data-del-class="${id}">🗑</button>
+        </div>
+      </div>`;
+  }).join('')}</div>`;
+
   el.querySelectorAll('[data-edit-class]').forEach(b => b.onclick = () => openClassEditor(b.dataset.editClass, classesCache[b.dataset.editClass]));
   el.querySelectorAll('[data-del-class]').forEach(b => b.onclick = async () => {
     const id = b.dataset.delClass;
@@ -1178,27 +1212,84 @@ function renderClassesList() {
     renderClassesList();
   });
 }
-function openClassEditor(classId, classData) {
+
+async function openClassEditor(classId, classData) {
   const isNew = !classId;
-  const initial = classData || { name: '', students: [] };
+  const initial = classData || { name: '', students: [], teachers: [], tests: [] };
+
+  // Свежие данные по учителям
+  await loadTeachersData();
+
+  // Список учителей
+  const teachers = Object.entries(teachersUsersCache)
+    .filter(([_, u]) => u && u.role === 'teacher')
+    .map(([uid, u]) => ({ uid, name: u.name || u.email || '—' }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+
+  // Список опубликованных тестов
+  const tests = Object.entries(testsCache)
+    .filter(([_, t]) => !t.status || t.status === 'published')
+    .map(([id, t]) => ({ id, title: t.title || '—' }))
+    .sort((a, b) => a.title.localeCompare(b.title, 'ru'));
+
+  const initialTeachers = Array.isArray(initial.teachers) ? initial.teachers : [];
+  const initialTests = Array.isArray(initial.tests) ? initial.tests : [];
+
   const m = openModal(`<div class="modal-body">
     <h2>${isNew ? '➕ Новый класс' : '✏ Редактирование'}</h2>
+
     <label class="label">Название</label>
     <input type="text" id="className" value="${escapeHtml(initial.name)}" placeholder="10А">
+
     <label class="label">Ученики (по одному в строке)</label>
-    <textarea id="classStudents" style="min-height:200px;">${escapeHtml((initial.students || []).join('\n'))}</textarea>
+    <textarea id="classStudents" style="min-height:130px;">${escapeHtml((initial.students || []).join('\n'))}</textarea>
+
+    <label class="label">👨‍🏫 Учителя (кто ведёт этот класс)</label>
+    <div id="classTeachersBox" style="max-height:180px;overflow-y:auto;border:2px solid #e2e8f0;border-radius:12px;padding:10px;margin-bottom:14px;background:#fff;">
+      ${teachers.length === 0
+        ? '<p class="hint" style="margin:0;">Учителей пока нет. Создайте их в разделе «Учителя».</p>'
+        : teachers.map(t => `
+          <label style="display:flex;align-items:center;gap:8px;padding:6px 4px;cursor:pointer;font-weight:600;font-size:14px;">
+            <input type="checkbox" value="${escapeAttr(t.uid)}" ${initialTeachers.includes(t.uid) ? 'checked' : ''}
+              style="width:18px;height:18px;accent-color:var(--violet);cursor:pointer;">
+            ${escapeHtml(t.name)}
+          </label>`).join('')}
+    </div>
+
+    <label class="label">📚 Тесты для этого класса</label>
+    <div id="classTestsBox" style="max-height:180px;overflow-y:auto;border:2px solid #e2e8f0;border-radius:12px;padding:10px;margin-bottom:14px;background:#fff;">
+      ${tests.length === 0
+        ? '<p class="hint" style="margin:0;">Опубликованных тестов пока нет.</p>'
+        : tests.map(t => `
+          <label style="display:flex;align-items:center;gap:8px;padding:6px 4px;cursor:pointer;font-weight:600;font-size:14px;">
+            <input type="checkbox" value="${escapeAttr(t.id)}" ${initialTests.includes(t.id) ? 'checked' : ''}
+              style="width:18px;height:18px;accent-color:var(--violet);cursor:pointer;">
+            ${escapeHtml(t.title)}
+          </label>`).join('')}
+    </div>
+
+    <p class="hint" style="margin-top:-4px;">Если ни один тест не выбран — учителю будут доступны все опубликованные тесты.</p>
+
     <div style="display:flex;gap:10px;margin-top:14px;">
       <button id="saveClass" class="green" style="flex:1;">💾 Сохранить</button>
       <button class="back" id="closeClass">Отмена</button>
     </div>
-  </div>`, 600);
+  </div>`, 640);
+
   m.$('#closeClass').onclick = () => m.close();
   m.$('#saveClass').onclick = async () => {
     const name = m.$('#className').value.trim();
-    if (!name) return;
+    if (!name) { alert('Укажите название'); return; }
     const students = m.$('#classStudents').value.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+    const teachersSel = Array.from(m.$$('#classTeachersBox input[type=checkbox]:checked')).map(i => i.value);
+    const testsSel = Array.from(m.$$('#classTestsBox input[type=checkbox]:checked')).map(i => i.value);
     const id = classId || genId('cls');
-    const payload = { name, students, updatedAt: Date.now() };
+    const payload = {
+      name, students,
+      teachers: teachersSel,
+      tests: testsSel,
+      updatedAt: Date.now()
+    };
     if (isNew) { payload.createdAt = Date.now(); payload.createdBy = currentUser.uid; }
     try {
       if (isNew) await window.FB.set(window.FB.ref(window.FB.db, `classes/${id}`), payload);
@@ -1287,6 +1378,18 @@ async function renderTeachersList() {
         .remove(window.FB.ref(window.FB.db, `teacher_lookup/${nameLookupKey(t.name)}`))
         .catch(() => {});
     }
+    // Чистим uid из классов
+    try {
+      const clsSnap = await window.FB.get(window.FB.ref(window.FB.db, 'classes'));
+      const cls = clsSnap.val() || {};
+      for (const [cid, c] of Object.entries(cls)) {
+        if (Array.isArray(c.teachers) && c.teachers.includes(uid)) {
+          const newT = c.teachers.filter(x => x !== uid);
+          await window.FB.update(window.FB.ref(window.FB.db, `classes/${cid}`), { teachers: newT });
+          if (classesCache[cid]) classesCache[cid].teachers = newT;
+        }
+      }
+    } catch (e) { console.warn('cleanup teacher from classes:', e); }
     await window.FB.remove(window.FB.ref(window.FB.db, `users/${uid}`));
     renderTeachersList();
   });
@@ -1954,14 +2057,19 @@ async function renderTeacherHome() {
   await loadClasses();
   document.body.className = 'theme-teacher';
 
+  // Мои классы: где я в teachers[]; если teachers не задан — показываем всем (совместимость)
+  const myClasses = Object.entries(classesCache).filter(([_, c]) => {
+    if (!Array.isArray(c.teachers) || c.teachers.length === 0) return true;
+    return c.teachers.includes(currentUser.uid);
+  });
+
   const publishedTests = Object.entries(testsCache).filter(([_, t]) => !t.status || t.status === 'published');
-  const testOptions = publishedTests.length === 0
+  const allTestsOptions = publishedTests.length === 0
     ? `<option value="">— Нет доступных тестов —</option>`
     : publishedTests.map(([id, t]) => `<option value="${id}">${escapeHtml(t.title.slice(0, 70))} · макс ${formatScore(getMaxScore(t))} б.</option>`).join('');
 
-  const classList = Object.entries(classesCache);
   const classOptions = `<option value="">Без класса</option>` +
-    classList.map(([id, c]) => `<option value="${id}">${escapeHtml(c.name)} (${(c.students || []).length} уч.)</option>`).join('');
+    myClasses.map(([id, c]) => `<option value="${id}">${escapeHtml(c.name)} (${(c.students || []).length} уч.)</option>`).join('');
 
   app.innerHTML = `
     ${renderTopNav('teacher', 'sessions')}
@@ -1969,8 +2077,8 @@ async function renderTeacherHome() {
     <div class="big-action">
       <h2>🚀 Запустить тест</h2>
       <p>Выберите режим: <b>🏠 Лобби</b> — все ждут и стартуем вместе, <b>👤 Индивидуальный</b> — каждый проходит сам.</p>
-      <div class="select-wrap"><select id="newSessionTest">${testOptions}</select></div>
-      <div class="select-wrap" style="margin-top:-6px;"><select id="newSessionClass">${classOptions}</select></div>
+      <div class="select-wrap"><select id="newSessionClass">${classOptions}</select></div>
+      <div class="select-wrap" style="margin-top:-6px;"><select id="newSessionTest">${allTestsOptions}</select></div>
       <div class="select-wrap">
         <select id="newSessionMode">
           <option value="lobby">🏠 Лобби — ждём всех, стартуем вместе</option>
@@ -1992,11 +2100,28 @@ async function renderTeacherHome() {
     </div>`;
 
   bindTopNav();
+
   const modeSel = document.getElementById('newSessionMode');
   const autoWrap = document.getElementById('autoWrap');
   modeSel.onchange = () => { autoWrap.style.display = modeSel.value === 'lobby' ? 'block' : 'none'; };
+
+  // При смене класса — обновляем список тестов
+  const classSel = document.getElementById('newSessionClass');
+  const testSel = document.getElementById('newSessionTest');
+  classSel.onchange = () => {
+    const cid = classSel.value;
+    if (!cid) { testSel.innerHTML = allTestsOptions; return; }
+    const cls = classesCache[cid];
+    const allowed = (cls && Array.isArray(cls.tests)) ? cls.tests : [];
+    if (allowed.length === 0) { testSel.innerHTML = allTestsOptions; return; }
+    const filtered = publishedTests.filter(([id]) => allowed.includes(id));
+    testSel.innerHTML = filtered.length === 0
+      ? `<option value="">— Нет тестов для этого класса —</option>`
+      : filtered.map(([id, t]) => `<option value="${id}">${escapeHtml(t.title.slice(0, 70))} · макс ${formatScore(getMaxScore(t))} б.</option>`).join('');
+  };
+
   onClick('createSessionBtn', createSession);
-  try { cleanupOldSessions();       } catch (e) {}
+  try { cleanupOldSessions(); } catch (e) {}
   try { subscribeTeacherSessions(); } catch (e) {}
 }
 
@@ -2182,7 +2307,7 @@ function buildSessionResults(session, test) {
   return results;
 }
 
-/* ---------- НОВОЕ: экспорт одного ученика ---------- */
+/* ---------- Экспорт одного ученика ---------- */
 function exportOneStudentTable(code, studentId, session, test) {
   if (!test) return;
   const st = (session.students || {})[studentId];
