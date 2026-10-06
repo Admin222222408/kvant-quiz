@@ -27,7 +27,6 @@ const fbApp = initializeApp(firebaseConfig);
 const db = getDatabase(fbApp);
 const auth = getAuth(fbApp);
 
-// Вторичное Firebase-приложение — чтобы создание учителя не разлогинивало разработчика
 const _existingSec = getApps().find(a => a.name === 'secondary');
 const secondaryApp = _existingSec || initializeApp(firebaseConfig, 'secondary');
 const secondaryAuth = getAuth(secondaryApp);
@@ -294,6 +293,155 @@ onAuthStateChanged(auth, () => {
   .tier-add-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: #f0fdf4; color: #16a34a; border: 2px dashed #86efac; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer; box-shadow: none; }
   .tier-preset-btn { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; box-shadow: none; }
   .print-form { display: none; }
+
+  /* ============================================================
+     АНИМИРОВАННЫЙ ЭКРАН ВХОДА УЧИТЕЛЯ
+     ============================================================ */
+  .auth-split {
+    min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr;
+    background: #f1f0f5; margin: -24px -20px -48px -20px;
+  }
+  @media (max-width: 800px) {
+    .auth-split { grid-template-columns: 1fr; margin: -24px -20px -48px -20px; }
+    .auth-art { display: none; }
+  }
+  .auth-art {
+    background: #e9e8ee; position: relative; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .art-scene { position: relative; width: 420px; height: 420px; }
+  @media (max-height: 700px) { .art-scene { width: 340px; height: 340px; } }
+
+  .art-char { position: absolute; bottom: 0; transition: transform 0.5s ease; }
+  .art-char .eyes { position: absolute; width: 100%; }
+  .eye {
+    position: absolute; background: #111; border-radius: 50%;
+    transition: all 0.3s ease;
+  }
+  .eye-closed {
+    opacity: 0; border-radius: 50% 50% 0 0;
+    background: transparent !important;
+    border: 3px solid #111; border-bottom: none;
+    width: 14px !important; height: 8px !important;
+  }
+  .mouth {
+    position: absolute; background: #111; border-radius: 3px;
+    transition: all 0.3s ease;
+  }
+
+  /* Оранжевый полукруг */
+  .art-orange { left: 20px; width: 210px; height: 130px; background: #f97316; border-radius: 110px 110px 0 0; z-index: 4; }
+  .art-orange .eyes { top: 55px; left: 0; }
+  .art-orange .eye { width: 8px; height: 8px; }
+  .art-orange .eye-open.left { left: 75px; }
+  .art-orange .eye-open.right { left: 120px; }
+  .art-orange .eye-closed.left { left: 72px; top: 2px; }
+  .art-orange .eye-closed.right { left: 117px; top: 2px; }
+  .art-orange .mouth { left: 90px; top: 85px; width: 14px; height: 3px; }
+
+  /* Фиолетовый прямоугольник */
+  .art-violet { left: 100px; width: 110px; height: 250px; background: #7c3aed; border-radius: 6px 6px 0 0; z-index: 1; }
+  .art-violet .eyes { top: 60px; left: 0; }
+  .art-violet .eye { width: 7px; height: 7px; }
+  .art-violet .eye-open.left { left: 32px; }
+  .art-violet .eye-open.right { left: 62px; }
+  .art-violet .eye-closed.left { left: 28px; top: 1px; }
+  .art-violet .eye-closed.right { left: 58px; top: 1px; }
+  .art-violet .mouth { left: 45px; top: 85px; width: 12px; height: 3px; }
+
+  /* Чёрный прямоугольник */
+  .art-black { left: 200px; width: 88px; height: 175px; background: #1a1a1a; border-radius: 4px 4px 0 0; z-index: 3; }
+  .art-black .eyes { top: 45px; left: 0; }
+  .art-black .eye { width: 7px; height: 7px; background: #fff; }
+  .art-black .eye-closed { border-color: #fff; }
+  .art-black .eye-open.left { left: 24px; }
+  .art-black .eye-open.right { left: 50px; }
+  .art-black .eye-closed.left { left: 20px; top: 1px; }
+  .art-black .eye-closed.right { left: 46px; top: 1px; }
+  .art-black .mouth { left: 34px; top: 70px; width: 12px; height: 3px; background: #fff; }
+
+  /* Жёлтая фигурка */
+  .art-yellow { left: 275px; width: 82px; height: 140px; background: #fbbf24; border-radius: 42px 42px 0 0; z-index: 2; }
+  .art-yellow .eyes { top: 50px; left: 0; }
+  .art-yellow .eye { width: 6px; height: 6px; }
+  .art-yellow .eye-open.left { left: 22px; }
+  .art-yellow .eye-open.right { left: 44px; }
+  .art-yellow .eye-closed.left { left: 18px; top: 1px; }
+  .art-yellow .eye-closed.right { left: 40px; top: 1px; }
+  .art-yellow .mouth { left: 30px; top: 72px; width: 10px; height: 3px; }
+
+  /* Состояния */
+  .auth-art[data-state="neutral"] .art-char { transform: translateY(0); }
+
+  .auth-art[data-state="typing"] .eye-open { width: 10px !important; height: 10px !important; }
+  .auth-art[data-state="typing"] .mouth { width: 8px; height: 8px; border-radius: 50%; }
+
+  .auth-art[data-state="password"] .eye-open { width: 11px !important; height: 11px !important; }
+  .auth-art[data-state="password"] .art-violet .eye-open { width: 9px !important; height: 9px !important; }
+  .auth-art[data-state="password"] .mouth { width: 10px; height: 10px; border-radius: 50%; }
+  .auth-art[data-state="password"] .art-orange .mouth { width: 12px; height: 12px; }
+  .auth-art[data-state="password"] .art-violet { transform: translateY(-6px); }
+  .auth-art[data-state="password"] .art-yellow { transform: translateY(-4px); }
+
+  .auth-art[data-state="ready"] .eye-open { opacity: 0; }
+  .auth-art[data-state="ready"] .eye-closed { opacity: 1; }
+  .auth-art[data-state="ready"] .mouth {
+    width: 20px !important; height: 10px !important;
+    background: transparent !important;
+    border-bottom: 3px solid #111;
+    border-radius: 0 0 20px 20px;
+    border-top: none; border-left: none; border-right: none;
+  }
+  .auth-art[data-state="ready"] .art-black .mouth { border-color: #fff; }
+  .auth-art[data-state="ready"] .art-char { animation: happyBounce 0.6s ease; }
+  @keyframes happyBounce {
+    0% { transform: translateY(0); }
+    40% { transform: translateY(-8px); }
+    100% { transform: translateY(0); }
+  }
+
+  .auth-form-side {
+    display: flex; align-items: center; justify-content: center;
+    padding: 40px 24px; background: #f8f7fb;
+    min-height: 100vh;
+  }
+  .auth-form-card { width: 100%; max-width: 400px; text-align: center; }
+  .auth-logo { font-size: 40px; margin-bottom: 14px; }
+  .auth-title { font-size: 30px; font-weight: 900; margin: 0 0 6px; color: #111; letter-spacing: -0.02em; }
+  .auth-sub { font-size: 14px; color: #64748b; font-weight: 500; margin: 0 0 34px; }
+  .auth-field { text-align: left; margin-bottom: 18px; }
+  .auth-field label { display: block; font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 8px; letter-spacing: 0.02em; }
+  .auth-field input {
+    width: 100%; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 12px;
+    font-size: 15px; font-weight: 600; color: #1e1b4b;
+    background: #fff; margin: 0; transition: all 0.15s;
+  }
+  .auth-field input:focus { border-color: var(--violet); box-shadow: 0 0 0 4px rgba(124,58,237,0.12); outline: none; }
+  .pass-wrap { position: relative; }
+  .pass-wrap input { padding-right: 48px; }
+  .pass-toggle {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    background: transparent; border: none; cursor: pointer; font-size: 18px;
+    padding: 8px; box-shadow: none; color: #94a3b8;
+  }
+  .pass-toggle:hover { background: transparent; transform: translateY(-50%); box-shadow: none; color: var(--violet); }
+
+  .btn-login-big {
+    width: 100%; padding: 16px; margin-top: 12px;
+    background: #111; color: #fff; border-radius: 12px;
+    font-size: 15px; font-weight: 800; letter-spacing: 0.02em;
+    box-shadow: none;
+  }
+  .btn-login-big:hover { background: #1e1b4b; transform: translateY(-1px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
+
+  .auth-error {
+    color: #ef4444; font-size: 13px; font-weight: 700;
+    min-height: 18px; margin: 8px 0 0; text-align: center;
+  }
+  .auth-links { margin-top: 26px; }
+  .auth-links a { color: var(--violet); font-size: 13px; font-weight: 600; text-decoration: none; }
+  .auth-links a:hover { text-decoration: underline; }
+
   @media print {
     body * { visibility: hidden; }
     body { background: #fff !important; }
@@ -333,13 +481,8 @@ onAuthStateChanged(auth, () => {
 <script>
 /* ==================================================================
    KVANT-QUIZ — FULL VERSION
-   • Античит (жёсткий и мягкий)
-   • Режимы: 🏠 Лобби / 👤 Индивидуальный
-   • Авто-переход когда все ответили
-   • Создание учителя через secondaryAuth (разработчик не вылетает)
-   • Вход учителя по ИО (teacher_lookup)
-   • Экспорт индивидуальной таблицы ученика
-   • Классы привязываются к учителям и тестам
+   • Анимированный экран входа учителя (персонажи + форма)
+   • Античит, Лобби/Индивидуальный, привязка классов к учителям и тестам
    ================================================================== */
 const DEFAULT_BASE_POINTS = 5;
 const DEFAULT_SPEED_TIERS = [
@@ -835,65 +978,191 @@ function bindTopNav() {
   });
 }
 
-/* ============ АВТОРИЗАЦИЯ ============ */
+/* ==================================================================
+   АВТОРИЗАЦИЯ
+   ================================================================== */
 function renderAuth(expectedRole) {
   clearAllUnsubs();
   fbReady(() => {
     const isDev = expectedRole === 'developer';
     document.body.className = isDev ? 'theme-developer' : 'theme-teacher';
-    app.innerHTML = `<div class="auth-form" style="max-width:440px;margin:40px auto;background:#fff;border-radius:24px;padding:36px 32px;box-shadow:0 20px 60px rgba(124,58,237,0.12);">
-      <h1 style="text-align:center;">${isDev ? '🛠 Вход разработчика' : '👨‍🏫 Вход учителя'}</h1>
-      <p class="hint" style="text-align:center;margin-bottom:24px;">${isDev ? 'Панель управления системой' : 'Кабинет для проведения тестов'}</p>
-      ${isDev ? `
+    document.body.style.padding = '0';
+
+    if (isDev) {
+      // Разработчик — старая форма
+      app.innerHTML = `<div style="max-width:440px;margin:60px auto;background:#fff;border-radius:24px;padding:36px 32px;box-shadow:0 20px 60px rgba(124,58,237,0.12);">
+        <h1 style="text-align:center;">🛠 Вход разработчика</h1>
+        <p class="hint" style="text-align:center;margin-bottom:24px;">Панель управления системой</p>
         <label class="label">Email</label>
         <input type="email" id="loginEmail" placeholder="you@school.ru" autocomplete="email">
-      ` : `
-        <label class="label">Имя Отчество</label>
-        <input type="text" id="loginName" placeholder="Иванов Иван" autocomplete="username">
-        <p class="hint" style="font-size:11px;margin-top:-4px;">Введите ИО, указанное разработчиком при создании</p>
-      `}
-      <label class="label">Пароль</label>
-      <input type="password" id="loginPass" placeholder="••••••••">
-      <p id="loginError" style="color:#ef4444;font-size:13px;font-weight:600;min-height:20px;margin:6px 0 10px;text-align:center;"></p>
-      <button id="doLogin" class="green" style="width:100%;padding:14px;">Войти →</button>
-      <p class="hint" style="text-align:center;margin-top:14px;"><a href="?mode=student" style="color:var(--violet);text-decoration:none;font-weight:600;">← Ко входу ученика</a></p>
-    </div>`;
-    document.getElementById('doLogin').onclick = doLogin;
-    const passInput = document.getElementById('loginPass');
-    if (passInput) passInput.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+        <label class="label">Пароль</label>
+        <input type="password" id="loginPass" placeholder="••••••••">
+        <p id="loginError" style="color:#ef4444;font-size:13px;font-weight:600;min-height:20px;margin:6px 0 10px;text-align:center;"></p>
+        <button id="doLogin" class="green" style="width:100%;padding:14px;">Войти →</button>
+        <p class="hint" style="text-align:center;margin-top:14px;"><a href="?mode=student" style="color:var(--violet);text-decoration:none;font-weight:600;">← Ко входу ученика</a></p>
+      </div>`;
+      document.getElementById('doLogin').onclick = doLoginDev;
+      document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLoginDev(); });
+      async function doLoginDev() {
+        const email = document.getElementById('loginEmail').value.trim();
+        const pass = document.getElementById('loginPass').value;
+        const err = document.getElementById('loginError');
+        err.textContent = '';
+        if (!email || !pass) { err.textContent = 'Заполните email и пароль'; return; }
+        try {
+          const cred = await window.FB.signInWithEmailAndPassword(window.FB.auth, email, pass);
+          let profile = getCachedProfile(cred.user.uid);
+          if (!profile) {
+            const snap = await window.FB.get(window.FB.ref(window.FB.db, `users/${cred.user.uid}`));
+            profile = snap.val();
+            if (profile) setCachedProfile(cred.user.uid, profile);
+          }
+          if (!profile) { err.textContent = 'Профиль не найден'; await window.FB.signOut(window.FB.auth); return; }
+          if (profile.role !== 'developer') { err.textContent = 'Это не аккаунт разработчика'; await window.FB.signOut(window.FB.auth); return; }
+          currentUser = { uid: cred.user.uid, email: profile.email || email, role: profile.role, name: profile.name || '' };
+          renderDeveloperHome();
+        } catch (e) {
+          const c = e && e.code;
+          if (c === 'auth/invalid-email') err.textContent = 'Некорректный email';
+          else if (c === 'auth/user-not-found') err.textContent = 'Пользователь не найден';
+          else if (c === 'auth/wrong-password') err.textContent = 'Неверный пароль';
+          else if (c === 'auth/invalid-credential') err.textContent = 'Неверный email или пароль';
+          else if (c === 'auth/too-many-requests') err.textContent = 'Слишком много попыток';
+          else err.textContent = 'Ошибка: ' + (e.message || 'неизвестная');
+        }
+      }
+      return;
+    }
+
+    // ============ УЧИТЕЛЬ: анимированный экран ============
+    app.innerHTML = `
+      <div class="auth-split">
+        <div class="auth-art" id="authArt" data-state="neutral">
+          <div class="art-scene">
+            <div class="art-char art-violet">
+              <div class="eyes">
+                <div class="eye eye-open left"></div>
+                <div class="eye eye-open right"></div>
+                <div class="eye eye-closed left"></div>
+                <div class="eye eye-closed right"></div>
+              </div>
+              <div class="mouth"></div>
+            </div>
+            <div class="art-char art-yellow">
+              <div class="eyes">
+                <div class="eye eye-open left"></div>
+                <div class="eye eye-open right"></div>
+                <div class="eye eye-closed left"></div>
+                <div class="eye eye-closed right"></div>
+              </div>
+              <div class="mouth"></div>
+            </div>
+            <div class="art-char art-black">
+              <div class="eyes">
+                <div class="eye eye-open left"></div>
+                <div class="eye eye-open right"></div>
+                <div class="eye eye-closed left"></div>
+                <div class="eye eye-closed right"></div>
+              </div>
+              <div class="mouth"></div>
+            </div>
+            <div class="art-char art-orange">
+              <div class="eyes">
+                <div class="eye eye-open left"></div>
+                <div class="eye eye-open right"></div>
+                <div class="eye eye-closed left"></div>
+                <div class="eye eye-closed right"></div>
+              </div>
+              <div class="mouth"></div>
+            </div>
+          </div>
+        </div>
+        <div class="auth-form-side">
+          <div class="auth-form-card">
+            <div class="auth-logo">✈️</div>
+            <h1 class="auth-title">Вход учителя</h1>
+            <p class="auth-sub">Кабинет для проведения тестов</p>
+
+            <div class="auth-field">
+              <label>Имя Отчество</label>
+              <input type="text" id="loginName" placeholder="Иванов Иван" autocomplete="username">
+            </div>
+
+            <div class="auth-field">
+              <label>Пароль</label>
+              <div class="pass-wrap">
+                <input type="password" id="loginPass" placeholder="••••••••">
+                <button type="button" class="pass-toggle" id="passToggle" title="Показать пароль">👁</button>
+              </div>
+            </div>
+
+            <p class="auth-error" id="loginError"></p>
+
+            <button id="doLogin" class="btn-login-big">Войти →</button>
+
+            <div class="auth-links">
+              <a href="?mode=student">← Ко входу ученика</a>
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+    const artEl = document.getElementById('authArt');
     const nameInput = document.getElementById('loginName');
-    if (nameInput) nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+    const passInput = document.getElementById('loginPass');
+    const passToggle = document.getElementById('passToggle');
+
+    function updateState() {
+      const hasName = nameInput.value.trim().length > 0;
+      const hasPass = passInput.value.length > 0;
+      const passFocused = document.activeElement === passInput;
+
+      let state = 'neutral';
+      if (hasName && hasPass) state = 'ready';
+      else if (passFocused && hasPass) state = 'password';
+      else if (hasName || hasPass) state = 'typing';
+      else if (passFocused) state = 'typing';
+
+      artEl.setAttribute('data-state', state);
+    }
+
+    nameInput.addEventListener('input', updateState);
+    nameInput.addEventListener('focus', updateState);
+    nameInput.addEventListener('blur', updateState);
+    passInput.addEventListener('input', updateState);
+    passInput.addEventListener('focus', updateState);
+    passInput.addEventListener('blur', () => { setTimeout(updateState, 100); });
+
+    passToggle.onclick = () => {
+      const isPass = passInput.type === 'password';
+      passInput.type = isPass ? 'text' : 'password';
+      passToggle.textContent = isPass ? '🙈' : '👁';
+    };
+
+    document.getElementById('doLogin').onclick = doLogin;
+    nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+    passInput.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
     async function doLogin() {
-      const pass = document.getElementById('loginPass').value;
+      const nameRaw = nameInput.value.trim();
+      const pass = passInput.value;
       const err = document.getElementById('loginError');
       err.textContent = '';
+      if (!nameRaw || !pass) { err.textContent = 'Заполните ИО и пароль'; return; }
 
       let email = '';
-
-      if (isDev) {
-        email = document.getElementById('loginEmail').value.trim();
-        if (!email || !pass) { err.textContent = 'Заполните email и пароль'; return; }
+      if (nameRaw.includes('@')) {
+        email = nameRaw;
       } else {
-        const nameRaw = document.getElementById('loginName').value.trim();
-        if (!nameRaw || !pass) { err.textContent = 'Заполните ИО и пароль'; return; }
-
-        if (nameRaw.includes('@')) {
-          email = nameRaw;
-        } else {
-          try {
-            const key = nameLookupKey(nameRaw);
-            const snap = await window.FB.get(window.FB.ref(window.FB.db, `teacher_lookup/${key}`));
-            const entry = snap.val();
-            if (!entry || !entry.email) {
-              err.textContent = 'Учитель с таким ИО не найден';
-              return;
-            }
-            email = entry.email;
-          } catch (lookupErr) {
-            err.textContent = 'Ошибка поиска: ' + (lookupErr.message || '');
-            return;
-          }
+        try {
+          const key = nameLookupKey(nameRaw);
+          const snap = await window.FB.get(window.FB.ref(window.FB.db, `teacher_lookup/${key}`));
+          const entry = snap.val();
+          if (!entry || !entry.email) { err.textContent = 'Учитель с таким ИО не найден'; return; }
+          email = entry.email;
+        } catch (lookupErr) {
+          err.textContent = 'Ошибка поиска: ' + (lookupErr.message || '');
+          return;
         }
       }
 
@@ -906,11 +1175,10 @@ function renderAuth(expectedRole) {
           if (profile) setCachedProfile(cred.user.uid, profile);
         }
         if (!profile) { err.textContent = 'Профиль не найден'; await window.FB.signOut(window.FB.auth); return; }
-        if (isDev && profile.role !== 'developer') { err.textContent = 'Это не аккаунт разработчика'; await window.FB.signOut(window.FB.auth); return; }
-        if (!isDev && profile.role !== 'teacher') { err.textContent = 'Это не аккаунт учителя'; await window.FB.signOut(window.FB.auth); return; }
+        if (profile.role !== 'teacher') { err.textContent = 'Это не аккаунт учителя'; await window.FB.signOut(window.FB.auth); return; }
         currentUser = { uid: cred.user.uid, email: profile.email || email, role: profile.role, name: profile.name || '' };
-        if (profile.role === 'developer') renderDeveloperHome();
-        else renderTeacherHome();
+        document.body.style.padding = '';
+        renderTeacherHome();
       } catch (e) {
         const c = e && e.code;
         if (c === 'auth/invalid-email') err.textContent = 'Некорректный email';
@@ -1002,6 +1270,7 @@ async function sendHelpMsg(m) {
 async function renderDeveloperHome() {
   clearAllUnsubs();
   if (!currentUser || currentUser.role !== 'developer') { renderAuth('developer'); return; }
+  document.body.style.padding = '';
   await seedTestsIfEmpty();
   await loadClasses();
   document.body.className = 'theme-developer';
@@ -1085,9 +1354,7 @@ async function rebuildTeacherLookup() {
     const updates = {};
     for (const [uid, u] of Object.entries(users)) {
       if (u && u.role === 'teacher' && u.name && u.email) {
-        updates[`teacher_lookup/${nameLookupKey(u.name)}`] = {
-          email: u.email, uid, name: u.name
-        };
+        updates[`teacher_lookup/${nameLookupKey(u.name)}`] = { email: u.email, uid, name: u.name };
       }
     }
     if (Object.keys(updates).length > 0) {
@@ -1151,7 +1418,6 @@ function renderDeveloperTestsList() {
     if (!confirm(`Удалить тест «${testsCache[id].title}»?`)) return;
     await window.FB.remove(window.FB.ref(window.FB.db, `tests/${id}`));
     delete testsCache[id];
-    // Чистим id теста из классов
     try {
       const clsSnap = await window.FB.get(window.FB.ref(window.FB.db, 'classes'));
       const cls = clsSnap.val() || {};
@@ -1171,12 +1437,9 @@ function renderDeveloperTestsList() {
 async function renderClassesList() {
   const el = document.getElementById('classesArea');
   if (!el) return;
-
-  // Свежие данные по учителям, чтобы показать их имена
   if (Object.keys(teachersUsersCache).length === 0) {
     try { await loadTeachersData(); } catch (e) {}
   }
-
   const classes = Object.entries(classesCache);
   if (classes.length === 0) { el.innerHTML = `<p class="hint">Классов пока нет.</p>`; return; }
 
@@ -1187,13 +1450,14 @@ async function renderClassesList() {
     const testTitles = (Array.isArray(c.tests) ? c.tests : [])
       .map(tid => testsCache[tid]?.title)
       .filter(Boolean);
+    const studentCount = (c.students || []).length;
     return `
       <div class="class-card">
         <div class="cc-head">
           <div class="cc-name">${escapeHtml(c.name)}</div>
-          <div class="cc-count">${(c.students || []).length} уч.</div>
+          ${studentCount > 0 ? `<div class="cc-count">${studentCount} уч.</div>` : ''}
         </div>
-        <div class="cc-students">${(c.students || []).length ? escapeHtml((c.students || []).join(', ')) : '<i>Пусто</i>'}</div>
+        <div class="cc-students">${studentCount > 0 ? escapeHtml((c.students || []).join(', ')) : '<i>Пусто</i>'}</div>
         ${teacherNames.length ? `<div style="font-size:11px;color:#7c3aed;font-weight:700;margin-bottom:4px;">👨‍🏫 ${escapeHtml(teacherNames.join(', '))}</div>` : ''}
         ${testTitles.length ? `<div style="font-size:11px;color:#16a34a;font-weight:700;margin-bottom:8px;">📚 ${escapeHtml(testTitles.join(', '))}</div>` : ''}
         <div class="cc-actions">
@@ -1216,17 +1480,13 @@ async function renderClassesList() {
 async function openClassEditor(classId, classData) {
   const isNew = !classId;
   const initial = classData || { name: '', students: [], teachers: [], tests: [] };
-
-  // Свежие данные по учителям
   await loadTeachersData();
 
-  // Список учителей
   const teachers = Object.entries(teachersUsersCache)
     .filter(([_, u]) => u && u.role === 'teacher')
     .map(([uid, u]) => ({ uid, name: u.name || u.email || '—' }))
     .sort((a, b) => a.name.localeCompare(b.name, 'ru'));
 
-  // Список опубликованных тестов
   const tests = Object.entries(testsCache)
     .filter(([_, t]) => !t.status || t.status === 'published')
     .map(([id, t]) => ({ id, title: t.title || '—' }))
@@ -1284,12 +1544,7 @@ async function openClassEditor(classId, classData) {
     const teachersSel = Array.from(m.$$('#classTeachersBox input[type=checkbox]:checked')).map(i => i.value);
     const testsSel = Array.from(m.$$('#classTestsBox input[type=checkbox]:checked')).map(i => i.value);
     const id = classId || genId('cls');
-    const payload = {
-      name, students,
-      teachers: teachersSel,
-      tests: testsSel,
-      updatedAt: Date.now()
-    };
+    const payload = { name, students, teachers: teachersSel, tests: testsSel, updatedAt: Date.now() };
     if (isNew) { payload.createdAt = Date.now(); payload.createdBy = currentUser.uid; }
     try {
       if (isNew) await window.FB.set(window.FB.ref(window.FB.db, `classes/${id}`), payload);
@@ -1374,11 +1629,8 @@ async function renderTeachersList() {
     const t = teachers.find(x => x.uid === uid);
     if (!confirm(`Удалить профиль учителя «${t.name || t.email}»?`)) return;
     if (t && t.name) {
-      await window.FB
-        .remove(window.FB.ref(window.FB.db, `teacher_lookup/${nameLookupKey(t.name)}`))
-        .catch(() => {});
+      await window.FB.remove(window.FB.ref(window.FB.db, `teacher_lookup/${nameLookupKey(t.name)}`)).catch(() => {});
     }
-    // Чистим uid из классов
     try {
       const clsSnap = await window.FB.get(window.FB.ref(window.FB.db, 'classes'));
       const cls = clsSnap.val() || {};
@@ -1440,51 +1692,29 @@ function openCreateTeacherModal() {
     btn.textContent = 'Создаём…';
 
     try {
-      // Создаём учителя через secondaryAuth — основная сессия разработчика не сбивается
       const cred = await window.FB.createUserWithEmailAndPassword(window.FB.secondaryAuth, email, pass);
       const uid = cred.user.uid;
-
       await window.FB.set(window.FB.ref(window.FB.db, `users/${uid}`), {
-        email,
-        name,
-        role: 'teacher',
-        createdAt: Date.now(),
+        email, name, role: 'teacher', createdAt: Date.now(),
         createdBy: currentUser ? currentUser.uid : null
       });
-
-      // Индекс для входа по ИО
       try {
-        await window.FB.set(
-          window.FB.ref(window.FB.db, `teacher_lookup/${nameLookupKey(name)}`),
-          { email, uid, name, createdAt: Date.now() }
-        );
+        await window.FB.set(window.FB.ref(window.FB.db, `teacher_lookup/${nameLookupKey(name)}`),
+          { email, uid, name, createdAt: Date.now() });
       } catch (lookupErr) { console.warn('teacher_lookup:', lookupErr); }
-
-      // Чистим вторичную сессию
       try { await window.FB.signOut(window.FB.secondaryAuth); } catch (signOutErr) {}
 
-      // Письмо сброса пароля — через основную auth
       let emailSent = false;
-      try {
-        await window.FB.sendPasswordResetEmail(window.FB.auth, email);
-        emailSent = true;
-      } catch (mailErr) {
-        console.warn('Не удалось отправить письмо:', mailErr);
-      }
+      try { await window.FB.sendPasswordResetEmail(window.FB.auth, email); emailSent = true; }
+      catch (mailErr) { console.warn('Не удалось отправить письмо:', mailErr); }
 
       m.close();
       alert(
-        `✅ Учитель создан!\n\n` +
-        `Имя: ${name}\n` +
-        `Email: ${email}\n` +
-        `Пароль: ${pass}\n\n` +
-        `Вход: ?mode=teacher\n` +
-        `Логин: ввести ИО «${name}»\n\n` +
-        (emailSent
-          ? `📧 На почту отправлено письмо для установки своего пароля.\n\n`
-          : `⚠️ Письмо отправить не удалось. Передайте пароль лично.\n\n`)
+        `✅ Учитель создан!\n\nИмя: ${name}\nEmail: ${email}\nПароль: ${pass}\n\n` +
+        `Вход: ?mode=teacher\nЛогин: ввести ИО «${name}»\n\n` +
+        (emailSent ? `📧 На почту отправлено письмо для установки своего пароля.\n\n`
+                   : `⚠️ Письмо отправить не удалось. Передайте пароль лично.\n\n`)
       );
-
       renderTeachersList();
       renderDeveloperMetrics();
     } catch (e) {
@@ -2053,11 +2283,11 @@ async function cleanupOldSessions() {
 async function renderTeacherHome() {
   clearAllUnsubs();
   if (!currentUser || currentUser.role !== 'teacher') { renderAuth('teacher'); return; }
+  document.body.style.padding = '';
   await loadTests();
   await loadClasses();
   document.body.className = 'theme-teacher';
 
-  // Мои классы: где я в teachers[]; если teachers не задан — показываем всем (совместимость)
   const myClasses = Object.entries(classesCache).filter(([_, c]) => {
     if (!Array.isArray(c.teachers) || c.teachers.length === 0) return true;
     return c.teachers.includes(currentUser.uid);
@@ -2069,7 +2299,7 @@ async function renderTeacherHome() {
     : publishedTests.map(([id, t]) => `<option value="${id}">${escapeHtml(t.title.slice(0, 70))} · макс ${formatScore(getMaxScore(t))} б.</option>`).join('');
 
   const classOptions = `<option value="">Без класса</option>` +
-    myClasses.map(([id, c]) => `<option value="${id}">${escapeHtml(c.name)} (${(c.students || []).length} уч.)</option>`).join('');
+    myClasses.map(([id, c]) => `<option value="${id}">${escapeHtml(c.name)}${(c.students || []).length > 0 ? ` (${(c.students || []).length} уч.)` : ''}</option>`).join('');
 
   app.innerHTML = `
     ${renderTopNav('teacher', 'sessions')}
@@ -2105,7 +2335,6 @@ async function renderTeacherHome() {
   const autoWrap = document.getElementById('autoWrap');
   modeSel.onchange = () => { autoWrap.style.display = modeSel.value === 'lobby' ? 'block' : 'none'; };
 
-  // При смене класса — обновляем список тестов
   const classSel = document.getElementById('newSessionClass');
   const testSel = document.getElementById('newSessionTest');
   classSel.onchange = () => {
@@ -2136,19 +2365,13 @@ async function createSession() {
   const code = genSessionCode();
   try {
     const payload = {
-      testId,
-      testTitle: test.title,
-      teacherId: currentUser.uid,
-      teacherEmail: currentUser.email,
+      testId, testTitle: test.title,
+      teacherId: currentUser.uid, teacherEmail: currentUser.email,
       teacherName: currentUser.name || currentUser.email,
-      createdAt: Date.now(),
-      status: 'active',
-      mode: sessionMode,
+      createdAt: Date.now(), status: 'active', mode: sessionMode,
       phase: sessionMode === 'individual' ? 'individual' : 'lobby',
-      currentQuestion: -1,
-      questionStartedAt: 0,
-      autoAdvance,
-      autoAdvanceDelaySec: 5,
+      currentQuestion: -1, questionStartedAt: 0,
+      autoAdvance, autoAdvanceDelaySec: 5,
       testQuestionCount: (test.questions || []).length
     };
     if (classId) { payload.classId = classId; payload.className = cls?.name || ''; }
@@ -2170,7 +2393,7 @@ function subscribeTeacherSessions() {
 }
 
 /* ==================================================================
-   УЧИТЕЛЬ: СЕССИЯ — Lobby и Individual
+   УЧИТЕЛЬ: СЕССИЯ
    ================================================================== */
 async function renderTeacherSession() {
   clearAllUnsubs();
@@ -2273,8 +2496,7 @@ function buildSessionResults(session, test) {
         arr.push({
           questionText: tq ? tq.q : ('Вопрос ' + (i+1)),
           correctText: tq ? tq.options[tq.correct] : '',
-          selectedText: null,
-          correct: false,
+          selectedText: null, correct: false,
           image: tq ? (tq.image || '') : '',
           points: 0, speedBonus: 0, timeSpentSec: 0
         });
@@ -2284,21 +2506,15 @@ function buildSessionResults(session, test) {
     const total = arr.length || totalQ;
     results.push({
       studentName: st.studentName || '—',
-      testId: session.testId,
-      testTitle: session.testTitle,
+      testId: session.testId, testTitle: session.testTitle,
       date: formatDate(st.finishedAt || st.startedAt || st.joinedAt || Date.now()),
       timestamp: st.finishedAt || st.startedAt || st.joinedAt || Date.now(),
-      score: round1(st.score || 0),
-      maxScore,
-      correct,
-      wrong: Math.max(0, total - correct),
-      total,
-      teacherId: session.teacherId,
-      teacherEmail: session.teacherEmail,
+      score: round1(st.score || 0), maxScore, correct,
+      wrong: Math.max(0, total - correct), total,
+      teacherId: session.teacherId, teacherEmail: session.teacherEmail,
       teacherName: session.teacherName || session.teacherEmail,
       sessionCode: sessionCode || '',
-      tabSwitches: st.tabSwitches || 0,
-      copyAttempts: st.copyAttempts || 0,
+      tabSwitches: st.tabSwitches || 0, copyAttempts: st.copyAttempts || 0,
       terminated: st.status === 'terminated',
       terminateReason: st.terminateReason || '',
       answers: arr
@@ -2307,12 +2523,10 @@ function buildSessionResults(session, test) {
   return results;
 }
 
-/* ---------- Экспорт одного ученика ---------- */
 function exportOneStudentTable(code, studentId, session, test) {
   if (!test) return;
   const st = (session.students || {})[studentId];
   if (!st) { alert('Ученик не найден'); return; }
-
   const totalQ = (test.questions || []).length;
   const maxScore = getMaxScore(test);
   const answersMap = st.answers || {};
@@ -2327,53 +2541,39 @@ function exportOneStudentTable(code, studentId, session, test) {
         selectedText: a.selectedText || null,
         correct: !!a.correct,
         image: a.image || (tq ? (tq.image || '') : ''),
-        points: a.points || 0,
-        speedBonus: a.speedBonus || 0,
-        timeSpentSec: a.timeSpentSec || 0
+        points: a.points || 0, speedBonus: a.speedBonus || 0, timeSpentSec: a.timeSpentSec || 0
       });
     } else {
       arr.push({
         questionText: tq ? tq.q : ('Вопрос ' + (i + 1)),
         correctText: tq ? tq.options[tq.correct] : '',
-        selectedText: null,
-        correct: false,
+        selectedText: null, correct: false,
         image: tq ? (tq.image || '') : '',
         points: 0, speedBonus: 0, timeSpentSec: 0
       });
     }
   }
   const correct = st.correctCount != null ? st.correctCount : arr.filter(a => a.correct).length;
-
   const rec = {
     studentName: st.studentName || '—',
-    testId: session.testId,
-    testTitle: session.testTitle,
+    testId: session.testId, testTitle: session.testTitle,
     date: formatDate(st.finishedAt || st.startedAt || st.joinedAt || Date.now()),
     timestamp: st.finishedAt || st.startedAt || st.joinedAt || Date.now(),
-    score: round1(st.score || 0),
-    maxScore,
-    correct,
-    wrong: Math.max(0, totalQ - correct),
-    total: totalQ,
-    teacherId: session.teacherId,
-    teacherEmail: session.teacherEmail,
+    score: round1(st.score || 0), maxScore, correct,
+    wrong: Math.max(0, totalQ - correct), total: totalQ,
+    teacherId: session.teacherId, teacherEmail: session.teacherEmail,
     teacherName: session.teacherName || session.teacherEmail,
     sessionCode: code,
-    tabSwitches: st.tabSwitches || 0,
-    copyAttempts: st.copyAttempts || 0,
-    terminated: st.status === 'terminated',
-    terminateReason: st.terminateReason || '',
+    tabSwitches: st.tabSwitches || 0, copyAttempts: st.copyAttempts || 0,
+    terminated: st.status === 'terminated', terminateReason: st.terminateReason || '',
     answers: arr
   };
-
   const tableHTML = studentSheetHTML(rec);
   const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
 <head><meta charset="UTF-8"><style>${excelStyles()}</style></head><body>${tableHTML}</body></html>`;
-
   const shortTest = sanitizeFilename(test.shortName || session.testTitle || 'тест', 30);
   const shortStudent = sanitizeFilename(st.studentName || 'Ученик', 30);
-  const filename = `${shortTest}_${shortStudent}_${shortDateStamp()}.xls`;
-  downloadBlob(html, filename, 'application/vnd.ms-excel;charset=utf-8;');
+  downloadBlob(html, `${shortTest}_${shortStudent}_${shortDateStamp()}.xls`, 'application/vnd.ms-excel;charset=utf-8;');
 }
 
 async function exportSessionSummary(code, test) {
@@ -2393,14 +2593,10 @@ async function exportSessionSummary(code, test) {
       const pct = maxScore > 0 ? Math.round(score / maxScore * 100) : 0;
       const color = pct >= 75 ? '#16a34a' : pct >= 50 ? '#b45309' : '#dc2626';
       const term = st.status === 'terminated' ? ' <span class="bad">🚫</span>' : '';
-      return `<tr>
-        <td class="c">${i + 1}</td>
-        <td>${escapeHtml(st.studentName || '—')}${term}</td>
-        <td class="c ok">${correct}</td>
-        <td class="c bad">${wrong}</td>
+      return `<tr><td class="c">${i + 1}</td><td>${escapeHtml(st.studentName || '—')}${term}</td>
+        <td class="c ok">${correct}</td><td class="c bad">${wrong}</td>
         <td class="c" style="font-weight:bold;color:${color};font-size:14pt;">${formatScore(score)}</td>
-        <td style="font-size:9pt;color:#666;">${escapeHtml(interpretScore(score, maxScore))}</td>
-      </tr>`;
+        <td style="font-size:9pt;color:#666;">${escapeHtml(interpretScore(score, maxScore))}</td></tr>`;
     }).join('');
     const avg = students.length ? round1(students.reduce((s, st) => s + (st.score || 0), 0) / students.length) : 0;
     const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
@@ -2461,8 +2657,7 @@ function startAutoAdvance(code, test) {
         const allAns = arr.length > 0 && arr.every(st => st.answers && st.answers[idx]);
         if (allAns && elapsed >= 1500) {
           await window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}`), { phase: 'results', revealedAt: Date.now() });
-        }
-        else if (elapsed >= tTotal) {
+        } else if (elapsed >= tTotal) {
           await window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}`), { phase: 'results', revealedAt: Date.now() });
         }
       }
@@ -2602,7 +2797,6 @@ function renderTeacherPanel(s, test, code) {
             </div>`;
           }).join('')}
         </div>
-        ${s.autoAdvance ? `<div style="margin:14px auto;padding:10px 20px;background:#fef3c7;border-radius:12px;color:#b45309;font-weight:800;display:inline-block;">⏱ Далее через <span id="autoCountdown">${s.autoAdvanceDelaySec || 5}</span> сек</div>` : ''}
         <div class="sync-controls">
           ${idx + 1 < test.questions.length
             ? `<button class="primary" id="nextBtn">➡ Следующий вопрос (${idx + 2}/${test.questions.length})</button>`
@@ -2770,11 +2964,9 @@ async function renderStudentSession() {
     const myRec = (s.students || {})[myId];
 
     syncState = {
-      code,
-      studentId: myId,
+      code, studentId: myId,
       studentName: myRec ? myRec.studentName : null,
-      test,
-      testId: s.testId,
+      test, testId: s.testId,
       teacherEmail: s.teacherEmail,
       teacherName: s.teacherName || s.teacherEmail,
       sessionMode: s.mode || 'lobby',
@@ -2868,10 +3060,7 @@ function validateNames(showError) {
   if (!first || !last) message = 'Заполните имя и фамилию';
   else if (first.length > MAX_NAME_LEN || last.length > MAX_NAME_LEN) message = `Макс. ${MAX_NAME_LEN} символов`;
   else if (!isValidName(first) || !isValidName(last)) message = 'Только буквы, дефис и пробел';
-  if (message) {
-    if (showError) { err.textContent = message; err.style.display = 'block'; }
-    return null;
-  }
+  if (message) { if (showError) { err.textContent = message; err.style.display = 'block'; } return null; }
   err.style.display = 'none';
   return { first, last };
 }
@@ -2902,27 +3091,16 @@ async function joinSession(code, test, sessionData) {
   const studentRef = window.FB.ref(window.FB.db, `sessions/${code}/students/${studentId}`);
   try {
     await window.FB.set(studentRef, {
-      studentName,
-      joinedAt: Date.now(),
+      studentName, joinedAt: Date.now(),
       status: isIndividual ? 'intro' : 'waiting',
-      currentQuestion: 0,
-      correctCount: 0,
-      score: 0,
-      maxStreak: 0,
-      tabSwitches: 0,
-      copyAttempts: 0,
-      answers: {}
+      currentQuestion: 0, correctCount: 0, score: 0, maxStreak: 0,
+      tabSwitches: 0, copyAttempts: 0, answers: {}
     });
     syncState.studentName = studentName;
     syncState.sessionMode = sessionData.mode || 'lobby';
     syncState.status = isIndividual ? 'intro' : 'waiting';
     syncState.teacherName = sessionData.teacherName || sessionData.teacherEmail;
-
-    enableAntiCheat(
-      studentRef,
-      test.antiCheatMode || 'soft',
-      (reason, msg) => terminateStudent(reason, msg)
-    );
+    enableAntiCheat(studentRef, test.antiCheatMode || 'soft', (reason, msg) => terminateStudent(reason, msg));
     subscribeStudentSession(code);
   } catch (e) { alert('Ошибка: ' + e.message); }
 }
@@ -2977,35 +3155,20 @@ function renderStudentScreen(s, code) {
         </div>`;
       onClick('introReadBtn', async () => {
         try {
-          await window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}/students/${syncState.studentId}`), {
-            status: 'in_progress',
-            startedAt: Date.now(),
-            currentQuestion: 0
-          });
+          await window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}/students/${syncState.studentId}`),
+            { status: 'in_progress', startedAt: Date.now(), currentQuestion: 0 });
         } catch (e) { alert('Ошибка: ' + e.message); }
       });
       return;
     }
-
     if (myRec.status === 'in_progress') {
       const idx = myRec.currentQuestion || 0;
-      if (idx >= test.questions.length) {
-        finishStudentIndividual(code);
-        return;
-      }
+      if (idx >= test.questions.length) { finishStudentIndividual(code); return; }
       renderIndividualQuestion(sss, topbar, test, idx, code);
       return;
     }
-
-    if (myRec.status === 'finished') {
-      renderFinishedScreen(sss, topbar, test, myRec, code);
-      return;
-    }
-
-    if (myRec.status === 'terminated') {
-      return;
-    }
-
+    if (myRec.status === 'finished') { renderFinishedScreen(sss, topbar, test, myRec, code); return; }
+    if (myRec.status === 'terminated') return;
     sss.innerHTML = topbar + `<div class="sss-hero"><div style="font-size:64px;">⏳</div><h2>Загрузка…</h2></div>`;
     return;
   }
@@ -3024,24 +3187,20 @@ function renderStudentScreen(s, code) {
       </div>`;
     return;
   }
-
   if (phase === 'question') {
     if (myAnswer) { renderAnsweredHero(sss, topbar, myAnswer); return; }
     renderLobbyQuestion(sss, topbar, test, idx, code);
     return;
   }
-
   if (phase === 'results') {
     sss.innerHTML = topbar + `
       <div class="sss-hero">
         <div style="font-size:72px;">⏳</div>
         <h2 style="color:var(--violet);margin:8px 0;">Готовим следующий вопрос…</h2>
-        <p style="color:var(--muted);font-weight:600;">Правильные ответы и баллы — в финале</p>
         <div class="waiting-dots" style="margin-top:20px;"><span></span><span></span><span></span></div>
       </div>`;
     return;
   }
-
   if (phase === 'leaderboard') {
     const arr = Object.entries(s.students || {}).map(([id, v]) => ({ id, ...v })).sort((a, b) => (b.score || 0) - (a.score || 0));
     const medal = i => i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
@@ -3060,11 +3219,7 @@ function renderStudentScreen(s, code) {
       </div>`;
     return;
   }
-
-  if (phase === 'finished') {
-    renderFinishedScreen(sss, topbar, test, myRec, code);
-    return;
-  }
+  if (phase === 'finished') { renderFinishedScreen(sss, topbar, test, myRec, code); return; }
 }
 
 function renderAnsweredHero(sss, topbar, myAnswer) {
@@ -3094,8 +3249,7 @@ function renderLobbyQuestion(sss, topbar, test, idx, code) {
   if (!syncState.localQuestionStartTimes) syncState.localQuestionStartTimes = {};
   if (!syncState.localQuestionStartTimes[idx]) syncState.localQuestionStartTimes[idx] = Date.now();
   const myStart = syncState.localQuestionStartTimes[idx];
-  const elapsed = (Date.now() - myStart) / 1000;
-  const remaining = Math.max(0, Math.floor(timeTotal - elapsed));
+  const remaining = Math.max(0, Math.floor(timeTotal - (Date.now() - myStart) / 1000));
   const circumference = 2 * Math.PI * 32;
   const offset = circumference * (1 - remaining / timeTotal);
   const warning = remaining <= 5;
@@ -3143,8 +3297,7 @@ function renderIndividualQuestion(sss, topbar, test, idx, code) {
   if (!syncState.localQuestionStartTimes) syncState.localQuestionStartTimes = {};
   if (!syncState.localQuestionStartTimes[idx]) syncState.localQuestionStartTimes[idx] = Date.now();
   const myStart = syncState.localQuestionStartTimes[idx];
-  const elapsed = (Date.now() - myStart) / 1000;
-  const remaining = Math.max(0, Math.floor(timeTotal - elapsed));
+  const remaining = Math.max(0, Math.floor(timeTotal - (Date.now() - myStart) / 1000));
   const circumference = 2 * Math.PI * 32;
   const offset = circumference * (1 - remaining / timeTotal);
   const warning = remaining <= 5;
@@ -3181,10 +3334,7 @@ function renderIndividualQuestion(sss, topbar, test, idx, code) {
     const rem = Math.max(0, Math.floor(timeTotal - (Date.now() - myStart) / 1000));
     el.textContent = rem;
     if (rem <= 5) el.parentElement.classList.add('warning');
-    if (rem <= 0) {
-      clearInterval(syncTimerInterval);
-      submitAnswer(code, idx, null, timeTotal, 'individual');
-    }
+    if (rem <= 0) { clearInterval(syncTimerInterval); submitAnswer(code, idx, null, timeTotal, 'individual'); }
   }, 500);
 }
 
@@ -3222,24 +3372,17 @@ async function submitAnswer(code, idx, oi, timeTotal, sessionMode) {
   const test = syncState.test;
   const q = test.questions[idx];
   const isCorrect = oi !== null && oi === q.correct;
-
   const myStart = (syncState.localQuestionStartTimes && syncState.localQuestionStartTimes[idx]) || Date.now();
   const timeSpentMs = Math.max(0, Date.now() - myStart);
   const timeSpentSec = timeSpentMs / 1000;
-
   const base = getBasePoints(test);
   const speedBonus = (isCorrect && sessionMode === 'lobby')
-    ? calcSpeedBonus(test, timeSpentSec, timeTotal)
-    : 0;
+    ? calcSpeedBonus(test, timeSpentSec, timeTotal) : 0;
   const points = isCorrect ? round1(base + speedBonus) : 0;
-
-  if (isCorrect) syncState.currentStreak = (syncState.currentStreak || 0) + 1;
-  else syncState.currentStreak = 0;
+  if (isCorrect) syncState.currentStreak = (syncState.currentStreak || 0) + 1; else syncState.currentStreak = 0;
   const newMaxStreak = Math.max(syncState.maxStreak || 0, syncState.currentStreak || 0);
-
   const newCorrectCount = (syncState.correctCount || 0) + (isCorrect ? 1 : 0);
   const newScore = round1((syncState.score || 0) + points);
-
   const answerRecord = {
     selected: oi !== null ? oi : -1,
     selectedText: oi !== null ? q.options[oi] : null,
@@ -3247,21 +3390,14 @@ async function submitAnswer(code, idx, oi, timeTotal, sessionMode) {
     questionText: q.q,
     correctText: q.options[q.correct],
     image: q.image || '',
-    points,
-    basePoints: base,
-    speedBonus: round1(speedBonus),
-    timeSpentMs,
-    timeSpentSec: round2(timeSpentSec),
-    answeredAt: Date.now()
+    points, basePoints: base, speedBonus: round1(speedBonus),
+    timeSpentMs, timeSpentSec: round2(timeSpentSec), answeredAt: Date.now()
   };
-
   try {
     const updates = {
       [`answers/${idx}`]: answerRecord,
-      correctCount: newCorrectCount,
-      score: newScore,
-      maxStreak: newMaxStreak,
-      lastAnswerAt: Date.now()
+      correctCount: newCorrectCount, score: newScore,
+      maxStreak: newMaxStreak, lastAnswerAt: Date.now()
     };
     if (sessionMode === 'individual') updates.currentQuestion = idx + 1;
     await window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}/students/${syncState.studentId}`), updates);
@@ -3296,25 +3432,16 @@ async function finishStudentIndividual(code) {
   const wrong = Math.max(0, total - correct);
   const score = round1(syncState.score || 0);
   try {
-    await window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}/students/${syncState.studentId}`), {
-      status: 'finished',
-      finishedAt: Date.now(),
-      score, correctCount: correct, wrongCount: wrong
-    });
+    await window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}/students/${syncState.studentId}`),
+      { status: 'finished', finishedAt: Date.now(), score, correctCount: correct, wrongCount: wrong });
     const answers = Object.values(syncState.answersByQ || {});
     const resultRecord = {
-      studentName: syncState.studentName,
-      testId: syncState.testId,
-      testTitle: test.title,
-      date: formatDate(Date.now()),
-      timestamp: Date.now(),
-      score,
-      maxScore: getMaxScore(test),
-      correct, wrong, total,
+      studentName: syncState.studentName, testId: syncState.testId,
+      testTitle: test.title, date: formatDate(Date.now()), timestamp: Date.now(),
+      score, maxScore: getMaxScore(test), correct, wrong, total,
       teacherEmail: syncState.teacherEmail,
       teacherName: syncState.teacherName || syncState.teacherEmail,
-      sessionCode: code,
-      mode: 'individual',
+      sessionCode: code, mode: 'individual',
       answers: answers.map(a => ({
         questionText: a.questionText, correctText: a.correctText,
         selectedText: a.selectedText, correct: a.correct,
@@ -3331,39 +3458,27 @@ async function terminateStudent(reason, message) {
   const test = syncState.test;
   if (!test) return;
   if (syncTimerInterval) { clearInterval(syncTimerInterval); syncTimerInterval = null; }
-
   const total = test.questions.length;
   const answers = Object.values(syncState.answersByQ || {});
   const correct = answers.filter(a => a.correct).length;
   const wrong = Math.max(0, total - correct);
   const score = round1(syncState.score || 0);
   const answered = answers.length;
-
   try {
-    await window.FB.update(window.FB.ref(window.FB.db, `sessions/${syncState.code}/students/${syncState.studentId}`), {
-      status: 'terminated',
-      terminatedAt: Date.now(),
-      terminateReason: reason || 'tab_switch',
-      score, correctCount: correct, wrongCount: wrong,
-      tabSwitches: antiCheatTabSwitches,
-      copyAttempts: antiCheatCopyAttempts
-    });
+    await window.FB.update(window.FB.ref(window.FB.db, `sessions/${syncState.code}/students/${syncState.studentId}`),
+      { status: 'terminated', terminatedAt: Date.now(),
+        terminateReason: reason || 'tab_switch',
+        score, correctCount: correct, wrongCount: wrong,
+        tabSwitches: antiCheatTabSwitches, copyAttempts: antiCheatCopyAttempts });
     const resultRecord = {
-      studentName: syncState.studentName,
-      testId: syncState.testId,
-      testTitle: test.title,
-      date: formatDate(Date.now()),
-      timestamp: Date.now(),
-      score,
-      maxScore: getMaxScore(test),
-      correct, wrong, total, answeredQuestions: answered,
+      studentName: syncState.studentName, testId: syncState.testId,
+      testTitle: test.title, date: formatDate(Date.now()), timestamp: Date.now(),
+      score, maxScore: getMaxScore(test), correct, wrong, total, answeredQuestions: answered,
       teacherEmail: syncState.teacherEmail,
       teacherName: syncState.teacherName || syncState.teacherEmail,
       sessionCode: syncState.code,
-      tabSwitches: antiCheatTabSwitches,
-      copyAttempts: antiCheatCopyAttempts,
-      terminated: true,
-      terminateReason: reason || 'tab_switch',
+      tabSwitches: antiCheatTabSwitches, copyAttempts: antiCheatCopyAttempts,
+      terminated: true, terminateReason: reason || 'tab_switch',
       answers: answers.map(a => ({
         questionText: a.questionText, correctText: a.correctText,
         selectedText: a.selectedText, correct: a.correct, image: a.image
