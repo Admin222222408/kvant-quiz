@@ -103,6 +103,9 @@ onAuthStateChanged(auth, () => {
   .badge.published { background: #d1fae5; color: #047857; border: 2px solid #86efac; }
   .label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
   .hint { color: #94a3b8; font-size: 13px; margin: 6px 0 12px; font-weight: 500; }
+  .tabs { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+  .summary-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+  .action-cell { white-space: nowrap; text-align: center; }
   .card, .panel { background: #fff; border-radius: 18px; padding: 22px; box-shadow: 0 6px 24px rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.06); margin-bottom: 16px; }
   .panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
   .top-nav { background: #fff; margin: -24px -20px 20px -20px; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 2px solid #f1f5f9; flex-wrap: wrap; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
@@ -119,17 +122,19 @@ onAuthStateChanged(auth, () => {
   .kpi { background: #fff; border-radius: 16px; padding: 18px; box-shadow: 0 6px 20px rgba(124,58,237,0.08); position: relative; overflow: hidden; }
   .kpi::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: linear-gradient(180deg, #7c3aed, #ec4899); }
   .kpi .icon { font-size: 20px; margin-bottom: 6px; }
-  .kpi .n { font-size: 30px; font-weight: 900; color: var(--ink); line-height: 1; }
-  .kpi .t { font-size: 11px; color: var(--muted); margin-top: 6px; text-transform: uppercase; font-weight: 700; }
+  .kpi .n { font-size: 30px; font-weight: 900; color: var(--ink); line-height: 1; letter-spacing: -0.02em; }
+  .kpi .t { font-size: 11px; color: var(--muted); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
   .big-action { background: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #ec4899 100%); border-radius: 22px; padding: 36px 26px; text-align: center; color: #fff; margin-bottom: 22px; box-shadow: 0 20px 50px rgba(124,58,237,0.3); }
   .big-action h2 { font-size: 26px; margin: 0 0 8px; color: #fff; }
   .big-action p { color: rgba(255,255,255,0.9); font-size: 15px; margin: 0 0 22px; }
   .big-action .select-wrap { max-width: 520px; margin: 0 auto 14px; }
-  .big-action select { padding: 14px 18px; font-size: 15px; background: rgba(255,255,255,0.95); border: none; border-radius: 12px; text-align: center; font-weight: 700; color: var(--ink); }
+  .big-action select { padding: 14px 18px; font-size: 15px; background: rgba(255,255,255,0.95); border: none; border-radius: 12px; text-align: center; font-weight: 700; color: var(--ink); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
   .big-action .btn-create { padding: 14px 36px; font-size: 16px; font-weight: 800; background: #fff; color: var(--violet); border-radius: 14px; }
   .session-row { display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: #fff; border-radius: 14px; border: 2px solid #f1f5f9; margin-bottom: 8px; flex-wrap: wrap; }
   .session-row .dot { width: 10px; height: 10px; border-radius: 50%; background: #10b981; flex-shrink: 0; box-shadow: 0 0 0 4px rgba(16,185,129,0.15); }
   .session-row .dot.closed { background: #94a3b8; }
+  .session-row .date { font-size: 12px; color: var(--muted); font-weight: 700; min-width: 95px; }
+  .session-row .time { font-size: 14px; color: var(--ink); font-weight: 800; min-width: 50px; }
   .session-row .code { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--violet); font-weight: 800; background: #ede9fe; padding: 4px 10px; border-radius: 6px; }
   .session-row .title { flex: 1; font-size: 14px; font-weight: 700; color: var(--ink); min-width: 140px; overflow: hidden; text-overflow: ellipsis; }
   .session-row .stats { font-size: 12px; color: var(--muted); font-weight: 700; white-space: nowrap; }
@@ -145,12 +150,14 @@ onAuthStateChanged(auth, () => {
   .student-card.active { border-color: var(--green); }
   .student-card.done { border-color: var(--blue); background: #eff6ff; }
   .student-card.terminated { border-color: var(--red); background: #fef2f2; }
+  .student-card.answered { border-color: #10b981; background: #f0fdf4; }
   .student-card .name { font-weight: 800; color: var(--ink); margin-bottom: 4px; font-size: 14px; }
   .student-card .status { font-size: 12px; color: var(--muted); font-weight: 600; }
   .student-card .progress { font-size: 12px; color: #475569; margin-top: 4px; font-weight: 600; }
   .join-screen { min-height: 100vh; background: #5b5bef; display: flex; align-items: center; justify-content: center; padding: 20px; position: relative; overflow: hidden; }
   .yellow-shape { position: absolute; top: -100px; left: -120px; width: 520px; height: 340px; background: #f5b800; border-radius: 0 0 100px 0; transform: skewX(-15deg); animation: yellowSlide 1s cubic-bezier(0.22, 0.9, 0.3, 1.05); pointer-events: none; z-index: 0; }
   @keyframes yellowSlide { 0% { transform: skewX(-15deg) translate(-180%,-180%) scale(0.7); opacity: 0; } 60% { transform: skewX(-15deg) translate(20px,20px) scale(1.02); opacity: 1; } 100% { transform: skewX(-15deg) translate(0,0) scale(1); opacity: 1; } }
+  @media (max-width: 700px) { .yellow-shape { width: 260px; height: 180px; top: -60px; left: -70px; border-radius: 0 0 60px 0; } }
   .join-card { position: relative; z-index: 1; text-align: center; max-width: 420px; width: 100%; }
   .join-title { font-size: 34px; font-weight: 900; color: #fff; margin: 0 0 26px; }
   .join-sub { font-size: 16px; color: #fff; font-weight: 600; margin: 0 0 20px; }
@@ -184,8 +191,8 @@ onAuthStateChanged(auth, () => {
   .editor-modal { display: grid; grid-template-columns: 320px 1fr; min-height: 580px; max-height: 92vh; overflow: hidden; }
   @media (max-width: 900px) { .editor-modal { grid-template-columns: 1fr; max-height: none; } }
   .editor-side { background: #f8f5ff; border-right: 2px solid #ede9fe; display: flex; flex-direction: column; overflow: hidden; max-height: 92vh; }
-  @media (max-width: 900px) { .editor-side { max-height: none; } }
-  .editor-tabs { display: flex; padding: 12px; gap: 6px; background: #f3e8ff; }
+  @media (max-width: 900px) { .editor-side { max-height: none; border-right: none; border-bottom: 2px solid #ede9fe; } }
+  .editor-tabs { display: flex; padding: 12px; gap: 6px; background: #f3e8ff; border-bottom: 2px solid #ede9fe; }
   .editor-tab { flex: 1; padding: 10px 6px; background: transparent; border: none; border-radius: 10px; font-size: 11px; font-weight: 800; color: var(--violet); cursor: pointer; text-transform: uppercase; box-shadow: none; }
   .editor-tab.active { background: linear-gradient(135deg, #7c3aed, #a855f7); color: #fff; }
   .q-list { flex: 1; overflow-y: auto; padding: 10px; }
@@ -196,13 +203,16 @@ onAuthStateChanged(auth, () => {
   .q-list-item .q-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .add-q-btn { margin: 10px; padding: 12px; background: #fff; border: 2px dashed #c4b5fd; color: var(--violet); font-weight: 700; font-size: 13px; border-radius: 10px; cursor: pointer; box-shadow: none; }
   .editor-main { display: flex; flex-direction: column; overflow: hidden; max-height: 92vh; }
+  @media (max-width: 900px) { .editor-main { max-height: none; } }
   .editor-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 2px solid #f1f5f9; gap: 10px; flex-wrap: wrap; background: #fff; min-height: 60px; }
   .editor-head h3 { margin: 0; font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .editor-head h3 .q-badge { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 6px; background: #dcfce7; color: #16a34a; font-size: 12px; font-weight: 800; }
+  .editor-head h3 .q-badge { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 6px; background: #dcfce7; color: #16a34a; font-size: 12px; font-weight: 800; flex-shrink: 0; }
+  .editor-head-actions { display: flex; gap: 4px; }
   .editor-head-actions button { padding: 6px 10px; background: #f1f5f9; color: var(--muted); box-shadow: none; border-radius: 8px; font-size: 13px; }
+  .editor-head-actions button.danger { background: #fee2e2; color: var(--red); }
   .editor-body { flex: 1; overflow-y: auto; padding: 20px; background: #fafbfc; }
   .editor-footer { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-top: 2px solid #f1f5f9; gap: 8px; background: #fff; flex-wrap: wrap; }
-  .editor-footer-right { display: flex; gap: 8px; flex-wrap: wrap; }
+  .editor-footer-left, .editor-footer-right { display: flex; gap: 8px; flex-wrap: wrap; }
   .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
   @media (max-width: 700px) { .field-row { grid-template-columns: 1fr; } }
   .field-label { display: block; font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
@@ -220,6 +230,7 @@ onAuthStateChanged(auth, () => {
   .class-card { background: #fff; border: 2px solid #f1f5f9; border-radius: 14px; padding: 16px; }
   .class-card .cc-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
   .class-card .cc-name { font-size: 16px; font-weight: 800; }
+  .class-card .cc-count { font-size: 12px; color: var(--muted); font-weight: 700; }
   .class-card .cc-students { font-size: 12px; color: #475569; max-height: 80px; overflow-y: auto; margin-bottom: 10px; }
   .class-card .cc-actions { display: flex; gap: 6px; }
   .loading-spinner { display: inline-block; width: 16px; height: 16px; border: 2.5px solid rgba(124,58,237,0.2); border-top-color: var(--violet); border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
@@ -232,6 +243,7 @@ onAuthStateChanged(auth, () => {
   .stp-phase.results { background: #dbeafe; color: #1d4ed8; }
   .stp-phase.leaderboard { background: #fce7f3; color: #be185d; }
   .stp-phase.finished { background: #e5e7eb; color: #374151; }
+  .stp-phase.individual { background: #fce7f3; color: #be185d; }
   .sync-controls { display: flex; gap: 12px; flex-wrap: wrap; margin: 20px 0; }
   .sync-controls button { padding: 18px 32px; font-size: 17px; border-radius: 14px; font-weight: 800; }
   .sync-controls button.primary { background: linear-gradient(135deg, #10b981, #34d399); }
@@ -248,7 +260,8 @@ onAuthStateChanged(auth, () => {
   .sync-answer-dist .sad-item.correct { border-color: #10b981; background: #f0fdf4; }
   .sync-answer-dist .sad-fig { font-size: 24px; margin-bottom: 6px; }
   .sync-answer-dist .sad-count { font-size: 28px; font-weight: 900; color: var(--ink); }
-  .sync-answer-dist .sad-opt { font-size: 11px; color: var(--muted); font-weight: 700; margin-top: 4px; }
+  .sync-answer-dist .sad-opt { font-size: 11px; color: var(--muted); font-weight: 700; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sync-answer-dist .sad-bar { height: 6px; border-radius: 3px; margin-top: 8px; background: linear-gradient(90deg, #7c3aed, #ec4899); }
   .sync-student-screen { max-width: 640px; margin: 0 auto; }
   .sync-student-screen .sss-hero { background: #fff; border-radius: 26px; padding: 32px 28px; box-shadow: 0 24px 60px rgba(0,0,0,0.25); text-align: center; }
   .lb-list { background: rgba(255,255,255,0.12); border-radius: 14px; padding: 10px; margin-bottom: 18px; }
@@ -286,10 +299,14 @@ onAuthStateChanged(auth, () => {
     .pf-logo { font-size: 36pt; }
     .pf-title { font-size: 16pt; font-weight: bold; text-align: center; margin: 20px 0; }
     .pf-subtitle { font-size: 12pt; text-align: center; margin-bottom: 24px; color: #444; }
+    .pf-info { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; font-size: 12pt; }
+    .pf-info b { display: inline-block; min-width: 130px; }
     .print-form table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 10pt; }
     .print-form th, .print-form td { border: 1px solid #333; padding: 6px; text-align: left; }
     .print-form th { background: #f0f0f0; font-weight: bold; }
     .pf-score { text-align: center; font-size: 28pt; font-weight: bold; margin: 20px 0; padding: 16px; border: 2px solid #000; }
+    .pf-signature { margin-top: 40px; display: flex; justify-content: space-between; font-size: 12pt; }
+    .pf-signature div { border-bottom: 1px solid #000; min-width: 250px; padding-bottom: 2px; }
   }
 </style>
 </head>
@@ -310,11 +327,10 @@ onAuthStateChanged(auth, () => {
 
 <script>
 /* ==================================================================
-   KVANT-QUIZ — FULL VERSION
-   Изменения:
-   • Античит работает (жёсткий и мягкий)
-   • Два режима сессии: Лобби / Индивидуальный
-   • Сводная таблица в широком формате (как в My Quiz)
+   KVANT-QUIZ
+   Новое:
+   • Античит реально прерывает тест (жёсткий / мягкий)
+   • Два режима сессии: 🏠 Лобби / 👤 Индивидуальный
    ================================================================== */
 const DEFAULT_BASE_POINTS = 5;
 const DEFAULT_SPEED_TIERS = [
@@ -336,13 +352,35 @@ const DEFAULT_TESTS = {
     title: 'Входной тест по БПЛА',
     shortName: 'ТВ_тест_БПЛА',
     status: 'published',
-    antiCheatMode: 'hard',
+    antiCheatMode: 'soft',
     basePoints: 5,
-    speedBonusTiers: JSON.parse(JSON.stringify(DEFAULT_SPEED_TIERS)),
+    speedBonusTiers: [
+      { timeSec: 15, bonus: 3 },
+      { timeSec: 10, bonus: 2 },
+      { timeSec: 5,  bonus: 1 }
+    ],
+    intro: 'Ознакомьтесь с материалом. Как только нажмёте «Начать», тест запустится.',
     questions: [
       { q: "Как называется коптер с 8 моторами?", options: ["Пентакоптер","Октокоптер","Трикоптер","Гексакоптер"], correct: 1, image: '', time: null },
       { q: "Как обозначается сопротивление в законе Ома?", options: ["R","I","U","S"], correct: 0, image: '', time: null },
       { q: "В каких единицах измеряется напряжение?", options: ["Вольт","Кулон","Ампер","Ом"], correct: 0, image: '', time: null }
+    ]
+  },
+  seed_2: {
+    title: 'Компоненты квадрокоптера',
+    shortName: 'Компл_квадро',
+    status: 'published',
+    antiCheatMode: 'soft',
+    basePoints: 5,
+    speedBonusTiers: [
+      { timeSec: 15, bonus: 3 },
+      { timeSec: 10, bonus: 2 },
+      { timeSec: 5,  bonus: 1 }
+    ],
+    intro: '',
+    questions: [
+      { q: "На какую основу крепятся все элементы дрона?", options: ["Полётный контроллер","Рама","Клей","ESC"], correct: 1, image: '', time: null },
+      { q: "Какой компонент обрабатывает сигналы датчиков?", options: ["Приёмник","Аккумулятор","Полётный контроллер","Хомяк"], correct: 2, image: '', time: null }
     ]
   }
 };
@@ -358,19 +396,17 @@ let classesCache = {};
 let activeUnsubs = [];
 function trackUnsub(fn) { if (typeof fn === 'function') activeUnsubs.push(fn); }
 function clearAllUnsubs() { activeUnsubs.forEach(fn => { try { fn(); } catch (e) {} }); activeUnsubs = []; }
+let antiCheatActive = false, antiCheatRef = null;
+let antiCheatTabSwitches = 0, antiCheatCopyAttempts = 0;
+let acTerminated = false;
+let acOnTerminate = null;
+let acBlurTimeout = null;
+let syncState = {};
+let syncTimerInterval = null;
+let autoAdvanceInterval = null;
 let teachersUsersCache = {};
 let teachersStatsCache = { sessions: {}, results: {} };
 let allResultsCache = [];
-
-// ===== СОСТОЯНИЕ УЧЕНИКА =====
-let stuState = {};           // данные текущего ученика
-let stuTimerInterval = null; // интервал таймера
-let acActive = false;        // античит включён
-let acRef = null;            // ссылка на запись ученика в Firebase
-let acTabSwitches = 0;
-let acCopyAttempts = 0;
-let acMode = 'hard';
-let acTerminated = false;
 
 /* ============ ХЕЛПЕРЫ БАЛЛОВ ============ */
 function round1(n) { return Math.round(Number(n) * 10) / 10; }
@@ -388,10 +424,10 @@ function getBasePoints(test) {
 function getSpeedTiers(test) {
   if (!test) return [];
   if (Array.isArray(test.speedBonusTiers)) {
-    return test.speedBonusTiers
-      .map(t => ({ timeSec: Math.max(0, Math.round(Number(t.timeSec) || 0)), bonus: round1(t.bonus) }))
-      .filter(t => t.timeSec > 0 && t.bonus > 0)
-      .sort((a, b) => a.timeSec - b.timeSec);
+    return test.speedBonusTiers.map(t => ({
+      timeSec: Math.max(0, Math.round(Number(t.timeSec) || 0)),
+      bonus: round1(t.bonus)
+    })).filter(t => t.timeSec > 0 && t.bonus > 0).sort((a, b) => a.timeSec - b.timeSec);
   }
   if (test.speedBonusPct != null && test.speedBonusPct > 0) {
     const base = getBasePoints(test);
@@ -413,8 +449,7 @@ function getMaxBonus(test) {
 function getMaxPerQuestion(test) { return round1(getBasePoints(test) + getMaxBonus(test)); }
 function getMaxScore(test) {
   if (!test) return 0;
-  const q = (test.questions || []).length;
-  return round1(q * getMaxPerQuestion(test));
+  return round1((test.questions || []).length * getMaxPerQuestion(test));
 }
 function calcSpeedBonus(test, timeSpentSec, timeTotalSec) {
   const tiers = getSpeedTiers(test);
@@ -424,12 +459,22 @@ function calcSpeedBonus(test, timeSpentSec, timeTotalSec) {
   for (const tier of tiers) if (remaining >= tier.timeSec) best = Math.max(best, tier.bonus);
   return best;
 }
-function interpretScore(score, maxScore) {
-  const pct = maxScore > 0 ? Math.round((score || 0) / maxScore * 100) : 0;
+function interpretPct(pct) {
   if (pct >= 90) return '🏆 Отличное знание материала';
   if (pct >= 75) return '👍 Хорошее знание';
   if (pct >= 50) return '📘 Средний уровень, есть пробелы';
   return '⚠️ Материал усвоен плохо';
+}
+function interpretScore(score, maxScore) {
+  const pct = maxScore > 0 ? Math.round((score || 0) / maxScore * 100) : 0;
+  return interpretPct(pct);
+}
+
+/* ============ ОБРАБОТЧИК ============ */
+function onClick(id, handler) {
+  const el = document.getElementById(id);
+  if (el) el.onclick = handler;
+  return el;
 }
 
 /* ============ УТИЛИТЫ ============ */
@@ -448,6 +493,20 @@ function escapeXml(s) {
 function escapeAttr(s) { return escapeHtml(s); }
 function genSessionCode() { return String(Math.floor(100000 + Math.random() * 900000)); }
 function genId(prefix) { return (prefix||'id') + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7); }
+function sanitizeSheetName(name, idx) {
+  let s = String(name).replace(/[:\\\/\?\*\[\]]/g, '_').trim();
+  if (!s) s = 'Ученик_' + (idx + 1);
+  return s.length > 31 ? s.slice(0, 28) + '...' : s;
+}
+function uniqueSheetNames(names) {
+  const used = new Set();
+  return names.map((raw, i) => {
+    const base = sanitizeSheetName(raw, i);
+    let name = base, k = 2;
+    while (used.has(name)) { name = (base.length > 28 ? base.slice(0, 28) : base) + '_' + k; k++; }
+    used.add(name); return name;
+  });
+}
 function formatDate(ts) { return new Date(ts).toLocaleString('ru-RU'); }
 function formatDateShort(ts) {
   const d = new Date(ts);
@@ -457,12 +516,6 @@ function formatDateShort(ts) {
 function formatTimeShort(ts) {
   const d = new Date(ts);
   return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-}
-function formatDuration(sec) {
-  const s = Math.round(sec);
-  const m = Math.floor(s / 60);
-  const r = s % 60;
-  return m > 0 ? `${m} мин ${r} сек` : `${r} сек`;
 }
 function getStudentLocalId() {
   let id = localStorage.getItem('quiz_student_id');
@@ -484,7 +537,9 @@ function getCachedProfile(uid) {
 function setCachedProfile(uid, profile) {
   try { localStorage.setItem('quiz_profile_' + uid, JSON.stringify({ ...profile, uid })); } catch (e) {}
 }
-function clearCachedProfile(uid) { try { if (uid) localStorage.removeItem('quiz_profile_' + uid); } catch (e) {} }
+function clearCachedProfile(uid) {
+  try { if (uid) localStorage.removeItem('quiz_profile_' + uid); } catch (e) {}
+}
 function getInitial(email) { return (String(email || '?')[0] || '?').toUpperCase(); }
 function readFileAsDataURL(file) {
   return new Promise((resolve, reject) => {
@@ -509,8 +564,10 @@ function shortDateStamp() {
   return `${p(d.getDate())}${p(d.getMonth() + 1)}_${p(d.getHours())}${p(d.getMinutes())}`;
 }
 function sanitizeFilename(s, maxLen = 40) {
-  let t = String(s || '').trim().replace(/[<>:"/\\|?*\x00-\x1f]/g, '')
-    .replace(/[^\wа-яА-ЯёЁ _\-]+/g, '_').replace(/\s+/g, ' ').replace(/_+/g, '_')
+  let t = String(s || '').trim()
+    .replace(/[<>:"/\\|?*\x00-\x1f]/g, '')
+    .replace(/[^\wа-яА-ЯёЁ _\-]+/g, '_')
+    .replace(/\s+/g, ' ').replace(/_+/g, '_')
     .replace(/^[_\s]+|[_\s]+$/g, '');
   if (!t) t = 'тест';
   return t.slice(0, maxLen);
@@ -521,106 +578,90 @@ function buildExcelFilename(testTitle, shortName, prefix) {
   const stamp = shortDateStamp();
   return prefix ? `${prefix}_${clean}_${stamp}.xls` : `${clean}_${stamp}.xls`;
 }
-function downloadBlob(content, filename, mime) {
-  const blob = new Blob(['\uFEFF' + content], { type: mime });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = filename;
-  document.body.appendChild(a); a.click();
-  document.body.removeChild(a); URL.revokeObjectURL(url);
-}
-function openModal(innerHTML, maxWidth, wide) {
-  const el = document.createElement('div');
-  el.className = 'modal-backdrop';
-  const cls = wide ? 'modal wide' : 'modal';
-  el.innerHTML = `<div class="${cls}" ${maxWidth ? `style="max-width:${maxWidth}px"` : ''}>${innerHTML}</div>`;
-  document.body.appendChild(el);
-  el.addEventListener('click', (e) => { if (e.target === el) el.remove(); });
-  return { el, close: () => el.remove(), $: s => el.querySelector(s), $$: s => el.querySelectorAll(s) };
-}
-function onClick(id, handler) {
-  const el = document.getElementById(id);
-  if (el) el.onclick = handler;
-  return el;
-}
 
 /* ==================================================================
-   АНТИЧИТ — работает в обоих режимах
+   АНТИЧИТ — рабочий: прерывает тест
    ================================================================== */
-function enableAntiCheat(studentRef, mode /* 'hard' | 'soft' */, onTerminate) {
-  disableAntiCheat();
-  acActive = true;
-  acRef = studentRef;
-  acMode = mode || 'hard';
-  acTabSwitches = 0;
-  acCopyAttempts = 0;
+function enableAntiCheat(studentRef, antiCheatMode, onTerminate) {
+  antiCheatActive = true;
+  antiCheatTabSwitches = 0;
+  antiCheatCopyAttempts = 0;
+  antiCheatRef = studentRef;
+  syncState.antiCheatMode = antiCheatMode || 'soft';
   acTerminated = false;
-  window._acOnTerminate = onTerminate || null;
-
-  document.addEventListener('visibilitychange', onVisChange);
+  acOnTerminate = onTerminate || null;
+  document.addEventListener('visibilitychange', onVisibilityChange);
   window.addEventListener('blur', onWindowBlur);
   document.addEventListener('copy', onCopyAttempt);
   document.addEventListener('cut', onCopyAttempt);
-  document.addEventListener('contextmenu', onCtxMenu, true);
-  document.addEventListener('dragstart', onDragStart, true);
+  document.addEventListener('contextmenu', onContextMenuGlobal, true);
+  document.addEventListener('dragstart', onDragStartGlobal, true);
 }
 function disableAntiCheat() {
-  acActive = false;
-  acRef = null;
-  window._acOnTerminate = null;
-  document.removeEventListener('visibilitychange', onVisChange);
+  antiCheatActive = false;
+  antiCheatRef = null;
+  acOnTerminate = null;
+  if (acBlurTimeout) { clearTimeout(acBlurTimeout); acBlurTimeout = null; }
+  document.removeEventListener('visibilitychange', onVisibilityChange);
   window.removeEventListener('blur', onWindowBlur);
   document.removeEventListener('copy', onCopyAttempt);
   document.removeEventListener('cut', onCopyAttempt);
-  document.removeEventListener('contextmenu', onCtxMenu, true);
-  document.removeEventListener('dragstart', onDragStart, true);
+  document.removeEventListener('contextmenu', onContextMenuGlobal, true);
+  document.removeEventListener('dragstart', onDragStartGlobal, true);
 }
-function onVisChange() {
-  if (!acActive || !acRef || acTerminated) return;
+function onVisibilityChange() {
+  if (!antiCheatActive || !antiCheatRef || acTerminated) return;
   if (document.hidden) handleTabSwitch();
 }
 function onWindowBlur() {
-  if (!acActive || !acRef || acTerminated) return;
-  if (document.hidden) return;   // visibilitychange уже сработает
-  handleTabSwitch();
+  if (!antiCheatActive || !antiCheatRef || acTerminated) return;
+  if (document.hidden) return; // visibilitychange сработает
+  // Небольшая задержка, чтобы не срабатывало при клике на свои элементы
+  if (acBlurTimeout) clearTimeout(acBlurTimeout);
+  acBlurTimeout = setTimeout(() => {
+    if (document.hidden) return;
+    handleTabSwitch();
+  }, 600);
 }
 function handleTabSwitch() {
-  acTabSwitches++;
-  window.FB.update(acRef, {
-    tabSwitches: acTabSwitches,
+  if (acTerminated) return;
+  antiCheatTabSwitches++;
+  window.FB.update(antiCheatRef, {
+    tabSwitches: antiCheatTabSwitches,
     lastTabSwitchAt: Date.now()
   }).catch(() => {});
 
+  const acMode = syncState.antiCheatMode || 'soft';
   if (acMode === 'hard') {
     terminateStudentTest('tab_switch', 'Жёсткий режим античита: тест прерван при уходе с вкладки.');
   } else {
-    if (acTabSwitches >= 2) {
+    if (antiCheatTabSwitches >= 2) {
       terminateStudentTest('tab_switch', 'Мягкий режим: второе предупреждение — тест прерван.');
     } else {
-      showAntiCheatWarning('⚠️ Предупреждение!\n\nВы покинули вкладку. При следующем уходе тест будет прерван.');
+      showSoftWarning('⚠️ Предупреждение!\n\nВы покинули вкладку. При следующем уходе тест будет прерван.');
     }
   }
 }
 function onCopyAttempt(e) {
-  if (!acActive) return;
+  if (!antiCheatActive) return;
   const sel = window.getSelection();
   if (sel && sel.toString().trim().length > 0) {
     e.preventDefault();
-    acCopyAttempts++;
-    if (acRef) window.FB.update(acRef, { copyAttempts: acCopyAttempts }).catch(() => {});
+    antiCheatCopyAttempts++;
+    if (antiCheatRef) window.FB.update(antiCheatRef, { copyAttempts: antiCheatCopyAttempts }).catch(() => {});
   }
 }
-function onCtxMenu(e) {
-  if (!acActive) return;
-  const area = document.getElementById('testArea') || document.querySelector('.sync-student-screen');
+function onContextMenuGlobal(e) {
+  if (!antiCheatActive) return;
+  const area = document.querySelector('.sync-student-screen');
   if (area && area.contains(e.target)) e.preventDefault();
 }
-function onDragStart(e) {
-  if (!acActive) return;
-  const area = document.getElementById('testArea') || document.querySelector('.sync-student-screen');
+function onDragStartGlobal(e) {
+  if (!antiCheatActive) return;
+  const area = document.querySelector('.sync-student-screen');
   if (area && area.contains(e.target)) e.preventDefault();
 }
-function showAntiCheatWarning(msg) {
+function showSoftWarning(msg) {
   const el = document.createElement('div');
   el.style.cssText = 'position:fixed;inset:0;background:rgba(30,27,75,0.85);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;';
   el.innerHTML = `<div style="background:#fff;border-radius:20px;padding:28px 32px;max-width:480px;text-align:center;">
@@ -635,7 +676,7 @@ function showAntiCheatWarning(msg) {
 function terminateStudentTest(reason, message) {
   if (acTerminated) return;
   acTerminated = true;
-  const cb = window._acOnTerminate;
+  const cb = acOnTerminate;
   disableAntiCheat();
   if (typeof cb === 'function') cb(reason, message);
 }
@@ -645,198 +686,111 @@ function excelStyles() {
   return `table{border-collapse:collapse;font-family:Calibri,Arial,sans-serif;font-size:11pt;}
   td,th{border:1px solid #999;padding:6px 8px;vertical-align:top;}
   .title{font-size:14pt;font-weight:bold;background:#dbeafe;text-align:left;}
-  .summary-label{font-weight:bold;background:#f3f4f6;text-align:left;}
+  .summary-label{font-weight:bold;background:#f3f4f6;width:180px;text-align:left;}
   .summary-value{text-align:left!important;mso-number-format:"\\@";}
   th{background:#e5e7eb;font-weight:bold;text-align:left;}
   .ok{color:#16a34a;font-weight:bold;}.bad{color:#dc2626;font-weight:bold;}
-  .c{text-align:center;}
-  .header-q{background:#dbeafe;font-weight:bold;text-align:center;}
-  .header-opt{background:#f3f4f6;font-weight:bold;text-align:center;font-size:9pt;}
-  .b{font-weight:bold;background:#fff7ed;}
-  .meta{background:#f8fafc;font-size:10pt;}`;
+  .warn{color:#b45309;font-weight:bold;}.c{text-align:center;}
+  .img-cell{text-align:center;}.img-cell img{max-height:120px;max-width:200px;}
+  .header-meta{background:#f8fafc;padding:8px;font-size:10pt;}`;
 }
-
-/* ===== СВОДНАЯ В ШИРОКОМ ФОРМАТЕ (как My Quiz) ===== */
-function exportSessionSummaryWide(session, test, code) {
-  const students = Object.values(session.students || {}).filter(st => st.status !== 'intro');
-  if (students.length === 0) { alert('Нет данных для экспорта'); return; }
-
-  const questions = (test && test.questions) || [];
-  const totalQ = questions.length;
-
-  // Считаем общее время каждого ученика
-  const studentsData = students.map(st => {
-    const answers = st.answers || {};
-    let answered = 0, correct = 0, totalTime = 0;
-    for (let i = 0; i < totalQ; i++) {
-      const a = answers[i] || answers[String(i)];
-      if (a) {
-        answered++;
-        if (a.correct) correct++;
-        totalTime += (a.timeSpentSec || 0);
-      }
-    }
-    return {
-      name: st.studentName || '—',
-      score: round1(st.score || 0),
-      totalTime: round1(totalTime),
-      answered,
-      correct,
-      joinedAt: st.joinedAt || 0,
-      finishedAt: st.finishedAt || st.startedAt || st.joinedAt || 0,
-      answers
-    };
+function studentSheetHTML(rec) {
+  let rows = '';
+  (rec.answers || []).forEach((a, i) => {
+    const ans = a.selectedText ? escapeHtml(a.selectedText) : '<i>нет ответа</i>';
+    const verdict = a.correct ? '<span class="ok">✔ верно</span>' : '<span class="bad">✘ неверно</span>';
+    const bonusCell = a.speedBonus ? `<span class="ok">⚡ +${formatScore(a.speedBonus)}</span>` : '—';
+    const pointsCell = a.correct ? `<b>${formatScore(a.points || 0)}</b>` : '0';
+    rows += `<tr><td class="c">${i+1}</td><td>${escapeHtml(a.questionText)}</td><td>${escapeHtml(a.correctText)}</td><td>${ans}</td><td class="c">${verdict}</td><td class="c">${pointsCell}</td><td class="c">${bonusCell}</td></tr>`;
   });
-
-  studentsData.sort((a, b) => b.score - a.score || a.totalTime - b.totalTime);
-
-  const maxScore = getMaxScore(test);
-  const nowStr = formatDate(Date.now());
-
-  // Построение заголовков
-  // Строка 1: "Вопрос N" через colspan по (N_опций + 1) колонок
-  // Строка 2: текст вопроса через тот же colspan
-  // Строка 3: "Ответ 1" ... "Баллы"
-  const leftCols = ['Псевдоним', 'Город', 'Email', 'Ссылка на профиль', 'Место', 'Общий счёт', 'Время (сек)', 'Отвечено', 'Правильных', 'Дата'];
-
-  let header1 = leftCols.map(() => '').map((_, i) => i === 0 ? '' : '').join('');
-  let row1 = leftCols.map(() => '<th></th>').join('');
-  let row2 = leftCols.map(() => '<th></th>').join('');
-  let row3 = leftCols.map(t => `<th class="header-opt">${escapeHtml(t)}</th>`).join('');
-
-  // Для каждого вопроса добавляем колонки
-  for (let i = 0; i < totalQ; i++) {
-    const q = questions[i];
-    const opts = q.options || [];
-    const cols = opts.length + 1;   // +1 для «Баллы»
-
-    row1 += `<th class="header-q" colspan="${cols}">Вопрос ${i + 1}</th>`;
-    row2 += `<th class="header-q" colspan="${cols}" style="text-align:left;font-weight:normal;font-size:10pt;">${escapeHtml((q.q || '').slice(0, 200))}</th>`;
-    for (let oi = 0; oi < opts.length; oi++) {
-      row3 += `<th class="header-opt">Ответ ${oi + 1}<br><span style="font-weight:normal;font-size:8pt;">${escapeHtml((opts[oi] || '').slice(0, 60))}</span></th>`;
-    }
-    row3 += `<th class="header-opt b">Баллы</th>`;
-  }
-
-  // Строки данных
-  const dataRows = studentsData.map((st, rank) => {
-    let cells = '';
-    cells += `<td>${escapeHtml(st.name)}</td>`;
-    cells += `<td></td>`;              // Город
-    cells += `<td>-</td>`;             // Email
-    cells += `<td></td>`;              // Ссылка
-    cells += `<td class="c">${rank + 1}</td>`;
-    cells += `<td class="c b">${formatScore(st.score)}</td>`;
-    cells += `<td class="c">${st.totalTime.toFixed(2)}</td>`;
-    cells += `<td class="c">${st.answered}</td>`;
-    cells += `<td class="c">${st.correct}</td>`;
-    cells += `<td class="c">${formatDate(st.finishedAt)}</td>`;
-
-    for (let i = 0; i < totalQ; i++) {
-      const q = questions[i];
-      const opts = q.options || [];
-      const a = st.answers[i] || st.answers[String(i)];
-      const selected = a ? a.selected : -1;
-      for (let oi = 0; oi < opts.length; oi++) {
-        const mark = (selected === oi) ? 1 : '';
-        cells += `<td class="c">${mark}</td>`;
-      }
-      const pts = a && a.correct ? formatScore(a.points || 0) : (a ? '0' : '');
-      cells += `<td class="c b">${pts}</td>`;
-    }
-    return `<tr>${cells}</tr>`;
-  }).join('');
-
-  // Финальная строка — сколько человек выбрали каждый вариант
-  let footerCells = `<td colspan="10" style="text-align:right;font-weight:bold;background:#fef3c7;">Количество ответивших:</td>`;
-  for (let i = 0; i < totalQ; i++) {
-    const q = questions[i];
-    const opts = q.options || [];
-    const counts = opts.map(() => 0);
-    let answeredQ = 0;
-    studentsData.forEach(st => {
-      const a = st.answers[i] || st.answers[String(i)];
-      if (a && typeof a.selected === 'number' && a.selected >= 0 && a.selected < opts.length) {
-        counts[a.selected]++;
-        answeredQ++;
-      }
-    });
-    for (let oi = 0; oi < opts.length; oi++) {
-      footerCells += `<td class="c" style="background:#fef3c7;font-weight:bold;">${counts[oi]}</td>`;
-    }
-    footerCells += `<td class="c" style="background:#fef3c7;font-weight:bold;">${answeredQ}</td>`;
-  }
-
-  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
-<head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
-<x:Name>Сводная</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
-<style>${excelStyles()}</style></head><body>
-<table>
-  <tr><td colspan="10" class="title">${escapeHtml(test.title || 'Тест')} — сводная ведомость</td></tr>
-  <tr><td colspan="5" class="meta"><b>Учитель:</b> ${escapeHtml(session.teacherEmail || '—')}</td>
-      <td colspan="5" class="meta"><b>Дата:</b> ${escapeHtml(nowStr)}</td></tr>
-  <tr><td colspan="5" class="meta"><b>Учеников:</b> ${studentsData.length}</td>
-      <td colspan="5" class="meta"><b>Максимум:</b> ${formatScore(maxScore)} баллов</td></tr>
-  <tr><td colspan="10" style="height:8px;border:none;"></td></tr>
-  <tr>${row1}</tr>
-  <tr>${row2}</tr>
-  <tr>${row3}</tr>
-  ${dataRows}
-  <tr>${footerCells}</tr>
-</table>
-</body></html>`.trim();
-
-  const shortName = (test && test.shortName) || 'сводная';
-  const filename = buildExcelFilename(test.title, shortName, 'Сводная');
-  downloadBlob(html, filename, 'application/vnd.ms-excel;charset=utf-8;');
+  const tRow = rec.teacherEmail ? `<tr><td colspan="2" class="summary-label">Учитель</td><td colspan="5" class="summary-value">${escapeHtml(rec.teacherEmail)}</td></tr>` : '';
+  const maxScore = rec.maxScore || 100;
+  const scoreStr = `${formatScore(rec.score)} / ${formatScore(maxScore)}`;
+  return `<table>
+    <tr><td colspan="7" class="title">${escapeHtml(rec.testTitle)}</td></tr>
+    <tr><td colspan="7" style="height:8px;border:none;"></td></tr>
+    <tr><td colspan="2" class="summary-label">Ученик</td><td colspan="5" class="summary-value">${escapeHtml(rec.studentName)}</td></tr>
+    ${tRow}
+    <tr><td colspan="2" class="summary-label">Дата</td><td colspan="5" class="summary-value">${escapeHtml(rec.date)}</td></tr>
+    <tr><td colspan="2" class="summary-label">Правильных</td><td colspan="5" class="summary-value"><span class="ok">${rec.correct}</span></td></tr>
+    <tr><td colspan="2" class="summary-label">Неправильных</td><td colspan="5" class="summary-value"><span class="bad">${rec.wrong}</span></td></tr>
+    <tr><td colspan="2" class="summary-label">Баллов</td><td colspan="5" class="summary-value"><b>${scoreStr}</b></td></tr>
+    <tr><td colspan="2" class="summary-label">Оценка</td><td colspan="5" class="summary-value">${escapeHtml(interpretScore(rec.score, maxScore))}</td></tr>
+    <tr><td colspan="7" style="height:12px;border:none;"></td></tr>
+    <tr><th class="c">#</th><th>Вопрос</th><th>Правильный ответ</th><th>Ответ ученика</th><th class="c">Итог</th><th class="c">Балл</th><th class="c">Бонус</th></tr>
+    ${rows}
+  </table>`;
 }
-
-/* ===== Подробная (по листам) ===== */
+function downloadBlob(content, filename, mime) {
+  const blob = new Blob(['\uFEFF' + content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
 function exportStudentsWorkbook(results, testTitle, testId, shortName) {
   if (!results || results.length === 0) { alert('Нет результатов'); return; }
   if (!shortName && testId && testsCache[testId]) shortName = testsCache[testId].shortName || '';
-  const used = new Set();
-  const names = results.map((raw, i) => {
-    let base = String(raw.studentName || 'Ученик').replace(/[:\\\/\?\*\[\]]/g, '_').slice(0, 31);
-    if (!base) base = 'Ученик_' + (i + 1);
-    let name = base, k = 2;
-    while (used.has(name)) { name = base.slice(0, 28) + '_' + k; k++; }
-    used.add(name); return name;
-  });
+  const names = uniqueSheetNames(results.map(r => r.studentName));
   const sheetsXML = names.map(n => `<x:ExcelWorksheet><x:Name>${escapeXml(n)}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet>`).join('');
-
-  let tables = '';
-  results.forEach((rec, ri) => {
-    let rows = '';
-    (rec.answers || []).forEach((a, i) => {
-      const ans = a.selectedText ? escapeHtml(a.selectedText) : '<i>нет ответа</i>';
-      const verdict = a.correct ? '<span class="ok">✔ верно</span>' : '<span class="bad">✘ неверно</span>';
-      const bonusCell = a.speedBonus ? `<span class="ok">⚡ +${formatScore(a.speedBonus)}</span>` : '—';
-      const pointsCell = a.correct ? `<b>${formatScore(a.points || 0)}</b>` : '0';
-      rows += `<tr><td class="c">${i+1}</td><td>${escapeHtml(a.questionText)}</td><td>${escapeHtml(a.correctText)}</td><td>${ans}</td><td class="c">${verdict}</td><td class="c">${pointsCell}</td><td class="c">${bonusCell}</td></tr>`;
-    });
-    const maxScore = rec.maxScore || 100;
-    const scoreStr = `${formatScore(rec.score)} / ${formatScore(maxScore)}`;
-    tables += `<table>
-      <tr><td colspan="7" class="title">${escapeHtml(rec.testTitle || '')}</td></tr>
-      <tr><td colspan="7" style="height:8px;border:none;"></td></tr>
-      <tr><td class="summary-label">Ученик</td><td colspan="6" class="summary-value">${escapeHtml(rec.studentName || '')}</td></tr>
-      <tr><td class="summary-label">Дата</td><td colspan="6" class="summary-value">${escapeHtml(rec.date || '')}</td></tr>
-      <tr><td class="summary-label">Правильных</td><td colspan="6" class="summary-value"><span class="ok">${rec.correct}</span></td></tr>
-      <tr><td class="summary-label">Неправильных</td><td colspan="6" class="summary-value"><span class="bad">${rec.wrong}</span></td></tr>
-      <tr><td class="summary-label">Баллов</td><td colspan="6" class="summary-value"><b>${scoreStr}</b></td></tr>
-      <tr><td colspan="7" style="height:12px;border:none;"></td></tr>
-      <tr><th class="c">#</th><th>Вопрос</th><th>Правильный ответ</th><th>Ответ ученика</th><th class="c">Итог</th><th class="c">Балл</th><th class="c">Бонус</th></tr>
-      ${rows}
-    </table>`;
-    if (ri < results.length - 1) tables += '<br clear="all" style="page-break-before:always;">';
-  });
-
+  const tables = results.map(r => studentSheetHTML(r)).join('');
   const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
 <head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets>${sheetsXML}</x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
 <style>${excelStyles()}</style></head><body>${tables}</body></html>`.trim();
-
   downloadBlob(html, buildExcelFilename(testTitle, shortName), 'application/vnd.ms-excel;charset=utf-8;');
+}
+function exportFlatSummary(results, title, filename) {
+  if (!results || results.length === 0) { alert('Нет данных'); return; }
+  const rows = results.sort((a,b) => b.timestamp - a.timestamp).map((r, i) => {
+    const ms = r.maxScore || 100;
+    return `<tr>
+      <td class="c">${results.length - i}</td>
+      <td>${escapeHtml(r.date)}</td><td>${escapeHtml(r.teacherEmail || '')}</td>
+      <td>${escapeHtml(r.testTitle || '')}</td><td>${escapeHtml(r.studentName || '')}</td>
+      <td class="c ok">${r.correct}</td><td class="c bad">${r.wrong}</td>
+      <td class="c"><b>${formatScore(r.score)}</b></td>
+      <td class="c" style="font-size:9pt;color:#666;">${formatScore(ms)}</td>
+      <td>${escapeHtml(interpretScore(r.score, ms))}</td></tr>`;
+  }).join('');
+  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+<head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
+<x:Name>Сводка</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+<style>${excelStyles()}</style></head><body><table>
+  <tr><td colspan="10" class="title">${escapeHtml(title)}</td></tr>
+  <tr><td colspan="10" style="height:8px;border:none;"></td></tr>
+  <tr><th class="c">№</th><th>Дата</th><th>Учитель</th><th>Тест</th><th>Ученик</th>
+  <th class="c">Верно</th><th class="c">Неверно</th><th class="c">Балл</th><th class="c">Макс</th><th>Оценка</th></tr>
+  ${rows}</table></body></html>`.trim();
+  downloadBlob(html, filename, 'application/vnd.ms-excel;charset=utf-8;');
+}
+function printStudentResult(rec) {
+  const existing = document.getElementById('printForm');
+  if (existing) existing.remove();
+  const form = document.createElement('div');
+  form.id = 'printForm';
+  form.className = 'print-form';
+  let rows = '';
+  (rec.answers || []).forEach((a, i) => {
+    rows += `<tr><td style="text-align:center;">${i+1}</td><td>${escapeHtml(a.questionText)}</td><td>${escapeHtml(a.correctText)}</td><td>${a.selectedText ? escapeHtml(a.selectedText) : '—'}</td><td style="text-align:center;">${a.correct ? '✓' : '✗'}</td></tr>`;
+  });
+  const maxScore = rec.maxScore || 100;
+  form.innerHTML = `
+    <div class="pf-header"><div class="pf-school">${escapeHtml(SCHOOL_NAME)}</div><div class="pf-logo">🎓</div></div>
+    <div class="pf-title">${escapeHtml(rec.testTitle)}</div>
+    <div class="pf-subtitle">Результат прохождения теста</div>
+    <div class="pf-info">
+      <div><b>Ученик:</b> ${escapeHtml(rec.studentName)}</div>
+      <div><b>Дата:</b> ${escapeHtml(rec.date)}</div>
+      <div><b>Учитель:</b> ${escapeHtml(rec.teacherEmail || '—')}</div>
+      <div><b>Баллов:</b> ${formatScore(rec.score)} / ${formatScore(maxScore)}</div>
+    </div>
+    <table><thead><tr><th style="width:40px;">#</th><th>Вопрос</th><th>Правильный ответ</th><th>Ответ ученика</th><th style="width:60px;">Итог</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="pf-score">${formatScore(rec.score)} / ${formatScore(maxScore)}</div>
+    <div style="text-align:center;font-size:12pt;font-style:italic;margin-bottom:24px;">${escapeHtml(interpretScore(rec.score, maxScore))}</div>
+    <div class="pf-signature"><div>Подпись учителя</div><div>Дата</div></div>`;
+  document.body.appendChild(form);
+  setTimeout(() => { window.print(); setTimeout(() => form.remove(), 500); }, 100);
 }
 
 /* ============ ЗАГРУЗКА ============ */
@@ -851,6 +805,12 @@ async function loadClasses() {
     const snap = await window.FB.get(window.FB.ref(window.FB.db, 'classes'));
     classesCache = snap.val() || {};
   } catch (e) { classesCache = {}; }
+}
+async function seedTestsIfEmpty() {
+  const snap = await window.FB.get(window.FB.ref(window.FB.db, 'tests'));
+  if (snap.exists()) return false;
+  await window.FB.set(window.FB.ref(window.FB.db, 'tests'), DEFAULT_TESTS);
+  return true;
 }
 
 /* ============ TOP NAV ============ */
@@ -900,7 +860,7 @@ function renderAuth(expectedRole) {
   fbReady(() => {
     const isDev = expectedRole === 'developer';
     document.body.className = isDev ? 'theme-developer' : 'theme-teacher';
-    app.innerHTML = `<div style="max-width:440px;margin:40px auto;background:#fff;border-radius:24px;padding:36px 32px;box-shadow:0 20px 60px rgba(124,58,237,0.12);">
+    app.innerHTML = `<div class="auth-form" style="max-width:440px;margin:40px auto;background:#fff;border-radius:24px;padding:36px 32px;box-shadow:0 20px 60px rgba(124,58,237,0.12);">
       <h1 style="text-align:center;">${isDev ? '🛠 Вход разработчика' : '👨‍🏫 Вход учителя'}</h1>
       <p class="hint" style="text-align:center;margin-bottom:24px;">${isDev ? 'Панель управления системой' : 'Кабинет для проведения тестов'}</p>
       <label class="label">Email</label>
@@ -936,7 +896,10 @@ function renderAuth(expectedRole) {
         else renderTeacherHome();
       } catch (e) {
         const c = e && e.code;
-        if (c === 'auth/invalid-credential' || c === 'auth/wrong-password') err.textContent = 'Неверный email или пароль';
+        if (c === 'auth/invalid-email') err.textContent = 'Некорректный email';
+        else if (c === 'auth/user-not-found') err.textContent = 'Пользователь не найден';
+        else if (c === 'auth/wrong-password') err.textContent = 'Неверный пароль';
+        else if (c === 'auth/invalid-credential') err.textContent = 'Неверный email или пароль';
         else if (c === 'auth/too-many-requests') err.textContent = 'Слишком много попыток';
         else err.textContent = 'Ошибка: ' + (e.message || 'неизвестная');
       }
@@ -949,43 +912,50 @@ function openHelpChat() {
   const isDev = currentUser.role === 'developer';
   const m = openModal(`<div class="modal-body">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-      <h2 style="margin:0;">💬 Помощь</h2>
+      <h2 style="margin:0;">💬 Помощь ${isDev ? '— вопросы учителей' : '— связь с разработчиком'}</h2>
       <button class="small back" id="helpClose">Закрыть</button>
     </div>
     ${!isDev ? `<label class="label">Ваш вопрос</label>
       <textarea id="helpNewText" placeholder="Опишите проблему..." style="min-height:80px;"></textarea>
-      <button id="helpSend" class="green" style="margin-bottom:16px;">Отправить</button>` : ''}
+      <button id="helpSend" class="green" style="margin-bottom:16px;">Отправить разработчику</button>` : ''}
     <h3>${isDev ? 'Все обращения' : 'Мои обращения'}</h3>
     <div id="helpList"><p class="hint"><span class="loading-spinner"></span>Загрузка…</p></div>
   </div>`, 780);
   m.$('#helpClose').onclick = () => m.close();
-  if (!isDev) m.$('#helpSend').onclick = () => {
-    const text = m.$('#helpNewText').value.trim();
-    if (!text) return;
-    const id = genId('h');
-    window.FB.set(window.FB.ref(window.FB.db, `help_messages/${id}`), { from: 'teacher', fromEmail: currentUser.email, text, timestamp: Date.now() })
-      .then(() => { m.$('#helpNewText').value = ''; alert('✅ Отправлено'); });
-  };
+  if (!isDev) m.$('#helpSend').onclick = () => sendHelpMsg(m);
+  loadHelpMessages(m, isDev);
+}
+async function loadHelpMessages(m, isDev) {
   const list = m.$('#helpList');
-  trackUnsub(window.FB.onValue(window.FB.ref(window.FB.db, 'help_messages'), (snap) => {
+  if (!list) return;
+  const ref = window.FB.ref(window.FB.db, 'help_messages');
+  trackUnsub(window.FB.onValue(ref, (snap) => {
     const data = snap.val() || {};
-    let arr = Object.entries(data).map(([id, v]) => ({ id, ...v }));
-    if (!isDev) arr = arr.filter(x => x.fromEmail === currentUser.email);
-    arr.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-    if (arr.length === 0) { list.innerHTML = `<p class="hint">Пусто</p>`; return; }
-    list.innerHTML = arr.map(msg => {
+    let list0 = Object.entries(data).map(([id, v]) => ({ id, ...v }));
+    if (!isDev) list0 = list0.filter(x => x.fromEmail === currentUser.email);
+    list0.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    if (list0.length === 0) { list.innerHTML = `<p class="hint">Пусто.</p>`; return; }
+    list.innerHTML = list0.map(msg => {
       const replies = msg.replies ? Object.values(msg.replies) : [];
       return `<div style="background:#f8fafc;border-radius:14px;padding:14px;margin-bottom:10px;border-left:4px solid var(--violet);">
-        <div style="font-size:12px;color:#64748b;font-weight:700;margin-bottom:6px;">${escapeHtml(msg.fromEmail || '?')} · ${formatDate(msg.timestamp || 0)}</div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:#64748b;font-weight:700;margin-bottom:6px;">
+          <span>${escapeHtml(msg.fromEmail || '?')} · ${formatDate(msg.timestamp || 0)}</span>
+          ${isDev ? `<button class="small danger" data-del-help="${msg.id}" style="padding:2px 8px;font-size:11px;">🗑</button>` : ''}
+        </div>
         <div style="font-size:14px;white-space:pre-wrap;">${escapeHtml(msg.text || '')}</div>
-        ${replies.map(r => `<div style="background:#fff;border-radius:10px;padding:10px;margin-top:8px;border-left:3px solid var(--green);font-size:13px;">
-          <div style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:4px;">${r.from === 'developer' ? '🛠 Разработчик' : '👨‍🏫 Учитель'} · ${formatDate(r.timestamp || 0)}</div>
-          <div style="white-space:pre-wrap;">${escapeHtml(r.text || '')}</div>
-        </div>`).join('')}
+        ${replies.length ? `<div style="margin-top:10px;padding-top:10px;border-top:1px dashed #cbd5e1;">${replies.map(r => `
+          <div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:6px;border-left:3px solid var(--green);">
+            <div style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:4px;">${r.from === 'developer' ? '🛠 Разработчик' : '👨‍🏫 Учитель'} · ${formatDate(r.timestamp || 0)}</div>
+            <div style="font-size:13px;white-space:pre-wrap;">${escapeHtml(r.text || '')}</div>
+          </div>`).join('')}</div>` : ''}
         ${isDev ? `<textarea data-reply-input="${msg.id}" placeholder="Ответить..." style="min-height:50px;margin-top:8px;"></textarea>
           <button class="small green" data-reply-btn="${msg.id}">Ответить</button>` : ''}
       </div>`;
     }).join('');
+    list.querySelectorAll('[data-del-help]').forEach(b => b.onclick = async () => {
+      if (!confirm('Удалить обращение?')) return;
+      await window.FB.remove(window.FB.ref(window.FB.db, `help_messages/${b.dataset.delHelp}`));
+    });
     list.querySelectorAll('[data-reply-btn]').forEach(b => b.onclick = async () => {
       const id = b.dataset.replyBtn;
       const ta = list.querySelector(`[data-reply-input="${id}"]`);
@@ -997,14 +967,25 @@ function openHelpChat() {
     });
   }));
 }
+async function sendHelpMsg(m) {
+  const ta = m.$('#helpNewText');
+  const text = ta.value.trim();
+  if (!text) return;
+  const id = genId('h');
+  try {
+    await window.FB.set(window.FB.ref(window.FB.db, `help_messages/${id}`), { from: 'teacher', fromEmail: currentUser.email, text, timestamp: Date.now() });
+    ta.value = '';
+    alert('✅ Отправлено');
+  } catch (e) { alert('Ошибка: ' + e.message); }
+}
 
 /* ==================================================================
-   ПАНЕЛЬ РАЗРАБОТЧИКА
+   ПАНЕЛЬ РАЗРАБОТЧИКА (без изменений)
    ================================================================== */
 async function renderDeveloperHome() {
   clearAllUnsubs();
   if (!currentUser || currentUser.role !== 'developer') { renderAuth('developer'); return; }
-  await loadTests();
+  await seedTestsIfEmpty();
   await loadClasses();
   document.body.className = 'theme-developer';
 
@@ -1014,36 +995,33 @@ async function renderDeveloperHome() {
     <div class="kpi-line" id="metricsLine"><span><span class="loading-spinner"></span>Загрузка…</span></div>
 
     <div class="panel" id="testsPanel">
-      <div class="panel-head">
-        <h3>📚 Управление тестами</h3>
-        <div style="display:flex;gap:8px;">
+      <div class="panel-head"><h3>📚 Управление тестами</h3>
+        <div class="summary-actions" style="margin:0;">
           <button id="addTestBtn" class="green">➕ Новый тест</button>
           <button id="refreshTestsBtn" class="refresh">🔄 Обновить</button>
         </div>
       </div>
-      <div id="testsManageArea"></div>
+      <div id="testsManageArea"><p class="hint"><span class="loading-spinner"></span>Загрузка…</p></div>
     </div>
 
     <div class="panel" id="classesPanel">
-      <div class="panel-head">
-        <h3>👥 Классы</h3>
-        <div style="display:flex;gap:8px;">
-          <button id="addClassBtn" class="green">➕ Создать</button>
-          <button id="refreshClassesBtn" class="refresh">🔄</button>
+      <div class="panel-head"><h3>👥 Классы</h3>
+        <div class="summary-actions" style="margin:0;">
+          <button id="addClassBtn" class="green">➕ Создать класс</button>
+          <button id="refreshClassesBtn" class="refresh">🔄 Обновить</button>
         </div>
       </div>
-      <div id="classesArea"></div>
+      <div id="classesArea"><p class="hint"><span class="loading-spinner"></span>Загрузка…</p></div>
     </div>
 
     <div class="panel" id="teachersPanel">
-      <div class="panel-head">
-        <h3>👨‍🏫 Учителя</h3>
-        <div style="display:flex;gap:8px;">
-          <button id="addTeacherBtn" class="green">➕ Создать</button>
-          <button id="refreshTeachersBtn" class="refresh">🔄</button>
+      <div class="panel-head"><h3>👨‍🏫 Учителя и их статистика</h3>
+        <div class="summary-actions" style="margin:0;">
+          <button id="addTeacherBtn" class="green">➕ Создать учителя</button>
+          <button id="refreshTeachersBtn" class="refresh">🔄 Обновить</button>
         </div>
       </div>
-      <div id="teachersArea"></div>
+      <div id="teachersArea"><p class="hint"><span class="loading-spinner"></span>Загрузка…</p></div>
     </div>
 
     <div class="panel">
@@ -1052,15 +1030,14 @@ async function renderDeveloperHome() {
     </div>
 
     <div class="panel">
-      <div class="panel-head">
-        <h3>📈 Результаты школы</h3>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <div class="panel-head"><h3>📈 Результаты всей школы</h3>
+        <div class="summary-actions" style="margin:0;">
           <button id="exportSchoolBtn" class="download">🏫 Сводная</button>
           <button id="clearOldResultsBtn" class="danger">🗑 Старше 30 дней</button>
           <button id="clearAllResultsBtn" class="danger">🗑 Очистить всё</button>
         </div>
       </div>
-      <div id="allResultsArea"></div>
+      <div id="allResultsArea"><p class="hint"><span class="loading-spinner"></span>Загрузка…</p></div>
     </div>`;
 
   bindTopNav();
@@ -1074,30 +1051,31 @@ async function renderDeveloperHome() {
   onClick('clearOldResultsBtn', clearOldResults);
   onClick('clearAllResultsBtn', clearAllResults);
 
-  renderDeveloperMetrics();
-  renderDeveloperTestsList();
-  renderClassesList();
-  renderTeachersList();
-  subscribeAllSessions();
-  subscribeAllResults();
+  try { cleanupOldSessions();       } catch (e) {}
+  try { renderDeveloperMetrics();   } catch (e) {}
+  try { renderDeveloperTestsList(); } catch (e) {}
+  try { renderClassesList();        } catch (e) {}
+  try { renderTeachersList();       } catch (e) {}
+  try { subscribeAllSessions();     } catch (e) {}
+  try { subscribeAllResults();      } catch (e) {}
 }
 
 async function renderDeveloperMetrics() {
   const el = document.getElementById('metricsLine');
   if (!el) return;
   try {
-    const [testsS, sessionsS, resultsS, usersS, classesS] = await Promise.all([
+    const [testsSnap, sessionsSnap, resultsSnap, usersSnap, classesSnap] = await Promise.all([
       window.FB.get(window.FB.ref(window.FB.db, 'tests')),
       window.FB.get(window.FB.ref(window.FB.db, 'sessions')),
       window.FB.get(window.FB.ref(window.FB.db, 'results')),
       window.FB.get(window.FB.ref(window.FB.db, 'users')),
       window.FB.get(window.FB.ref(window.FB.db, 'classes'))
     ]);
-    const tests = testsS.val() || {};
-    const sessions = sessionsS.val() || {};
-    const results = resultsS.val() || {};
-    const users = usersS.val() || {};
-    const classes = classesS.val() || {};
+    const tests = testsSnap.val() || {};
+    const sessions = sessionsSnap.val() || {};
+    const results = resultsSnap.val() || {};
+    const users = usersSnap.val() || {};
+    const classes = classesSnap.val() || {};
     const teachers = Object.values(users).filter(u => u.role === 'teacher').length;
     el.innerHTML = `
       <span>📚 Тестов: <b>${Object.keys(tests).length}</b></span>
@@ -1115,18 +1093,16 @@ function renderDeveloperTestsList() {
   if (tests.length === 0) { el.innerHTML = `<p class="hint">Тестов пока нет.</p>`; return; }
   const rows = tests.map(([id, t]) => {
     const statusBadge = t.status === 'draft' ? '<span class="badge draft">ЧЕРНОВИК</span>' : '<span class="badge published">ОПУБЛИКОВАН</span>';
-    const baseP = getBasePoints(t);
-    const maxB = getMaxBonus(t);
-    const tiers = getSpeedTiers(t);
-    const tiersInfo = tiers.length ? `⚡ ${baseP} б + до +${formatScore(maxB)} (${tiers.length} ступ.)` : `⚡ ${baseP} б/вопрос (без бонуса)`;
+    const shortInfo = t.shortName ? `<div style="font-size:11px;color:#94a3b8;font-weight:700;margin-top:3px;">🏷 ${escapeHtml(t.shortName)}</div>` : '';
+    const baseP = getBasePoints(t), maxBonus = getMaxBonus(t), tiers = getSpeedTiers(t);
+    const tiersInfo = tiers.length ? `⚡ ${baseP} б + до +${formatScore(maxBonus)} (${tiers.length} ступ.)` : `⚡ ${baseP} б/вопрос`;
     return `<tr>
       <td style="font-family:monospace;font-size:12px;color:#94a3b8;">${escapeHtml(id)}</td>
-      <td>${escapeHtml(t.title)}${t.shortName ? `<div style="font-size:11px;color:#94a3b8;">🏷 ${escapeHtml(t.shortName)}</div>` : ''}
-          <div style="font-size:11px;color:#b45309;font-weight:700;">${tiersInfo}</div></td>
+      <td>${escapeHtml(t.title)}${shortInfo}<div style="font-size:11px;color:#b45309;font-weight:700;margin-top:3px;">${tiersInfo}</div></td>
       <td style="text-align:center;">${statusBadge}</td>
       <td style="text-align:center;">${(t.questions || []).length}</td>
       <td style="text-align:center;font-weight:800;color:var(--violet);">${formatScore(getMaxScore(t))}</td>
-      <td style="text-align:center;">
+      <td class="action-cell">
         <button class="small" data-edit="${id}">✏</button>
         <button class="small danger" data-del="${id}">✕</button>
       </td>
@@ -1151,13 +1127,10 @@ function renderClassesList() {
   if (classes.length === 0) { el.innerHTML = `<p class="hint">Классов пока нет.</p>`; return; }
   el.innerHTML = `<div class="class-list">${classes.map(([id, c]) => `
     <div class="class-card">
-      <div class="cc-head">
-        <div class="cc-name">${escapeHtml(c.name)}</div>
-        <div style="font-size:12px;color:#64748b;font-weight:700;">${(c.students || []).length} уч.</div>
-      </div>
+      <div class="cc-head"><div class="cc-name">${escapeHtml(c.name)}</div><div class="cc-count">${(c.students || []).length} уч.</div></div>
       <div class="cc-students">${(c.students || []).length ? escapeHtml((c.students || []).join(', ')) : '<i>Пусто</i>'}</div>
       <div class="cc-actions">
-        <button class="small" data-edit-class="${id}">✏</button>
+        <button class="small" data-edit-class="${id}">✏ Изменить</button>
         <button class="small danger" data-del-class="${id}">🗑</button>
       </div>
     </div>`).join('')}</div>`;
@@ -1177,7 +1150,7 @@ function openClassEditor(classId, classData) {
     <h2>${isNew ? '➕ Новый класс' : '✏ Редактирование'}</h2>
     <label class="label">Название</label>
     <input type="text" id="className" value="${escapeHtml(initial.name)}" placeholder="10А">
-    <label class="label" style="margin-top:14px;">Ученики (по одному в строке)</label>
+    <label class="label">Ученики (по одному в строке)</label>
     <textarea id="classStudents" style="min-height:200px;">${escapeHtml((initial.students || []).join('\n'))}</textarea>
     <div style="display:flex;gap:10px;margin-top:14px;">
       <button id="saveClass" class="green" style="flex:1;">💾 Сохранить</button>
@@ -1187,7 +1160,7 @@ function openClassEditor(classId, classData) {
   m.$('#closeClass').onclick = () => m.close();
   m.$('#saveClass').onclick = async () => {
     const name = m.$('#className').value.trim();
-    if (!name) { alert('Введите название'); return; }
+    if (!name) return;
     const students = m.$('#classStudents').value.split('\n').map(s => s.trim()).filter(s => s.length > 0);
     const id = classId || genId('cls');
     const payload = { name, students, updatedAt: Date.now() };
@@ -1222,9 +1195,8 @@ async function renderTeachersList() {
   await loadTeachersData();
   const teachers = Object.entries(teachersUsersCache).filter(([_, u]) => u && u.role === 'teacher').map(([uid, u]) => ({ uid, ...u }));
   if (teachers.length === 0) { el.innerHTML = `<p class="hint">Учителей нет.</p>`; return; }
-
   const stats = {};
-  teachers.forEach(t => { stats[t.uid] = { sessionsTotal: 0, studentsTotal: 0, resultsTotal: 0, avgScore: 0, lastActivityAt: 0 }; });
+  teachers.forEach(t => stats[t.uid] = { sessionsTotal: 0, studentsTotal: 0, resultsTotal: 0, avgScore: 0, lastActivityAt: 0 });
   Object.values(teachersStatsCache.sessions).forEach(s => {
     if (!s || !s.teacherId || !stats[s.teacherId]) return;
     stats[s.teacherId].sessionsTotal++;
@@ -1234,15 +1206,13 @@ async function renderTeachersList() {
   Object.values(teachersStatsCache.results).forEach(r => {
     if (!r || !r.teacherId || !stats[r.teacherId]) return;
     stats[r.teacherId].resultsTotal++;
-    stats[r.teacherId]._sum = (stats[r.teacherId]._sum || 0) + (r.score || 0);
+    stats[r.teacherId]._s = (stats[r.teacherId]._s || 0) + (r.score || 0);
     if (r.timestamp > stats[r.teacherId].lastActivityAt) stats[r.teacherId].lastActivityAt = r.timestamp;
   });
   Object.keys(stats).forEach(uid => {
-    const st = stats[uid];
-    st.avgScore = st.resultsTotal > 0 ? round1((st._sum || 0) / st.resultsTotal) : 0;
-    delete st._sum;
+    stats[uid].avgScore = stats[uid].resultsTotal > 0 ? round1((stats[uid]._s || 0) / stats[uid].resultsTotal) : 0;
+    delete stats[uid]._s;
   });
-
   el.innerHTML = `<div class="students-grid" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr));">
     ${teachers.map(t => {
       const st = stats[t.uid];
@@ -1273,7 +1243,6 @@ async function renderTeachersList() {
       </div>`;
     }).join('')}
   </div>`;
-
   el.querySelectorAll('[data-teacher-del]').forEach(b => b.onclick = async () => {
     const uid = b.dataset.teacherDel;
     const t = teachers.find(x => x.uid === uid);
@@ -1285,7 +1254,6 @@ async function renderTeachersList() {
 function openCreateTeacherModal() {
   const m = openModal(`<div class="modal-body">
     <h2>➕ Новый учитель</h2>
-    <p class="hint">Аккаунт создастся в Firebase Auth.</p>
     <label class="label">Email</label>
     <input type="email" id="ntEmail" placeholder="teacher@school.ru">
     <label class="label">Пароль (мин. 6)</label>
@@ -1334,18 +1302,18 @@ function openTestEditor(testId, testData) {
   const isNew = !testId;
   const initialTiers = (() => {
     if (testData && Array.isArray(testData.speedBonusTiers)) {
-      return testData.speedBonusTiers.map(t => ({ timeSec: Math.max(0, Math.round(Number(t.timeSec) || 0)), bonus: round1(t.bonus) }))
-        .filter(t => t.timeSec > 0 && t.bonus > 0).sort((a, b) => b.timeSec - a.timeSec);
+      return testData.speedBonusTiers.map(t => ({
+        timeSec: Math.max(0, Math.round(Number(t.timeSec) || 0)),
+        bonus: round1(t.bonus)
+      })).filter(t => t.timeSec > 0 && t.bonus > 0).sort((a, b) => b.timeSec - a.timeSec);
     }
-    return JSON.parse(JSON.stringify(DEFAULT_SPEED_TIERS)).sort((a, b) => b.timeSec - a.timeSec);
+    return JSON.parse(JSON.stringify(DEFAULT_SPEED_TIERS));
   })();
-
   const initial = testData || {
     title: '', shortName: '', intro: '', introImage: '', timePerQuestion: 20,
-    status: 'draft', antiCheatMode: 'hard',
+    status: 'draft', antiCheatMode: 'soft',
     questions: [{ q: '', options: ['','','',''], correct: 0, image: '', time: null }]
   };
-
   const m = openModal(`
     <div class="editor-modal">
       <aside class="editor-side">
@@ -1360,9 +1328,14 @@ function openTestEditor(testId, testData) {
         <div class="editor-head" id="editorHead"></div>
         <div class="editor-body" id="editorBody"></div>
         <div class="editor-footer">
-          <div><button class="back" id="closeEditor">✕ Закрыть</button></div>
+          <div class="editor-footer-left">
+            <button class="back" id="closeEditor">✕ Закрыть</button>
+            <label class="back" style="display:inline-flex;align-items:center;gap:6px;padding:10px 16px;cursor:pointer;font-size:14px;">
+              📄 CSV <input type="file" id="csvUpload" accept=".csv,.txt" style="display:none;">
+            </label>
+          </div>
           <div class="editor-footer-right">
-            ${!isNew ? `<button id="deleteTestBtn" class="danger">🗑</button>` : ''}
+            ${!isNew ? `<button id="deleteTestBtn" class="danger">🗑 Удалить</button>` : ''}
             <button id="saveDraftBtn" style="background:#fef3c7;color:#b45309;border:2px solid #fde68a;box-shadow:none;">📝 Черновик</button>
             <button id="saveTestBtn" class="green">💾 Опубликовать</button>
           </div>
@@ -1383,7 +1356,7 @@ function openTestEditor(testId, testData) {
     timePerQuestion: initial.timePerQuestion || 20,
     basePoints: (testData && testData.basePoints != null) ? testData.basePoints : DEFAULT_BASE_POINTS,
     speedTiers: initialTiers,
-    antiCheatMode: initial.antiCheatMode || 'hard'
+    antiCheatMode: initial.antiCheatMode || 'soft'
   };
 
   const qList = m.$('#qList');
@@ -1405,23 +1378,47 @@ function openTestEditor(testId, testData) {
   }
   function renderMain() { if (activeTab === 'settings') renderSettings(); else renderQuestionEditor(); }
 
+  function renderTierRows() {
+    if (settings.speedTiers.length === 0) return `<div style="padding:12px;background:#fef3c7;border-radius:10px;font-size:13px;color:#b45309;font-weight:700;">⚠️ Нет ступеней — бонус не сработает</div>`;
+    const total = Number(settings.timePerQuestion) || 20;
+    return settings.speedTiers.map((tier, i) => {
+      const spent = Math.max(0, total - tier.timeSec);
+      const invalid = tier.timeSec >= total;
+      return `<div class="tier-row" style="${invalid ? 'background:#fef2f2;' : ''}">
+        <div class="tier-field">
+          <span class="tier-lbl">⏱ остаток ≥</span>
+          <input type="number" class="tier-time" data-idx="${i}" min="1" max="300" value="${tier.timeSec}">
+          <span class="tier-lbl">сек</span>
+        </div>
+        <div class="tier-field" style="font-size:11px;color:#94a3b8;">
+          ${invalid ? `<span style="color:#b91c1c;font-weight:800;">⚠ больше времени вопроса</span>` : `<span>≈ ответ за ${spent} сек</span>`}
+        </div>
+        <div class="tier-field">
+          <span class="tier-lbl">⚡ +</span>
+          <input type="number" class="tier-bonus" data-idx="${i}" min="0" max="1000" step="0.1" value="${tier.bonus}">
+          <span class="tier-lbl">балла</span>
+        </div>
+        <button type="button" class="tier-del" data-del-tier="${i}">🗑</button>
+      </div>`;
+    }).join('');
+  }
+
   function renderSettings() {
     const baseP = Number(settings.basePoints) || 0;
     const maxBonus = Math.max(0, ...settings.speedTiers.map(t => Number(t.bonus) || 0));
     const maxPerQ = round1(baseP + maxBonus);
     const totalMax = round1(questions.length * maxPerQ);
-    const total = Number(settings.timePerQuestion) || 20;
 
     editorHead.innerHTML = `<h3>⚙️ Настройки теста</h3>`;
     editorBody.innerHTML = `
       <div class="editor-settings-section">
         <h4><span class="step-num">1</span> Основное</h4>
-        <label class="field-label">Название теста <span class="req">*</span></label>
-        <input type="text" id="setTitle" value="${escapeHtml(settings.title)}" placeholder="Входной тест по БПЛА">
-        <label class="field-label" style="margin-top:12px;">🏷 Короткое имя Excel</label>
-        <input type="text" id="setShortName" value="${escapeHtml(settings.shortName)}" placeholder="ТВ_тест_БПЛА" maxlength="30">
-        <label class="field-label" style="margin-top:12px;">Вводный текст (для индивидуального режима)</label>
-        <textarea id="setIntro" placeholder="Ученик увидит текст перед началом" style="min-height:100px;">${escapeHtml(settings.intro)}</textarea>
+        <label class="field-label">Название <span class="req">*</span></label>
+        <input type="text" id="setTitle" value="${escapeHtml(settings.title)}">
+        <label class="field-label">🏷 Короткое имя Excel</label>
+        <input type="text" id="setShortName" value="${escapeHtml(settings.shortName)}" maxlength="30">
+        <label class="field-label">📖 Вводный текст (для индивидуального режима)</label>
+        <textarea id="setIntro" style="min-height:100px;" placeholder="Ученик увидит текст перед началом">${escapeHtml(settings.intro)}</textarea>
       </div>
 
       <div class="editor-settings-section">
@@ -1433,20 +1430,19 @@ function openTestEditor(testId, testData) {
 
       <div class="editor-settings-section">
         <h4><span class="step-num">3</span> ⏱ Время на вопрос</h4>
-        <label class="field-label">По умолчанию (секунд)</label>
+        <label class="field-label">По умолчанию (сек)</label>
         <input type="number" id="setTime" min="5" max="300" value="${settings.timePerQuestion}">
       </div>
 
       <div class="editor-settings-section">
         <h4><span class="step-num">4</span> 🎯 Система баллов</h4>
-        <label class="field-label">Баллов за правильный ответ (можно с десятыми)</label>
+        <label class="field-label">Баллов за правильный ответ</label>
         <input type="number" id="setBasePoints" min="0.1" max="1000" step="0.1" value="${settings.basePoints}">
-
         <div style="border-top:2px dashed #e2e8f0;padding-top:14px;margin-top:14px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
             <div>
               <div style="font-weight:800;font-size:14px;">⚡ Бонусы за скорость</div>
-              <div style="font-size:12px;color:var(--muted);">Бонус срабатывает, если на таймере <b>осталось не меньше</b> N сек</div>
+              <div style="font-size:12px;color:var(--muted);">Срабатывает, если на таймере <b>осталось ≥ N сек</b></div>
             </div>
             <button type="button" id="addTierBtn" class="tier-add-btn">➕ Добавить ступень</button>
           </div>
@@ -1454,66 +1450,29 @@ function openTestEditor(testId, testData) {
             <button type="button" class="tier-preset-btn" data-preset="standard" style="background:#f0fdf4;color:#16a34a;border:2px solid #86efac;">🎯 Стандарт</button>
             <button type="button" class="tier-preset-btn" data-preset="soft" style="background:#eff6ff;color:#1d4ed8;border:2px solid #bfdbfe;">🌸 Мягкий</button>
             <button type="button" class="tier-preset-btn" data-preset="hardcore" style="background:#fef2f2;color:#b91c1c;border:2px solid #fecaca;">🔥 Хардкор</button>
-            <button type="button" class="tier-preset-btn" data-preset="none" style="background:#f1f5f9;color:#475569;border:2px solid #cbd5e1;">🚫 Без бонуса</button>
+            <button type="button" class="tier-preset-btn" data-preset="none" style="background:#f1f5f9;color:#475569;border:2px solid #cbd5e1;">🚫 Выкл</button>
           </div>
-          <div id="tiersBox">
-            ${settings.speedTiers.length === 0
-              ? `<div style="padding:12px;background:#fef3c7;border-radius:10px;color:#b45309;font-weight:700;">⚠️ Ступеней нет — бонус не сработает</div>`
-              : settings.speedTiers.map((tier, i) => {
-                  const spent = Math.max(0, total - tier.timeSec);
-                  const invalid = tier.timeSec >= total;
-                  return `<div class="tier-row" style="${invalid ? 'background:#fef2f2;' : ''}" data-tier-idx="${i}">
-                    <div class="tier-field">
-                      <span class="tier-lbl">⏱ остаток ≥</span>
-                      <input type="number" class="tier-time" data-idx="${i}" min="1" max="300" value="${tier.timeSec}">
-                      <span class="tier-lbl">сек</span>
-                    </div>
-                    <div class="tier-field" style="font-size:11px;color:#94a3b8;">
-                      ${invalid ? `<span style="color:#b91c1c;font-weight:800;">⚠ > времени вопроса</span>` : `<span>≈ ответ за ${spent} сек</span>`}
-                    </div>
-                    <div class="tier-field">
-                      <span class="tier-lbl">⚡ +</span>
-                      <input type="number" class="tier-bonus" data-idx="${i}" min="0" max="1000" step="0.1" value="${tier.bonus}">
-                      <span class="tier-lbl">балла</span>
-                    </div>
-                    <button type="button" class="tier-del" data-del-tier="${i}">🗑</button>
-                  </div>`;
-                }).join('')}
-          </div>
+          <div id="tiersBox">${renderTierRows()}</div>
         </div>
       </div>
 
       <div class="editor-settings-section">
         <h4><span class="step-num">5</span> 🛡 Античит</h4>
         <select id="setAntiCheat">
-          <option value="hard" ${settings.antiCheatMode === 'hard' ? 'selected' : ''}>🔒 Жёсткий — прерывать сразу</option>
+          <option value="hard" ${settings.antiCheatMode === 'hard' ? 'selected' : ''}>🔒 Жёсткий — прерывать сразу при уходе</option>
           <option value="soft" ${settings.antiCheatMode === 'soft' ? 'selected' : ''}>⚠️ Мягкий — 1 предупреждение, потом прерывание</option>
         </select>
+        <p class="hint" style="margin:6px 0 0;">Античит работает в обоих режимах (Лобби и Индивидуальный).</p>
       </div>
 
       <div class="editor-settings-section" style="background:#f5f3ff;border-color:#c4b5fd;">
         <div style="font-weight:800;color:var(--violet);margin-bottom:10px;">📊 Итог</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
-          <div style="background:#fff;border-radius:10px;padding:10px;text-align:center;">
-            <div style="font-size:22px;font-weight:900;color:var(--violet);">${questions.length}</div>
-            <div style="font-size:11px;color:#64748b;font-weight:800;">ВОПРОСОВ</div>
-          </div>
-          <div style="background:#fff;border-radius:10px;padding:10px;text-align:center;">
-            <div style="font-size:22px;font-weight:900;color:var(--green);">${formatScore(baseP)}</div>
-            <div style="font-size:11px;color:#64748b;font-weight:800;">БАЗА</div>
-          </div>
-          <div style="background:#fff;border-radius:10px;padding:10px;text-align:center;">
-            <div style="font-size:22px;font-weight:900;color:var(--yellow);">+${formatScore(maxBonus)}</div>
-            <div style="font-size:11px;color:#64748b;font-weight:800;">МАКС БОНУС</div>
-          </div>
-          <div style="background:#fff;border-radius:10px;padding:10px;text-align:center;">
-            <div style="font-size:22px;font-weight:900;color:var(--pink);">${formatScore(maxPerQ)}</div>
-            <div style="font-size:11px;color:#64748b;font-weight:800;">ЗА ВОПРОС</div>
-          </div>
-          <div style="background:#fff;border-radius:10px;padding:10px;text-align:center;">
-            <div style="font-size:22px;font-weight:900;color:var(--blue);">${formatScore(totalMax)}</div>
-            <div style="font-size:11px;color:#64748b;font-weight:800;">МАКСИМУМ</div>
-          </div>
+          <div style="background:#fff;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:22px;font-weight:900;color:var(--violet);">${questions.length}</div><div style="font-size:11px;color:#64748b;font-weight:800;">ВОПРОСОВ</div></div>
+          <div style="background:#fff;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:22px;font-weight:900;color:var(--green);">${formatScore(baseP)}</div><div style="font-size:11px;color:#64748b;font-weight:800;">БАЗА</div></div>
+          <div style="background:#fff;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:22px;font-weight:900;color:var(--yellow);">+${formatScore(maxBonus)}</div><div style="font-size:11px;color:#64748b;font-weight:800;">МАКС БОНУС</div></div>
+          <div style="background:#fff;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:22px;font-weight:900;color:var(--pink);">${formatScore(maxPerQ)}</div><div style="font-size:11px;color:#64748b;font-weight:800;">ЗА ВОПРОС</div></div>
+          <div style="background:#fff;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:22px;font-weight:900;color:var(--blue);">${formatScore(totalMax)}</div><div style="font-size:11px;color:#64748b;font-weight:800;">МАКСИМУМ</div></div>
         </div>
       </div>`;
 
@@ -1539,38 +1498,30 @@ function openTestEditor(testId, testData) {
         m.$('#coverPreview').innerHTML = `<img src="${d}">`;
       } catch (err) { alert(err.message); }
     };
-    m.$('#setTime').oninput = (e) => {
-      settings.timePerQuestion = parseInt(e.target.value, 10) || 20;
-    };
+    m.$('#setTime').oninput = (e) => { settings.timePerQuestion = parseInt(e.target.value, 10) || 20; };
 
-    editorBody.querySelectorAll('.tier-time').forEach(inp => {
-      inp.oninput = (e) => {
-        const i = +e.target.dataset.idx;
-        const v = parseInt(e.target.value, 10);
-        if (!isNaN(v)) settings.speedTiers[i].timeSec = Math.max(1, v);
-        renderSettings();
-      };
+    editorBody.querySelectorAll('.tier-time').forEach(inp => inp.oninput = (e) => {
+      const i = +e.target.dataset.idx;
+      const v = parseInt(e.target.value, 10);
+      if (!isNaN(v)) settings.speedTiers[i].timeSec = Math.max(1, v);
+      renderSettings();
     });
-    editorBody.querySelectorAll('.tier-bonus').forEach(inp => {
-      inp.oninput = (e) => {
-        const i = +e.target.dataset.idx;
-        const v = parseFloat(e.target.value);
-        if (!isNaN(v)) settings.speedTiers[i].bonus = Math.max(0, round1(v));
-        renderSettings();
-      };
+    editorBody.querySelectorAll('.tier-bonus').forEach(inp => inp.oninput = (e) => {
+      const i = +e.target.dataset.idx;
+      const v = parseFloat(e.target.value);
+      if (!isNaN(v)) settings.speedTiers[i].bonus = Math.max(0, round1(v));
+      renderSettings();
     });
     editorBody.querySelectorAll('[data-del-tier]').forEach(b => b.onclick = () => {
       settings.speedTiers.splice(+b.dataset.delTier, 1);
       renderSettings();
     });
-
     m.$('#addTierBtn').onclick = () => {
       const minT = settings.speedTiers.length ? Math.min(...settings.speedTiers.map(t => t.timeSec)) : 15;
       settings.speedTiers.push({ timeSec: Math.max(1, minT - 5), bonus: 1 });
       settings.speedTiers.sort((a, b) => b.timeSec - a.timeSec);
       renderSettings();
     };
-
     editorBody.querySelectorAll('.tier-preset-btn').forEach(btn => btn.onclick = () => {
       const preset = btn.dataset.preset;
       const total = Number(settings.timePerQuestion) || 20;
@@ -1592,7 +1543,7 @@ function openTestEditor(testId, testData) {
           { timeSec: Math.round(total * 0.60), bonus: round1(base * 0.6) },
           { timeSec: Math.round(total * 0.35), bonus: round1(base * 0.3) }
         ].filter(t => t.timeSec < total);
-      } else if (preset === 'none') settings.speedTiers = [];
+      } else settings.speedTiers = [];
       settings.speedTiers.sort((a, b) => b.timeSec - a.timeSec);
       renderSettings();
     });
@@ -1611,21 +1562,21 @@ function openTestEditor(testId, testData) {
         <div>
           <label class="field-label">Текст вопроса <span class="req">*</span></label>
           <textarea id="qText" style="min-height:110px;">${escapeHtml(q.q)}</textarea>
-          <label class="field-label" style="margin-top:10px;">⏱ Своё время (сек)</label>
-          <input type="number" id="qTime" min="5" max="300" value="${q.time || ''}" placeholder="По умолчанию: ${settings.timePerQuestion}">
+          <label class="field-label">⏱ Своё время (сек)</label>
+          <input type="number" id="qTime" min="5" max="300" value="${q.time || ''}" placeholder="${settings.timePerQuestion}">
         </div>
         <div>
           <label class="field-label">Медиа</label>
-          <input type="text" id="qImage" placeholder="URL картинки" value="${escapeHtml(q.image && !q.image.startsWith('data:') ? q.image : '')}">
+          <input type="text" id="qImage" placeholder="URL" value="${escapeHtml(q.image && !q.image.startsWith('data:') ? q.image : '')}">
           <input type="file" id="qImageFile" accept="image/*">
           <div class="cover-preview" id="qImagePreview" style="min-height:120px;">${q.image ? `<img src="${escapeAttr(q.image)}">` : '🖼 Превью'}</div>
         </div>
       </div>
-      <label class="field-label" style="margin-top:16px;">Ответы <span class="req">*</span></label>
+      <label class="field-label">Ответы <span class="req">*</span></label>
       <div>${q.options.map((opt, oi) => `
         <div class="answer-row ${q.correct === oi ? 'correct' : ''}" data-oi="${oi}">
           <input type="radio" name="correct" ${q.correct === oi ? 'checked' : ''} data-set-correct="${oi}">
-          <input type="text" class="ans-text" data-oi="${oi}" value="${escapeHtml(opt)}" placeholder="Вариант ${String.fromCharCode(65 + oi)}">
+          <input type="text" class="ans-text" data-oi="${oi}" value="${escapeHtml(opt)}">
         </div>`).join('')}</div>`;
 
     m.$('#qText').oninput = (e) => { questions[activeQ].q = e.target.value; renderSidebar(); };
@@ -1659,13 +1610,28 @@ function openTestEditor(testId, testData) {
       renderSidebar(); renderMain();
     };
     editorHead.querySelector('[data-remove-q]').onclick = () => {
-      if (questions.length === 1) { alert('Нужен хотя бы 1 вопрос'); return; }
+      if (questions.length === 1) return;
       if (!confirm('Удалить вопрос?')) return;
       questions.splice(activeQ, 1);
       activeQ = Math.max(0, activeQ - 1);
       renderSidebar(); renderMain();
     };
   }
+
+  m.$('#csvUpload').onchange = async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    try {
+      const text = await readFileAsText(f);
+      const parsed = parseCSVQuestions(text);
+      if (parsed.length === 0) { alert('Не распознано'); return; }
+      if (!confirm(`Добавить ${parsed.length} вопросов?`)) return;
+      questions = questions.concat(parsed);
+      activeQ = questions.length - parsed.length;
+      activeTab = 'questions';
+      m.$$('.editor-tab').forEach(x => x.classList.toggle('active', x.dataset.tab === 'questions'));
+      renderSidebar(); renderMain();
+    } catch (err) { alert('Ошибка: ' + err.message); }
+  };
 
   m.$$('.editor-tab').forEach(t => t.onclick = () => {
     m.$$('.editor-tab').forEach(x => x.classList.remove('active'));
@@ -1678,7 +1644,7 @@ function openTestEditor(testId, testData) {
     activeQ = questions.length - 1;
     renderSidebar(); renderMain();
   };
-  m.$('#closeEditor').onclick = () => { if (confirm('Закрыть редактор?')) m.close(); };
+  m.$('#closeEditor').onclick = () => { if (confirm('Закрыть?')) m.close(); };
 
   async function saveTest(publish) {
     if (!settings.title.trim()) { alert('Укажите название'); return false; }
@@ -1715,7 +1681,7 @@ function openTestEditor(testId, testData) {
   }
   m.$('#saveTestBtn').onclick = async () => {
     const ok = await saveTest(true);
-    if (ok) { m.close(); alert('✅ Тест опубликован'); }
+    if (ok) { m.close(); alert('✅ Опубликован'); }
   };
   m.$('#saveDraftBtn').onclick = async () => {
     const ok = await saveTest(false);
@@ -1733,12 +1699,35 @@ function openTestEditor(testId, testData) {
   renderSidebar(); renderMain();
 }
 
+function parseCSVQuestions(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  const result = [];
+  for (const line of lines) {
+    let parts = line.split(';');
+    if (parts.length < 5) parts = line.split(',');
+    if (parts.length < 5) parts = line.split('\t');
+    if (parts.length < 5) continue;
+    const q = parts[0].trim().replace(/^"|"$/g, '');
+    if (!q) continue;
+    const options = [parts[1], parts[2], parts[3], parts[4]].map(x => (x || '').trim().replace(/^"|"$/g, ''));
+    if (options.some(o => !o)) continue;
+    let correct = parseInt((parts[5] || '1').trim(), 10);
+    if (isNaN(correct) || correct < 1 || correct > 4) correct = 1;
+    correct = correct - 1;
+    const image = (parts[6] || '').trim().replace(/^"|"$/g, '');
+    const timeRaw = (parts[7] || '').trim();
+    const time = timeRaw ? Math.max(5, Math.min(300, parseInt(timeRaw, 10) || 20)) : null;
+    result.push({ q, options, correct, image, time });
+  }
+  return result;
+}
+
 /* ============ СЕССИИ ============ */
 function subscribeAllSessions() {
   const el = document.getElementById('allSessionsArea');
   if (!el) return;
-  trackUnsub(window.FB.onValue(window.FB.ref(window.FB.db, 'sessions'), (snap) => {
-    const data = snap.val() || {};
+  trackUnsub(window.FB.onValue(window.FB.ref(window.FB.db, 'sessions'), (snapshot) => {
+    const data = snapshot.val() || {};
     const list = Object.entries(data).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
     if (list.length === 0) { el.innerHTML = `<p class="hint">Пока нет сессий.</p>`; return; }
     el.innerHTML = list.map(([code, s]) => sessionRowHTML(code, s, s.teacherEmail || '')).join('');
@@ -1749,10 +1738,12 @@ function sessionRowHTML(code, s, teacherLabel) {
   const students = Object.keys(s.students || {}).length;
   const done = Object.values(s.students || {}).filter(x => x.status === 'finished').length;
   const isActive = s.status === 'active';
-  const sessionMode = s.mode === 'individual' ? '👤 Индивид.' : '🏠 Лобби';
-  const modeBadge = `<span style="font-size:11px;font-weight:800;padding:2px 8px;border-radius:6px;background:${s.mode === 'individual' ? '#fce7f3' : '#dbeafe'};color:${s.mode === 'individual' ? '#be185d' : '#1d4ed8'};">${sessionMode}</span>`;
+  const isIndividual = s.mode === 'individual';
+  const modeBadge = `<span style="font-size:11px;font-weight:800;padding:2px 8px;border-radius:6px;background:${isIndividual ? '#fce7f3' : '#dbeafe'};color:${isIndividual ? '#be185d' : '#1d4ed8'};">${isIndividual ? '👤 Индивид.' : '🏠 Лобби'}</span>`;
   return `<div class="session-row">
     <div class="dot ${isActive ? '' : 'closed'}"></div>
+    <div class="date">${formatDateShort(s.createdAt || Date.now())}</div>
+    <div class="time">${formatTimeShort(s.createdAt || Date.now())}</div>
     <div class="code">${code}</div>
     <div class="title">${escapeHtml((s.testTitle || '').slice(0, 50))} ${modeBadge} ${teacherLabel ? `<span style="color:#94a3b8;">· ${escapeHtml(teacherLabel)}</span>` : ''}</div>
     <div class="stats">👥 ${students}/${MAX_STUDENTS} · ✅ ${done}</div>
@@ -1773,8 +1764,7 @@ function bindSessionActions(el) {
   el.querySelectorAll('[data-copy-session]').forEach(b => b.onclick = () => {
     const code = b.dataset.copySession;
     navigator.clipboard.writeText(`${location.origin}${location.pathname}?mode=student&session=${code}`).then(() => {
-      b.textContent = '✓';
-      setTimeout(() => b.textContent = '🔗', 1200);
+      b.textContent = '✓'; setTimeout(() => b.textContent = '🔗', 1200);
     });
   });
   el.querySelectorAll('[data-close-session]').forEach(b => b.onclick = async () => {
@@ -1796,24 +1786,25 @@ function bindSessionActions(el) {
 function subscribeAllResults() {
   const el = document.getElementById('allResultsArea');
   if (!el) return;
-  trackUnsub(window.FB.onValue(window.FB.ref(window.FB.db, 'results'), (snap) => {
-    const data = snap.val() || {};
+  trackUnsub(window.FB.onValue(window.FB.ref(window.FB.db, 'results'), (snapshot) => {
+    const data = snapshot.val() || {};
     allResultsCache = Object.values(data).sort((a, b) => b.timestamp - a.timestamp);
-    renderAllResults();
+    renderResultsWithFilter();
   }));
 }
-function renderAllResults() {
+function renderResultsWithFilter() {
   const el = document.getElementById('allResultsArea');
   if (!el) return;
   if (allResultsCache.length === 0) { el.innerHTML = `<p class="hint">Пусто.</p>`; return; }
   el.innerHTML = `<p class="hint">Всего: ${allResultsCache.length}</p>
-    <table><thead><tr><th>Дата</th><th>Учитель</th><th>Тест</th><th>Ученик</th><th>Верно</th><th>Балл</th></tr></thead><tbody>
+    <table><thead><tr><th>Дата</th><th>Учитель</th><th>Тест</th><th>Ученик</th><th>Верно</th><th>Неверно</th><th>Балл</th></tr></thead><tbody>
     ${allResultsCache.slice(0, 100).map(r => `<tr>
       <td>${escapeHtml(r.date)}</td>
       <td>${escapeHtml(r.teacherEmail || '')}</td>
       <td>${escapeHtml((r.testTitle || '').slice(0, 30))}</td>
       <td>${escapeHtml(r.studentName)}</td>
       <td class="ok">${r.correct}</td>
+      <td class="bad">${r.wrong}</td>
       <td><b>${formatScore(r.score)}</b></td>
     </tr>`).join('')}</tbody></table>`;
 }
@@ -1822,17 +1813,7 @@ async function exportWholeSchool() {
   const data = snap.val() || {};
   const list = Object.values(data).sort((a, b) => b.timestamp - a.timestamp);
   if (list.length === 0) { alert('Пусто'); return; }
-  // Плоская сводка
-  const rows = list.map((r, i) => `<tr>
-    <td>${i+1}</td><td>${escapeHtml(r.date)}</td><td>${escapeHtml(r.teacherEmail || '')}</td>
-    <td>${escapeHtml(r.testTitle || '')}</td><td>${escapeHtml(r.studentName || '')}</td>
-    <td>${r.correct}</td><td>${r.wrong}</td><td>${formatScore(r.score)}</td>
-  </tr>`).join('');
-  const html = `<html><head><meta charset="UTF-8"><style>${excelStyles()}</style></head><body><table>
-    <tr><td colspan="8" class="title">Сводная по всей школе</td></tr>
-    <tr><th>№</th><th>Дата</th><th>Учитель</th><th>Тест</th><th>Ученик</th><th>Верно</th><th>Неверно</th><th>Балл</th></tr>
-    ${rows}</table></body></html>`;
-  downloadBlob(html, `Школа_${shortDateStamp()}.xls`, 'application/vnd.ms-excel;charset=utf-8;');
+  exportFlatSummary(list, 'Сводная по всей школе', `Школа_${shortDateStamp()}.xls`);
 }
 async function clearAllResults() {
   const snap = await window.FB.get(window.FB.ref(window.FB.db, 'results'));
@@ -1852,9 +1833,24 @@ async function clearOldResults() {
   for (const [id] of del) await window.FB.remove(window.FB.ref(window.FB.db, `results/${id}`));
   alert(`Удалено ${del.length}`);
 }
+async function cleanupOldSessions() {
+  if (!currentUser) return;
+  try {
+    const snap = await window.FB.get(window.FB.ref(window.FB.db, 'sessions'));
+    const all = snap.val() || {};
+    const now = Date.now();
+    const del = [];
+    for (const [code, s] of Object.entries(all)) {
+      if (!s || !s.createdAt) continue;
+      if (s.teacherId !== currentUser.uid && currentUser.role !== 'developer') continue;
+      if (now - s.createdAt > SESSION_TTL_MS) del.push(code);
+    }
+    for (const code of del) await window.FB.remove(window.FB.ref(window.FB.db, `sessions/${code}`));
+  } catch (e) {}
+}
 
 /* ==================================================================
-   КАБИНЕТ УЧИТЕЛЯ
+   УЧИТЕЛЬ: КАБИНЕТ
    ================================================================== */
 async function renderTeacherHome() {
   clearAllUnsubs();
@@ -1864,7 +1860,8 @@ async function renderTeacherHome() {
   document.body.className = 'theme-teacher';
 
   const publishedTests = Object.entries(testsCache).filter(([_, t]) => !t.status || t.status === 'published');
-  const testOptions = publishedTests.length === 0 ? `<option value="">— Нет тестов —</option>`
+  const testOptions = publishedTests.length === 0
+    ? `<option value="">— Нет доступных тестов —</option>`
     : publishedTests.map(([id, t]) => `<option value="${id}">${escapeHtml(t.title.slice(0, 70))} · макс ${formatScore(getMaxScore(t))} б.</option>`).join('');
 
   const classList = Object.entries(classesCache);
@@ -1876,7 +1873,7 @@ async function renderTeacherHome() {
     <h1 style="font-size:22px;">👨‍🏫 Кабинет учителя</h1>
     <div class="big-action">
       <h2>🚀 Запустить тест</h2>
-      <p>Выберите режим: «Лобби» — ждём всех и стартуем вместе, «Индивидуальный» — каждый проходит сам.</p>
+      <p>Выберите режим: <b>🏠 Лобби</b> — все ждут и стартуем вместе, <b>👤 Индивидуальный</b> — каждый проходит сам.</p>
       <div class="select-wrap"><select id="newSessionTest">${testOptions}</select></div>
       <div class="select-wrap" style="margin-top:-6px;"><select id="newSessionClass">${classOptions}</select></div>
       <div class="select-wrap">
@@ -1902,16 +1899,15 @@ async function renderTeacherHome() {
   bindTopNav();
   const modeSel = document.getElementById('newSessionMode');
   const autoWrap = document.getElementById('autoWrap');
-  modeSel.onchange = () => {
-    autoWrap.style.display = modeSel.value === 'lobby' ? 'block' : 'none';
-  };
+  modeSel.onchange = () => { autoWrap.style.display = modeSel.value === 'lobby' ? 'block' : 'none'; };
   onClick('createSessionBtn', createSession);
-  subscribeTeacherSessions();
+  try { cleanupOldSessions();       } catch (e) {}
+  try { subscribeTeacherSessions(); } catch (e) {}
 }
 
 async function createSession() {
   const testId = document.getElementById('newSessionTest').value;
-  if (!testId) { alert('Нет тестов'); return; }
+  if (!testId) { alert('Нет доступных тестов.'); return; }
   const test = testsCache[testId];
   const classId = document.getElementById('newSessionClass').value || null;
   const cls = classId ? classesCache[classId] : null;
@@ -1926,8 +1922,8 @@ async function createSession() {
       teacherEmail: currentUser.email,
       createdAt: Date.now(),
       status: 'active',
-      mode: sessionMode,       // 'lobby' | 'individual'
-      phase: sessionMode === 'lobby' ? 'lobby' : 'individual',
+      mode: sessionMode,
+      phase: sessionMode === 'individual' ? 'individual' : 'lobby',
       currentQuestion: -1,
       questionStartedAt: 0,
       autoAdvance,
@@ -1937,26 +1933,27 @@ async function createSession() {
     if (classId) { payload.classId = classId; payload.className = cls?.name || ''; }
     await window.FB.set(window.FB.ref(window.FB.db, `sessions/${code}`), payload);
     location.href = `?mode=teacher&session=${code}`;
-  } catch (e) { alert('Ошибка: ' + e.message); }
+  } catch (e) { alert('Не удалось создать: ' + e.message); }
 }
 
 function subscribeTeacherSessions() {
   const el = document.getElementById('sessionsList');
   if (!el) return;
-  trackUnsub(window.FB.onValue(window.FB.ref(window.FB.db, 'sessions'), (snap) => {
-    const data = snap.val() || {};
+  trackUnsub(window.FB.onValue(window.FB.ref(window.FB.db, 'sessions'), (snapshot) => {
+    const data = snapshot.val() || {};
     const mine = Object.entries(data).filter(([_, s]) => s && s.teacherId === currentUser.uid).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
-    if (mine.length === 0) { el.innerHTML = `<p class="hint">Нет сессий.</p>`; return; }
+    if (mine.length === 0) { el.innerHTML = `<p class="hint">Пока нет сессий.</p>`; return; }
     el.innerHTML = mine.map(([code, s]) => sessionRowHTML(code, s, '')).join('');
     bindSessionActions(el);
   }));
 }
 
 /* ==================================================================
-   УЧИТЕЛЬ: СЕССИЯ (Lobby + Individual)
+   УЧИТЕЛЬ: СЕССИЯ — Lobby и Individual
    ================================================================== */
 async function renderTeacherSession() {
   clearAllUnsubs();
+  if (autoAdvanceInterval) { clearInterval(autoAdvanceInterval); autoAdvanceInterval = null; }
   if (!currentUser || currentUser.role !== 'teacher') { renderAuth('teacher'); return; }
   document.body.className = 'theme-teacher';
   const code = sessionCode;
@@ -1971,32 +1968,30 @@ async function renderTeacherSession() {
   const isIndividual = s.mode === 'individual';
 
   app.innerHTML = `
-    <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;">
+    <div class="tabs no-print">
       <a href="?mode=teacher"><button class="back small">← К списку</button></a>
-      <button class="download small" id="exportSessionBtn">📥 Полная таблица</button>
-      <button class="download small" id="exportSummaryBtn">📊 Сводная</button>
-      <button class="danger small" id="closeBtn">⏹ Закрыть</button>
+      <button class="download small" id="exportSessionBtn">📥 Excel по сессии</button>
+      <button class="danger small" id="closeBtn">⏹ Закрыть сессию</button>
     </div>
-    <h1 style="display:flex;align-items:center;gap:12px;">
+    <h1 class="no-print" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
       ${isIndividual ? '👤' : '🏠'} Сессия <span style="color:#10b981;">${code}</span>
       <span style="font-size:13px;font-weight:700;padding:4px 12px;border-radius:8px;background:${isIndividual ? '#fce7f3' : '#dbeafe'};color:${isIndividual ? '#be185d' : '#1d4ed8'};">
         ${isIndividual ? 'Индивидуальный режим' : 'Режим Лобби'}
       </span>
     </h1>
-    <p><b>Тест:</b> ${escapeHtml(test.title)} · Вопросов: ${test.questions.length} · Макс: ${formatScore(getMaxScore(test))} б.</p>
+    <p class="no-print"><b>Тест:</b> ${escapeHtml(test.title)} · Вопросов: ${test.questions.length} · Макс: ${formatScore(getMaxScore(test))} б.</p>
 
     <div class="sync-teacher-panel" id="syncPanel">
-      ${!isIndividual ? `
-        <div class="stp-header">
-          <div id="phaseBadge"><span class="stp-phase lobby" id="phaseText">Лобби</span></div>
-          <div style="font-size:13px;color:#64748b;font-weight:700;">${s.autoAdvance ? '⏱ Авто' : '🎛 Ручной'}</div>
+      <div class="stp-header">
+        <div id="phaseBadge">
+          <span class="stp-phase ${isIndividual ? 'individual' : 'lobby'}" id="phaseText">
+            ${isIndividual ? '👤 Индивидуальный' : 'Лобби'}
+          </span>
         </div>
-      ` : `
-        <div class="stp-header">
-          <div><span class="stp-phase" style="background:#fce7f3;color:#be185d;">👤 Индивидуальный</span></div>
-          <div style="font-size:13px;color:#64748b;font-weight:700;">Каждый ученик проходит сам</div>
+        <div style="font-size:13px;color:#64748b;font-weight:700;">
+          ${isIndividual ? 'Каждый проходит сам' : (s.autoAdvance ? '⏱ Авто' : '🎛 Ручной')}
         </div>
-      `}
+      </div>
 
       <div style="background:#f8fafc;padding:16px;border-radius:14px;margin-bottom:16px;">
         <div style="font-size:12px;font-weight:800;color:#64748b;text-transform:uppercase;margin-bottom:8px;">Ссылка для учеников</div>
@@ -2009,23 +2004,21 @@ async function renderTeacherSession() {
       <div id="phaseContent"></div>
     </div>
 
-    <h2 style="margin-top:24px;">👥 Подключились (<span id="cntTotal">0</span>)</h2>
-    <div id="studentsArea" class="students-grid"></div>`;
+    <h2 class="no-print" style="margin-top:24px;">👥 Подключились ученики (<span id="cntTotal">0</span>)</h2>
+    <div id="studentsArea" class="students-grid">Ожидание…</div>`;
 
   onClick('copyLink', () => { navigator.clipboard.writeText(studentLink); alert('Скопировано'); });
   onClick('exportSessionBtn', async () => {
     const sSnap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
     const session = sSnap.val();
-    const results = buildSessionResults(session, test, code);
+    if (!session) return;
+    const results = buildSessionResults(session, test);
+    if (results.length === 0) { alert('Нет данных'); return; }
     exportStudentsWorkbook(results, session.testTitle, session.testId, test.shortName || '');
-  });
-  onClick('exportSummaryBtn', async () => {
-    const sSnap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
-    const session = sSnap.val();
-    exportSessionSummaryWide(session, test, code);
   });
   onClick('closeBtn', async () => {
     if (!confirm(`Закрыть сессию ${code}?`)) return;
+    if (autoAdvanceInterval) { clearInterval(autoAdvanceInterval); autoAdvanceInterval = null; }
     await window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}`), { status: 'closed', closedAt: Date.now() });
     location.href = '?mode=teacher';
   });
@@ -2033,11 +2026,11 @@ async function renderTeacherSession() {
   subscribeTeacherSessionLive(code, test);
 }
 
-function buildSessionResults(session, test, code) {
+function buildSessionResults(session, test) {
   const students = session.students || {};
   const totalQ = (test && test.questions && test.questions.length) || session.testQuestionCount || 0;
   const maxScore = test ? getMaxScore(test) : 0;
-  const out = [];
+  const results = [];
   Object.values(students).forEach(st => {
     const answersMap = st.answers || {};
     const arr = [];
@@ -2050,7 +2043,7 @@ function buildSessionResults(session, test, code) {
           correctText: a.correctText || (tq ? tq.options[tq.correct] : ''),
           selectedText: a.selectedText || null,
           correct: !!a.correct,
-          image: a.image || (tq ? tq.image || '' : ''),
+          image: a.image || (tq ? (tq.image || '') : ''),
           points: a.points || 0,
           speedBonus: a.speedBonus || 0,
           timeSpentSec: a.timeSpentSec || 0
@@ -2068,7 +2061,7 @@ function buildSessionResults(session, test, code) {
     }
     const correct = st.correctCount != null ? st.correctCount : arr.filter(a => a.correct).length;
     const total = arr.length || totalQ;
-    out.push({
+    results.push({
       studentName: st.studentName || '—',
       testId: session.testId,
       testTitle: session.testTitle,
@@ -2076,21 +2069,79 @@ function buildSessionResults(session, test, code) {
       timestamp: st.finishedAt || st.startedAt || st.joinedAt || Date.now(),
       score: round1(st.score || 0),
       maxScore,
-      correct, wrong: Math.max(0, total - correct), total,
-      teacherId: session.teacherId, teacherEmail: session.teacherEmail,
-      sessionCode: code,
+      correct,
+      wrong: Math.max(0, total - correct),
+      total,
+      teacherId: session.teacherId,
+      teacherEmail: session.teacherEmail,
+      sessionCode: sessionCode || '',
       tabSwitches: st.tabSwitches || 0,
       copyAttempts: st.copyAttempts || 0,
       terminated: st.status === 'terminated',
+      terminateReason: st.terminateReason || '',
       answers: arr
     });
   });
-  return out;
+  return results;
+}
+
+async function exportSessionSummary(code, test) {
+  try {
+    const sSnap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
+    const session = sSnap.val();
+    if (!session) return;
+    const students = Object.values(session.students || {});
+    if (students.length === 0) { alert('Нет данных'); return; }
+    students.sort((a, b) => (b.score || 0) - (a.score || 0));
+    const totalQ = (test && test.questions && test.questions.length) || session.testQuestionCount || 0;
+    const maxScore = test ? getMaxScore(test) : 0;
+    const rows = students.map((st, i) => {
+      const correct = st.correctCount || 0;
+      const wrong = Math.max(0, totalQ - correct);
+      const score = round1(st.score || 0);
+      const pct = maxScore > 0 ? Math.round(score / maxScore * 100) : 0;
+      const color = pct >= 75 ? '#16a34a' : pct >= 50 ? '#b45309' : '#dc2626';
+      const term = st.status === 'terminated' ? ' <span class="bad">🚫</span>' : '';
+      return `<tr>
+        <td class="c">${i + 1}</td>
+        <td>${escapeHtml(st.studentName || '—')}${term}</td>
+        <td class="c ok">${correct}</td>
+        <td class="c bad">${wrong}</td>
+        <td class="c" style="font-weight:bold;color:${color};font-size:14pt;">${formatScore(score)}</td>
+        <td style="font-size:9pt;color:#666;">${escapeHtml(interpretScore(score, maxScore))}</td>
+      </tr>`;
+    }).join('');
+    const avg = students.length ? round1(students.reduce((s, st) => s + (st.score || 0), 0) / students.length) : 0;
+    const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+<head><meta charset="UTF-8"><style>${excelStyles()}</style></head><body><table>
+  <tr><td colspan="6" class="title">${escapeHtml(session.testTitle || 'Тест')} — сводная</td></tr>
+  <tr><td colspan="3" class="header-meta"><b>Учитель:</b> ${escapeHtml(session.teacherEmail || '—')}</td>
+      <td colspan="3" class="header-meta"><b>Дата:</b> ${escapeHtml(formatDate(Date.now()))}</td></tr>
+  <tr><td colspan="3" class="header-meta"><b>Учеников:</b> ${students.length}</td>
+      <td colspan="3" class="header-meta"><b>Максимум:</b> ${formatScore(maxScore)}</td></tr>
+  <tr><td colspan="3" class="header-meta"><b>Средний:</b> ${formatScore(avg)}</td>
+      <td colspan="3" class="header-meta"><b>Режим:</b> ${session.mode === 'individual' ? 'Индивидуальный' : 'Лобби'}</td></tr>
+  <tr><th class="c">Место</th><th>ФИО</th><th class="c">Верно</th><th class="c">Неверно</th><th class="c">Балл</th><th>Оценка</th></tr>
+  ${rows}
+</table></body></html>`;
+    downloadBlob(html, buildExcelFilename(session.testTitle, test.shortName || 'сводная', 'Сводная'), 'application/vnd.ms-excel;charset=utf-8;');
+  } catch (e) { alert('Ошибка: ' + e.message); }
+}
+
+async function exportSessionFull(code, test) {
+  try {
+    const sSnap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
+    const session = sSnap.val();
+    if (!session) return;
+    const results = buildSessionResults(session, test);
+    if (results.length === 0) { alert('Нет данных'); return; }
+    exportStudentsWorkbook(results, session.testTitle, session.testId, test.shortName || '');
+  } catch (e) { alert('Ошибка: ' + e.message); }
 }
 
 function subscribeTeacherSessionLive(code, test) {
-  trackUnsub(window.FB.onValue(window.FB.ref(window.FB.db, `sessions/${code}`), (snap) => {
-    const s = snap.val();
+  trackUnsub(window.FB.onValue(window.FB.ref(window.FB.db, `sessions/${code}`), (snapshot) => {
+    const s = snapshot.val();
     if (!s) return;
     renderTeacherPanel(s, test, code);
     renderTeacherStudentsList(s, test);
@@ -2098,15 +2149,14 @@ function subscribeTeacherSessionLive(code, test) {
   if (test) startAutoAdvance(code, test);
 }
 
-/* === Автопереход (только Lobby) === */
-let autoAdvanceInterval = null;
 function startAutoAdvance(code, test) {
   if (autoAdvanceInterval) { clearInterval(autoAdvanceInterval); autoAdvanceInterval = null; }
   autoAdvanceInterval = setInterval(async () => {
     try {
       const snap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
       const s = snap.val();
-      if (!s || s.mode === 'individual') return;
+      if (!s) return;
+      if (s.mode === 'individual') return; // Авто-переход только в Лобби
       if (!s.autoAdvance || s.status !== 'active') return;
       if (s.phase === 'finished' || s.phase === 'lobby') return;
       const idx = s.currentQuestion;
@@ -2144,7 +2194,7 @@ function startAutoAdvance(code, test) {
           }
         }
       }
-    } catch (e) { console.warn(e); }
+    } catch (e) { console.warn('autoAdvance:', e); }
   }, 500);
 }
 
@@ -2160,20 +2210,24 @@ function renderTeacherPanel(s, test, code) {
     const started = studentsArr.filter(st => st.status === 'in_progress').length;
     const finished = studentsArr.filter(st => st.status === 'finished').length;
     const terminated = studentsArr.filter(st => st.status === 'terminated').length;
+    const waiting = studentsArr.filter(st => st.status === 'intro' || st.status === 'waiting').length;
     content.innerHTML = `
       <div class="sync-progress">
         <div class="sp-item"><div class="sp-n">${totalStudents}</div><div class="sp-l">Подключились</div></div>
         <div class="sp-item"><div class="sp-n" style="color:#3b82f6;">${started}</div><div class="sp-l">Проходят</div></div>
         <div class="sp-item"><div class="sp-n" style="color:#10b981;">${finished}</div><div class="sp-l">Завершили</div></div>
       </div>
-      <p style="text-align:center;font-size:13px;color:#64748b;margin-top:14px;">
-        Каждый ученик проходит тест самостоятельно. Управление не требуется.
-        ${terminated > 0 ? `<br><b style="color:#ef4444;">Прервано: ${terminated}</b>` : ''}
+      <p style="text-align:center;font-size:13px;color:#64748b;margin-top:14px;font-weight:600;">
+        ${waiting > 0 ? `📖 Читают вводный текст: ${waiting}` : 'Все приступили к тесту'}
+        ${terminated > 0 ? `<br><b style="color:#ef4444;">🚫 Прервано античитом: ${terminated}</b>` : ''}
+      </p>
+      <p style="text-align:center;font-size:12px;color:#94a3b8;margin-top:6px;">
+        Каждый ученик проходит сам. Кнопки управления не нужны.
       </p>`;
     return;
   }
 
-  // Lobby mode
+  // ============ Лобби ============
   const phase = s.phase || 'lobby';
   const phaseText = document.getElementById('phaseText');
   if (phaseText) {
@@ -2192,9 +2246,10 @@ function renderTeacherPanel(s, test, code) {
     content.innerHTML = `
       <div style="text-align:center;padding:24px 0;">
         <div style="font-size:64px;">🎯</div>
-        <h2>Ученики подключаются</h2>
-        <p style="color:#64748b;">Нажмите «Начать тест», когда все будут готовы</p>
+        <h2 style="margin:8px 0;">Ученики подключаются</h2>
+        <p style="color:#64748b;font-weight:600;">Нажмите «Начать тест», когда все будут готовы</p>
         <button class="huge green" id="startBtn" ${totalStudents === 0 ? 'disabled' : ''}>🚀 Начать тест</button>
+        ${totalStudents === 0 ? '<p style="color:#94a3b8;font-size:13px;margin-top:12px;font-weight:600;">Ждём хотя бы одного ученика…</p>' : ''}
       </div>`;
     onClick('startBtn', () => {
       window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}`), { phase: 'question', currentQuestion: 0, questionStartedAt: Date.now(), status: 'active' });
@@ -2222,7 +2277,9 @@ function renderTeacherPanel(s, test, code) {
             ${escapeHtml(opt)}
           </div>`).join('')}
         </div>
-        <p style="font-size:12px;color:#94a3b8;font-weight:700;margin-top:12px;">За верный ответ: ${formatScore(baseP)}${maxB > 0 ? ` – ${formatScore(maxPerQ)} б. (с бонусом)` : ' б.'}</p>
+        <p style="font-size:12px;color:#94a3b8;font-weight:700;margin-top:12px;">
+          За верный ответ: ${formatScore(baseP)}${maxB > 0 ? ` – ${formatScore(maxPerQ)} б. (с бонусом)` : ' б.'}
+        </p>
       </div>
       <div class="sync-controls">
         <button class="primary" id="revealBtn">📊 Показать ответы (${answeredThisQ}/${totalStudents})</button>
@@ -2248,14 +2305,16 @@ function renderTeacherPanel(s, test, code) {
               <div class="sad-fig">${FIGURES[oi]}</div>
               <div class="sad-count">${stats[oi]}</div>
               <div class="sad-opt">${escapeHtml(opt.slice(0, 30))}</div>
+              <div class="sad-bar" style="width:${pct}%;margin-left:auto;margin-right:auto;"></div>
             </div>`;
           }).join('')}
         </div>
         ${s.autoAdvance ? `<div style="margin:14px auto;padding:10px 20px;background:#fef3c7;border-radius:12px;color:#b45309;font-weight:800;display:inline-block;">⏱ Далее через <span id="autoCountdown">${s.autoAdvanceDelaySec || 5}</span> сек</div>` : ''}
         <div class="sync-controls">
           ${idx + 1 < test.questions.length
-            ? `<button class="primary" id="nextBtn">➡ Следующий вопрос</button>`
+            ? `<button class="primary" id="nextBtn">➡ Следующий вопрос (${idx + 2}/${test.questions.length})</button>`
             : `<button class="primary" id="finishBtn">🏁 Завершить тест</button>`}
+          <button class="secondary" id="leaderboardBtn">🏆 Лидерборд</button>
         </div>
       </div>`;
     onClick('nextBtn', () => {
@@ -2263,6 +2322,9 @@ function renderTeacherPanel(s, test, code) {
     });
     onClick('finishBtn', () => {
       window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}`), { phase: 'finished', finishedAt: Date.now(), status: 'closed' });
+    });
+    onClick('leaderboardBtn', () => {
+      window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}`), { phase: 'leaderboard', leaderboardAt: Date.now() });
     });
     return;
   }
@@ -2279,7 +2341,7 @@ function renderTeacherPanel(s, test, code) {
               <div class="lb-name">${escapeHtml(st.studentName || '—')}</div>
               <div class="lb-score">${formatScore(st.score || 0)}</div>
             </div>`;
-          }).join('')}
+          }).join('') || '<p class="hint">Нет данных</p>'}
         </div>
         <div class="sync-controls">
           ${idx + 1 < test.questions.length
@@ -2302,21 +2364,14 @@ function renderTeacherPanel(s, test, code) {
       <div style="text-align:center;padding:24px 0;">
         <div style="font-size:64px;">🏁</div>
         <h2>Тест завершён!</h2>
-        <p>Учеников: ${fin.length} · Средний балл: ${formatScore(avg)} / ${formatScore(getMaxScore(test))}</p>
+        <p>Учеников: ${fin.length} · Средний: ${formatScore(avg)} / ${formatScore(getMaxScore(test))}</p>
         <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:22px;">
           <button class="download" id="expSum">📊 Сводная</button>
           <button class="download" id="expFull" style="background:linear-gradient(135deg,#3b82f6,#60a5fa);">📥 Полная</button>
         </div>
       </div>`;
-    onClick('expSum', async () => {
-      const sSnap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
-      exportSessionSummaryWide(sSnap.val(), test, code);
-    });
-    onClick('expFull', async () => {
-      const sSnap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
-      const results = buildSessionResults(sSnap.val(), test, code);
-      exportStudentsWorkbook(results, test.title, s.testId, test.shortName || '');
-    });
+    onClick('expSum', () => exportSessionSummary(code, test));
+    onClick('expFull', () => exportSessionFull(code, test));
     return;
   }
 }
@@ -2331,25 +2386,22 @@ function renderTeacherStudentsList(s, test) {
   const isIndividual = s.mode === 'individual';
   const idx = typeof s.currentQuestion === 'number' ? s.currentQuestion : -1;
   area.innerHTML = arr.map(st => {
-    let cls = '', status = '', dot = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#10b981;margin-right:6px;"></span>';
+    let cls = '', status = '';
     if (st.status === 'intro') { cls = 'active'; status = '📖 Читает вводный текст'; }
+    else if (st.status === 'waiting') { cls = 'active'; status = '⏳ Ждёт старта'; }
     else if (st.status === 'in_progress') {
       cls = 'active';
       const cur = isIndividual ? (st.currentQuestion || 0) : idx;
       status = `Вопрос ${(cur || 0) + 1} из ${test.questions.length}`;
     }
     else if (st.status === 'finished') { cls = 'done'; status = `✅ Завершил — ${formatScore(st.score || 0)} б.`; }
-    else if (st.status === 'terminated') {
-      cls = 'terminated';
-      status = `🚫 Прерван (${st.terminateReason === 'tab_switch' ? 'ушёл со вкладки' : 'античит'})`;
-      dot = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-right:6px;"></span>';
-    }
+    else if (st.status === 'terminated') { cls = 'terminated'; status = `🚫 Прерван античитом`; }
     else { status = 'Ожидание'; }
     const warns = [];
     if (st.tabSwitches > 0) warns.push(`<span style="background:#fef3c7;color:#b45309;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;margin-right:4px;">⚠ ${st.tabSwitches}</span>`);
     if (st.copyAttempts > 0) warns.push(`<span style="background:#fee2e2;color:#b91c1c;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">📋 ${st.copyAttempts}</span>`);
     return `<div class="student-card ${cls}">
-      <div class="name">${dot}${escapeHtml(st.studentName || '—')}</div>
+      <div class="name">${escapeHtml(st.studentName || '—')}</div>
       <div class="status">${escapeHtml(status)}</div>
       <div class="progress">Верно: ${st.correctCount || 0} · ${formatScore(st.score || 0)} б. ${warns.join(' ')}</div>
     </div>`;
@@ -2398,7 +2450,7 @@ function renderStudentEnterCode() {
 }
 
 /* ==================================================================
-   УЧЕНИК: ВХОД В СЕССИЮ
+   УЧЕНИК: СЕССИЯ — Lobby / Individual
    ================================================================== */
 async function renderStudentSession() {
   clearAllUnsubs();
@@ -2418,11 +2470,12 @@ async function renderStudentSession() {
     const myId = getStudentLocalId();
     const myRec = (s.students || {})[myId];
 
-    stuState = {
+    syncState = {
       code,
       studentId: myId,
       studentName: myRec ? myRec.studentName : null,
-      test, testId: s.testId,
+      test,
+      testId: s.testId,
       teacherEmail: s.teacherEmail,
       sessionMode: s.mode || 'lobby',
       answersByQ: (myRec && myRec.answers) || {},
@@ -2430,8 +2483,9 @@ async function renderStudentSession() {
       correctCount: (myRec && myRec.correctCount) || 0,
       currentStreak: 0,
       maxStreak: (myRec && myRec.maxStreak) || 0,
-      localQuestionStartTimes: {},
-      status: myRec ? myRec.status : null
+      status: myRec ? myRec.status : null,
+      currentQuestion: (myRec && myRec.currentQuestion) || 0,
+      localQuestionStartTimes: {}
     };
 
     if (myRec && myRec.status === 'terminated') {
@@ -2444,27 +2498,28 @@ async function renderStudentSession() {
       return;
     }
     if (myRec && myRec.status === 'finished') {
+      const maxScore = getMaxScore(test);
       app.innerHTML = `<div class="student-wrap" style="margin-top:30px;"><div class="student-card-hero" style="text-align:center;">
         <div style="font-size:64px;">✅</div>
         <h1 class="student-title">Тест уже пройден</h1>
-        <p class="student-sub">Ваш результат: <b>${formatScore(myRec.score || 0)} / ${formatScore(getMaxScore(test))}</b></p>
+        <p class="student-sub">Ваш результат: <b>${formatScore(myRec.score || 0)} / ${formatScore(maxScore)}</b></p>
         <a href="?mode=student"><button class="btn-start">← Ввести другой код</button></a>
       </div></div>`;
       return;
     }
 
-    // Восстанавливаем существующего ученика
+    // Восстанавливаем существующего ученика (F5 в середине теста)
     if (myRec) {
       enableAntiCheat(
         window.FB.ref(window.FB.db, `sessions/${code}/students/${myId}`),
-        test.antiCheatMode || 'hard',
+        test.antiCheatMode || 'soft',
         (reason, msg) => terminateStudent(reason, msg)
       );
       subscribeStudentSession(code);
       return;
     }
 
-    // Экран регистрации
+    // Регистрация
     const maxScore = getMaxScore(test);
     const isIndividual = s.mode === 'individual';
     const classInfo = s.classId ? `<p class="student-sub" style="color:#7c3aed;">Класс: <b>${escapeHtml(s.className || '')}</b></p>` : '';
@@ -2492,7 +2547,6 @@ async function renderStudentSession() {
           </div>
         </div>
       </div>`;
-
     ['firstName', 'lastName'].forEach(id => {
       const el = document.getElementById(id);
       el.addEventListener('input', () => {
@@ -2544,7 +2598,7 @@ async function joinSession(code, test, sessionData) {
   const studentId = getStudentLocalId();
   const existing = Object.values(sessionData.students || {});
   if (existing.some(x => x.studentName === studentName)) { alert(`«${studentName}» уже участвует.`); return; }
-  if (existing.length >= MAX_STUDENTS) { alert(`Уже ${MAX_STUDENTS} учеников`); return; }
+  if (existing.length >= MAX_STUDENTS) { alert(`Уже ${MAX_STUDENTS} учеников.`); return; }
 
   const isIndividual = sessionData.mode === 'individual';
   const studentRef = window.FB.ref(window.FB.db, `sessions/${code}/students/${studentId}`);
@@ -2552,7 +2606,7 @@ async function joinSession(code, test, sessionData) {
     await window.FB.set(studentRef, {
       studentName,
       joinedAt: Date.now(),
-      status: isIndividual ? 'intro' : 'waiting',   // waiting → ждёт старта учителя (лобби)
+      status: isIndividual ? 'intro' : 'waiting',
       currentQuestion: 0,
       correctCount: 0,
       score: 0,
@@ -2561,13 +2615,13 @@ async function joinSession(code, test, sessionData) {
       copyAttempts: 0,
       answers: {}
     });
-    stuState.studentName = studentName;
-    stuState.sessionMode = sessionData.mode || 'lobby';
-    stuState.status = isIndividual ? 'intro' : 'waiting';
+    syncState.studentName = studentName;
+    syncState.sessionMode = sessionData.mode || 'lobby';
+    syncState.status = isIndividual ? 'intro' : 'waiting';
 
     enableAntiCheat(
       studentRef,
-      test.antiCheatMode || 'hard',
+      test.antiCheatMode || 'soft',
       (reason, msg) => terminateStudent(reason, msg)
     );
     subscribeStudentSession(code);
@@ -2578,40 +2632,45 @@ function subscribeStudentSession(code) {
   trackUnsub(window.FB.onValue(window.FB.ref(window.FB.db, `sessions/${code}`), (snap) => {
     const s = snap.val();
     if (!s) return;
-    const myRec = (s.students || {})[stuState.studentId];
+    const myRec = (s.students || {})[syncState.studentId];
     if (!myRec) { location.href = '?mode=student'; return; }
-    stuState.answersByQ = myRec.answers || {};
-    stuState.score = myRec.score || 0;
-    stuState.correctCount = myRec.correctCount || 0;
-    stuState.status = myRec.status;
+    syncState.answersByQ = myRec.answers || {};
+    syncState.score = myRec.score || 0;
+    syncState.correctCount = myRec.correctCount || 0;
+    syncState.maxStreak = myRec.maxStreak || 0;
+    syncState.status = myRec.status;
+    syncState.currentQuestion = myRec.currentQuestion || 0;
     renderStudentScreen(s, code);
   }));
 }
 
 /* ==================================================================
-   ЭКРАН УЧЕНИКА — оба режима
+   ЭКРАН УЧЕНИКА
    ================================================================== */
 function renderStudentScreen(s, code) {
-  const test = stuState.test;
+  const test = syncState.test;
   if (!test) return;
   const isIndividual = s.mode === 'individual';
+
   const root = document.getElementById('app');
   if (!document.querySelector('.sync-student-screen')) {
     root.innerHTML = `<div class="sync-student-screen" id="sss"></div>`;
   }
   const sss = document.getElementById('sss');
 
-  const showScore = s.phase === 'finished' || (s.phase === 'question' && stuState.answersByQ[s.currentQuestion]) || isIndividual && stuState.status === 'in_progress' && stuState.answersByQ[s.currentQuestion];
+  const myRec = (s.students || {})[syncState.studentId] || {};
+  const showScore = myRec.status === 'finished' || s.phase === 'leaderboard' ||
+    (myRec.status === 'in_progress' && syncState.answersByQ[myRec.currentQuestion]);
   const topbar = `
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;
       background:rgba(255,255,255,0.15);padding:12px 18px;border-radius:14px;margin-bottom:14px;color:#fff;font-weight:700;">
-      <span>👤 ${escapeHtml(stuState.studentName)}</span>
-      <span>${showScore ? '⭐ ' + formatScore(stuState.score) + ' б.' : '🎮 Играем'}</span>
+      <span>👤 ${escapeHtml(syncState.studentName)}</span>
+      <span>${showScore ? '⭐ ' + formatScore(syncState.score) + ' б.' : '🎮 Играем'}</span>
     </div>`;
 
-  // =============== ИНДИВИДУАЛЬНЫЙ РЕЖИМ ===============
+  // ============== ИНДИВИДУАЛЬНЫЙ РЕЖИМ ==============
   if (isIndividual) {
-    if (stuState.status === 'intro') {
+    if (myRec.status === 'intro') {
       sss.innerHTML = topbar + `
         <div class="sss-hero">
           <h1 style="color:var(--violet);margin:0 0 14px;font-size:24px;">📖 Информация перед тестом</h1>
@@ -2623,7 +2682,7 @@ function renderStudentScreen(s, code) {
         </div>`;
       onClick('introReadBtn', async () => {
         try {
-          await window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}/students/${stuState.studentId}`), {
+          await window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}/students/${syncState.studentId}`), {
             status: 'in_progress',
             startedAt: Date.now(),
             currentQuestion: 0
@@ -2633,62 +2692,37 @@ function renderStudentScreen(s, code) {
       return;
     }
 
-    if (stuState.status === 'in_progress') {
-      const idx = stuState.localQuestionStartTimes ?
-        Object.keys(stuState.answersByQ).length : 0;
-      // Определяем текущий вопрос: сколько уже отвечено
-      let curIdx = 0;
-      while (stuState.answersByQ[curIdx]) curIdx++;
-      if (curIdx >= test.questions.length) {
-        // Все ответили → финиш
+    if (myRec.status === 'in_progress') {
+      const idx = myRec.currentQuestion || 0;
+      if (idx >= test.questions.length) {
         finishStudentIndividual(code);
         return;
       }
-      renderIndividualQuestion(sss, topbar, test, curIdx, code);
+      renderIndividualQuestion(sss, topbar, test, idx, code);
       return;
     }
 
-    if (stuState.status === 'finished') {
-      const maxScore = getMaxScore(test);
-      const score = stuState.score || 0;
-      sss.innerHTML = topbar + `
-        <div class="sss-hero">
-          <div style="font-size:72px;">🏁</div>
-          <h2 style="color:var(--violet);margin:8px 0;">Тест завершён!</h2>
-          <div class="score">${formatScore(score)}</div>
-          <p style="color:#94a3b8;font-weight:700;">из ${formatScore(maxScore)} возможных</p>
-          <p style="color:#475569;font-weight:700;margin-top:8px;">${interpretScore(score, maxScore)}</p>
-          <div style="display:flex;justify-content:center;gap:24px;margin-top:18px;padding-top:18px;border-top:2px solid #f1f5f9;">
-            <div style="text-align:center;">
-              <div class="ok" style="font-size:26px;font-weight:900;">${stuState.correctCount || 0}</div>
-              <div style="font-size:11px;color:#94a3b8;font-weight:700;">ВЕРНЫХ</div>
-            </div>
-            <div style="text-align:center;">
-              <div style="font-size:26px;font-weight:900;color:var(--red);">${test.questions.length - (stuState.correctCount || 0)}</div>
-              <div style="font-size:11px;color:#94a3b8;font-weight:700;">НЕВЕРНЫХ</div>
-            </div>
-          </div>
-          <button id="goHomeBtn" class="btn-start" style="margin-top:22px;">🏠 На главную</button>
-        </div>`;
-      onClick('goHomeBtn', () => {
-        if (stuTimerInterval) clearInterval(stuTimerInterval);
-        disableAntiCheat();
-        location.href = '?mode=student';
-      });
+    if (myRec.status === 'finished') {
+      renderFinishedScreen(sss, topbar, test, myRec, code);
       return;
     }
 
-    // Другие статусы — не должно случиться в individual, но на всякий случай
-    sss.innerHTML = topbar + `<div class="sss-hero"><p>Загрузка…</p></div>`;
+    if (myRec.status === 'terminated') {
+      // Уже обработано при загрузке
+      return;
+    }
+
+    // Неизвестный статус — ждём
+    sss.innerHTML = topbar + `<div class="sss-hero"><div style="font-size:64px;">⏳</div><h2>Загрузка…</h2></div>`;
     return;
   }
 
-  // =============== РЕЖИМ ЛОББИ ===============
+  // ============== ЛОББИ РЕЖИМ ==============
   const phase = s.phase || 'lobby';
   const idx = typeof s.currentQuestion === 'number' ? s.currentQuestion : -1;
-  const myAnswer = stuState.answersByQ[idx];
+  const myAnswer = syncState.answersByQ[idx];
 
-  if (phase === 'lobby' || stuState.status === 'waiting') {
+  if (phase === 'lobby' || myRec.status === 'waiting') {
     sss.innerHTML = topbar + `
       <div class="sss-hero">
         <div style="font-size:64px;margin-bottom:12px;animation:pulse 2s infinite;">⏳</div>
@@ -2701,7 +2735,7 @@ function renderStudentScreen(s, code) {
 
   if (phase === 'question') {
     if (myAnswer) { renderAnsweredHero(sss, topbar, myAnswer); return; }
-    renderLobbyQuestion(sss, topbar, test, idx, s, code);
+    renderLobbyQuestion(sss, topbar, test, idx, code);
     return;
   }
 
@@ -2710,7 +2744,7 @@ function renderStudentScreen(s, code) {
       <div class="sss-hero">
         <div style="font-size:72px;">⏳</div>
         <h2 style="color:var(--violet);margin:8px 0;">Готовим следующий вопрос…</h2>
-        <p style="color:var(--muted);font-weight:600;">Правильные ответы и баллы будут в финале</p>
+        <p style="color:var(--muted);font-weight:600;">Правильные ответы и баллы — в финале</p>
         <div class="waiting-dots" style="margin-top:20px;"><span></span><span></span><span></span></div>
       </div>`;
     return;
@@ -2724,7 +2758,7 @@ function renderStudentScreen(s, code) {
         <h2>🏆 Лидерборд</h2>
         <p class="lb-sub">Топ-10</p>
         <div class="lb-list">
-          ${arr.slice(0, 10).map((st, i) => `<div class="lb-item ${st.id === stuState.studentId ? 'me' : ''}">
+          ${arr.slice(0, 10).map((st, i) => `<div class="lb-item ${st.id === syncState.studentId ? 'me' : ''}">
             <div class="lb-rank ${medal(i)}">${i + 1}</div>
             <div class="lb-name">${escapeHtml(st.studentName || '—')}</div>
             <div class="lb-score">${formatScore(st.score || 0)}</div>
@@ -2736,22 +2770,7 @@ function renderStudentScreen(s, code) {
   }
 
   if (phase === 'finished') {
-    const maxScore = getMaxScore(test);
-    const score = stuState.score || 0;
-    sss.innerHTML = topbar + `
-      <div class="sss-hero">
-        <div style="font-size:72px;">🏁</div>
-        <h2 style="color:var(--violet);margin:8px 0;">Тест завершён!</h2>
-        <div class="score">${formatScore(score)}</div>
-        <p style="color:#94a3b8;font-weight:700;">из ${formatScore(maxScore)} возможных</p>
-        <p style="color:#475569;font-weight:700;margin-top:8px;">${interpretScore(score, maxScore)}</p>
-        <button id="goHomeBtn" class="btn-start" style="margin-top:22px;">🏠 На главную</button>
-      </div>`;
-    onClick('goHomeBtn', () => {
-      if (stuTimerInterval) clearInterval(stuTimerInterval);
-      disableAntiCheat();
-      location.href = '?mode=student';
-    });
+    renderFinishedScreen(sss, topbar, test, myRec, code);
     return;
   }
 }
@@ -2776,13 +2795,13 @@ function renderAnsweredHero(sss, topbar, myAnswer) {
     </div>`;
 }
 
-function renderLobbyQuestion(sss, topbar, test, idx, s, code) {
+function renderLobbyQuestion(sss, topbar, test, idx, code) {
   const q = test.questions[idx];
   if (!q) return;
   const timeTotal = q.time || test.timePerQuestion || TIME_PER_QUESTION;
-  if (!stuState.localQuestionStartTimes) stuState.localQuestionStartTimes = {};
-  if (!stuState.localQuestionStartTimes[idx]) stuState.localQuestionStartTimes[idx] = Date.now();
-  const myStart = stuState.localQuestionStartTimes[idx];
+  if (!syncState.localQuestionStartTimes) syncState.localQuestionStartTimes = {};
+  if (!syncState.localQuestionStartTimes[idx]) syncState.localQuestionStartTimes[idx] = Date.now();
+  const myStart = syncState.localQuestionStartTimes[idx];
   const elapsed = (Date.now() - myStart) / 1000;
   const remaining = Math.max(0, Math.floor(timeTotal - elapsed));
   const circumference = 2 * Math.PI * 32;
@@ -2812,18 +2831,16 @@ function renderLobbyQuestion(sss, topbar, test, idx, s, code) {
       </div>
     </div>`;
 
-  sss.querySelectorAll('[data-oi]').forEach(b => {
-    b.onclick = () => submitAnswer(code, idx, +b.dataset.oi, timeTotal, 'lobby');
-  });
+  sss.querySelectorAll('[data-oi]').forEach(b => b.onclick = () => submitAnswer(code, idx, +b.dataset.oi, timeTotal, 'lobby'));
 
-  if (stuTimerInterval) clearInterval(stuTimerInterval);
-  stuTimerInterval = setInterval(() => {
+  if (syncTimerInterval) clearInterval(syncTimerInterval);
+  syncTimerInterval = setInterval(() => {
     const el = document.getElementById('syncTimer');
-    if (!el) { clearInterval(stuTimerInterval); return; }
+    if (!el) { clearInterval(syncTimerInterval); return; }
     const rem = Math.max(0, Math.floor(timeTotal - (Date.now() - myStart) / 1000));
     el.textContent = rem;
     if (rem <= 5) el.parentElement.classList.add('warning');
-    if (rem <= 0) clearInterval(stuTimerInterval);
+    if (rem <= 0) clearInterval(syncTimerInterval);
   }, 500);
 }
 
@@ -2831,9 +2848,9 @@ function renderIndividualQuestion(sss, topbar, test, idx, code) {
   const q = test.questions[idx];
   if (!q) return;
   const timeTotal = q.time || test.timePerQuestion || TIME_PER_QUESTION;
-  if (!stuState.localQuestionStartTimes) stuState.localQuestionStartTimes = {};
-  if (!stuState.localQuestionStartTimes[idx]) stuState.localQuestionStartTimes[idx] = Date.now();
-  const myStart = stuState.localQuestionStartTimes[idx];
+  if (!syncState.localQuestionStartTimes) syncState.localQuestionStartTimes = {};
+  if (!syncState.localQuestionStartTimes[idx]) syncState.localQuestionStartTimes[idx] = Date.now();
+  const myStart = syncState.localQuestionStartTimes[idx];
   const elapsed = (Date.now() - myStart) / 1000;
   const remaining = Math.max(0, Math.floor(timeTotal - elapsed));
   const circumference = 2 * Math.PI * 32;
@@ -2863,32 +2880,59 @@ function renderIndividualQuestion(sss, topbar, test, idx, code) {
       </div>
     </div>`;
 
-  sss.querySelectorAll('[data-oi]').forEach(b => {
-    b.onclick = () => submitAnswer(code, idx, +b.dataset.oi, timeTotal, 'individual');
-  });
+  sss.querySelectorAll('[data-oi]').forEach(b => b.onclick = () => submitAnswer(code, idx, +b.dataset.oi, timeTotal, 'individual'));
 
-  if (stuTimerInterval) clearInterval(stuTimerInterval);
-  stuTimerInterval = setInterval(() => {
+  if (syncTimerInterval) clearInterval(syncTimerInterval);
+  syncTimerInterval = setInterval(() => {
     const el = document.getElementById('syncTimer');
-    if (!el) { clearInterval(stuTimerInterval); return; }
+    if (!el) { clearInterval(syncTimerInterval); return; }
     const rem = Math.max(0, Math.floor(timeTotal - (Date.now() - myStart) / 1000));
     el.textContent = rem;
     if (rem <= 5) el.parentElement.classList.add('warning');
     if (rem <= 0) {
-      clearInterval(stuTimerInterval);
-      // время вышло — фиксируем без выбора
+      clearInterval(syncTimerInterval);
+      // Время вышло — фиксируем ответ как «нет ответа»
       submitAnswer(code, idx, null, timeTotal, 'individual');
     }
   }, 500);
 }
 
-async function submitAnswer(code, idx, oi, timeTotal, mode) {
-  if (stuState.answersByQ[idx]) return;
-  const test = stuState.test;
+function renderFinishedScreen(sss, topbar, test, myRec, code) {
+  const maxScore = getMaxScore(test);
+  const score = myRec.score || 0;
+  sss.innerHTML = topbar + `
+    <div class="sss-hero">
+      <div style="font-size:72px;margin-bottom:8px;">🏁</div>
+      <h2 style="color:var(--violet);margin:0 0 8px;">Тест завершён!</h2>
+      <div class="score">${formatScore(score)}</div>
+      <p style="color:#94a3b8;font-weight:700;font-size:14px;">из ${formatScore(maxScore)} возможных</p>
+      <p style="color:#475569;font-weight:700;margin-top:8px;">${interpretScore(score, maxScore)}</p>
+      <div style="display:flex;justify-content:center;gap:24px;margin-top:18px;padding-top:18px;border-top:2px solid #f1f5f9;">
+        <div style="text-align:center;">
+          <div class="ok" style="font-size:26px;font-weight:900;">${myRec.correctCount || 0}</div>
+          <div style="font-size:11px;color:#94a3b8;font-weight:700;">ВЕРНЫХ</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:26px;font-weight:900;color:var(--red);">${test.questions.length - (myRec.correctCount || 0)}</div>
+          <div style="font-size:11px;color:#94a3b8;font-weight:700;">НЕВЕРНЫХ</div>
+        </div>
+      </div>
+      <button id="goHomeBtn" class="btn-start" style="margin-top:22px;">🏠 На главную</button>
+    </div>`;
+  onClick('goHomeBtn', () => {
+    if (syncTimerInterval) { clearInterval(syncTimerInterval); syncTimerInterval = null; }
+    disableAntiCheat();
+    location.href = '?mode=student';
+  });
+}
+
+async function submitAnswer(code, idx, oi, timeTotal, sessionMode) {
+  if (syncState.answersByQ[idx]) return;
+  const test = syncState.test;
   const q = test.questions[idx];
   const isCorrect = oi !== null && oi === q.correct;
 
-  const myStart = (stuState.localQuestionStartTimes && stuState.localQuestionStartTimes[idx]) || Date.now();
+  const myStart = (syncState.localQuestionStartTimes && syncState.localQuestionStartTimes[idx]) || Date.now();
   const timeSpentMs = Math.max(0, Date.now() - myStart);
   const timeSpentSec = timeSpentMs / 1000;
 
@@ -2896,12 +2940,12 @@ async function submitAnswer(code, idx, oi, timeTotal, mode) {
   const speedBonus = isCorrect ? calcSpeedBonus(test, timeSpentSec, timeTotal) : 0;
   const points = isCorrect ? round1(base + speedBonus) : 0;
 
-  if (isCorrect) stuState.currentStreak = (stuState.currentStreak || 0) + 1;
-  else stuState.currentStreak = 0;
-  const newMaxStreak = Math.max(stuState.maxStreak || 0, stuState.currentStreak || 0);
+  if (isCorrect) syncState.currentStreak = (syncState.currentStreak || 0) + 1;
+  else syncState.currentStreak = 0;
+  const newMaxStreak = Math.max(syncState.maxStreak || 0, syncState.currentStreak || 0);
 
-  const newCorrectCount = (stuState.correctCount || 0) + (isCorrect ? 1 : 0);
-  const newScore = round1((stuState.score || 0) + points);
+  const newCorrectCount = (syncState.correctCount || 0) + (isCorrect ? 1 : 0);
+  const newScore = round1((syncState.score || 0) + points);
 
   const answerRecord = {
     selected: oi !== null ? oi : -1,
@@ -2926,134 +2970,156 @@ async function submitAnswer(code, idx, oi, timeTotal, mode) {
       maxStreak: newMaxStreak,
       lastAnswerAt: Date.now()
     };
-    if (mode === 'individual') updates.currentQuestion = idx + 1;
-    await window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}/students/${stuState.studentId}`), updates);
-    stuState.answersByQ[idx] = answerRecord;
-    stuState.correctCount = newCorrectCount;
-    stuState.score = newScore;
-    stuState.maxStreak = newMaxStreak;
+    if (sessionMode === 'individual') updates.currentQuestion = idx + 1;
+    await window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}/students/${syncState.studentId}`), updates);
+    syncState.answersByQ[idx] = answerRecord;
+    syncState.correctCount = newCorrectCount;
+    syncState.score = newScore;
+    syncState.maxStreak = newMaxStreak;
 
-    if (mode === 'lobby') {
-      // Ожидаем учителя, просто показали "Ответ принят"
-    } else {
-      // Индивидуальный — сразу к следующему вопросу
+    if (sessionMode === 'individual') {
+      // Сразу к следующему вопросу
       setTimeout(() => {
-        if (idx + 1 >= test.questions.length) finishStudentIndividual(code);
-        else {
-          const s = { students: {} };
+        if (idx + 1 >= test.questions.length) {
+          finishStudentIndividual(code);
+        } else {
           const root = document.getElementById('sss');
           const topbar = `
             <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;
               background:rgba(255,255,255,0.15);padding:12px 18px;border-radius:14px;margin-bottom:14px;color:#fff;font-weight:700;">
-              <span>👤 ${escapeHtml(stuState.studentName)}</span>
-              <span>⭐ ${formatScore(stuState.score)} б.</span>
+              <span>👤 ${escapeHtml(syncState.studentName)}</span>
+              <span>⭐ ${formatScore(syncState.score)} б.</span>
             </div>`;
           renderIndividualQuestion(root, topbar, test, idx + 1, code);
         }
-      }, 500);
+      }, 600);
+    } else {
+      // Лобби — ждём учителя, показали «Ответ принят»
     }
   } catch (e) { console.error('submitAnswer:', e); }
 }
 
 async function finishStudentIndividual(code) {
-  const test = stuState.test;
+  const test = syncState.test;
   const total = test.questions.length;
-  const correct = stuState.correctCount || 0;
+  const correct = syncState.correctCount || 0;
   const wrong = Math.max(0, total - correct);
-  const score = round1(stuState.score || 0);
-
+  const score = round1(syncState.score || 0);
   try {
-    await window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}/students/${stuState.studentId}`), {
+    await window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}/students/${syncState.studentId}`), {
       status: 'finished',
       finishedAt: Date.now(),
       score, correctCount: correct, wrongCount: wrong
     });
     // Пишем в общий results
+    const answers = Object.values(syncState.answersByQ || {});
     const resultRecord = {
-      studentName: stuState.studentName,
-      testId: stuState.testId,
+      studentName: syncState.studentName,
+      testId: syncState.testId,
       testTitle: test.title,
       date: formatDate(Date.now()),
       timestamp: Date.now(),
-      score, maxScore: getMaxScore(test),
+      score,
+      maxScore: getMaxScore(test),
       correct, wrong, total,
-      teacherEmail: stuState.teacherEmail,
+      teacherEmail: syncState.teacherEmail,
       sessionCode: code,
       mode: 'individual',
-      answers: Object.values(stuState.answersByQ)
+      answers: answers.map(a => ({
+        questionText: a.questionText, correctText: a.correctText,
+        selectedText: a.selectedText, correct: a.correct,
+        image: a.image, points: a.points, speedBonus: a.speedBonus
+      }))
     };
     const newRef = window.FB.push(window.FB.ref(window.FB.db, 'results'));
     await window.FB.set(newRef, resultRecord);
-  } catch (e) { console.error(e); }
+  } catch (e) { console.error('finishStudentIndividual:', e); }
 }
 
 /* ==================================================================
-   ПРЕРЫВАНИЕ ТЕСТА АНТИЧИТОМ
+   ПРЕРЫВАНИЕ АНТИЧИТОМ
    ================================================================== */
 async function terminateStudent(reason, message) {
-  if (!stuState || !stuState.studentId) return;
-  const test = stuState.test;
+  if (!syncState || !syncState.studentId) return;
+  const test = syncState.test;
   if (!test) return;
+  if (syncTimerInterval) { clearInterval(syncTimerInterval); syncTimerInterval = null; }
+
   const total = test.questions.length;
-  const answers = Object.values(stuState.answersByQ);
+  const answers = Object.values(syncState.answersByQ || {});
   const correct = answers.filter(a => a.correct).length;
   const wrong = Math.max(0, total - correct);
-  const score = round1(stuState.score || 0);
+  const score = round1(syncState.score || 0);
   const answered = answers.length;
 
   try {
-    await window.FB.update(window.FB.ref(window.FB.db, `sessions/${stuState.code}/students/${stuState.studentId}`), {
+    await window.FB.update(window.FB.ref(window.FB.db, `sessions/${syncState.code}/students/${syncState.studentId}`), {
       status: 'terminated',
       terminatedAt: Date.now(),
       terminateReason: reason || 'tab_switch',
       score, correctCount: correct, wrongCount: wrong,
-      tabSwitches: acTabSwitches, copyAttempts: acCopyAttempts
+      tabSwitches: antiCheatTabSwitches,
+      copyAttempts: antiCheatCopyAttempts
     });
     const resultRecord = {
-      studentName: stuState.studentName,
-      testId: stuState.testId,
+      studentName: syncState.studentName,
+      testId: syncState.testId,
       testTitle: test.title,
       date: formatDate(Date.now()),
       timestamp: Date.now(),
-      score, maxScore: getMaxScore(test),
+      score,
+      maxScore: getMaxScore(test),
       correct, wrong, total, answeredQuestions: answered,
-      teacherEmail: stuState.teacherEmail,
-      sessionCode: stuState.code,
-      tabSwitches: acTabSwitches, copyAttempts: acCopyAttempts,
+      teacherEmail: syncState.teacherEmail,
+      sessionCode: syncState.code,
+      tabSwitches: antiCheatTabSwitches,
+      copyAttempts: antiCheatCopyAttempts,
       terminated: true,
       terminateReason: reason || 'tab_switch',
-      answers: Object.values(stuState.answersByQ)
+      answers: answers.map(a => ({
+        questionText: a.questionText, correctText: a.correctText,
+        selectedText: a.selectedText, correct: a.correct, image: a.image
+      }))
     };
     const newRef = window.FB.push(window.FB.ref(window.FB.db, 'results'));
     await window.FB.set(newRef, resultRecord);
   } catch (e) { console.error('terminateStudent:', e); }
 
-  if (stuTimerInterval) clearInterval(stuTimerInterval);
-  disableAntiCheat();
-
+  // Рисуем экран «Тест прерван»
   const root = document.getElementById('sss') || document.getElementById('app');
   if (root) {
     root.innerHTML = `
-      <div class="sss-hero" style="text-align:center;">
-        <div style="font-size:64px;margin-bottom:10px;">🚫</div>
-        <h2 style="color:#ef4444;font-size:26px;margin-bottom:8px;">Тест прерван</h2>
-        <p style="font-size:15px;color:#475569;font-weight:600;">${escapeHtml(message || 'Античит зафиксировал нарушение.')}</p>
-        <div style="margin-top:20px;padding:16px 22px;background:#f8fafc;border-radius:14px;display:inline-block;text-align:left;">
-          <div style="font-size:14px;margin-bottom:4px;">Отвечено: <b>${answered} из ${total}</b></div>
-          <div style="font-size:14px;margin-bottom:4px;">Правильных: <b class="ok">${correct}</b></div>
-          <div style="font-size:14px;">Баллов: <b>${formatScore(score)}</b></div>
+      <div class="sync-student-screen">
+        <div class="sss-hero" style="text-align:center;">
+          <div style="font-size:64px;margin-bottom:10px;">🚫</div>
+          <h2 style="color:#ef4444;font-size:26px;margin-bottom:8px;">Тест прерван</h2>
+          <p style="font-size:15px;color:#475569;font-weight:600;">${escapeHtml(message || 'Античит зафиксировал нарушение.')}</p>
+          <div style="margin-top:20px;padding:16px 22px;background:#f8fafc;border-radius:14px;display:inline-block;text-align:left;">
+            <div style="font-size:14px;margin-bottom:4px;">Отвечено: <b>${answered} из ${total}</b></div>
+            <div style="font-size:14px;margin-bottom:4px;">Правильных: <b class="ok">${correct}</b></div>
+            <div style="font-size:14px;">Баллов: <b>${formatScore(score)}</b></div>
+          </div>
+          <br>
+          <a href="?mode=student" style="display:inline-block;margin-top:18px;text-decoration:none;">
+            <button class="btn-start" style="width:auto;padding:14px 32px;">← На главную</button>
+          </a>
         </div>
-        <br>
-        <a href="?mode=student" style="display:inline-block;margin-top:18px;text-decoration:none;">
-          <button class="btn-start" style="width:auto;padding:14px 32px;">← На главную</button>
-        </a>
       </div>`;
   }
 }
 
-/* ==================================================================
-   BOOT
-   ================================================================== */
+/* ============ MODAL ============ */
+function openModal(innerHTML, maxWidth, wide) {
+  const el = document.createElement('div');
+  el.className = 'modal-backdrop';
+  const cls = wide ? 'modal wide' : 'modal';
+  el.innerHTML = `<div class="${cls}" ${maxWidth ? `style="max-width:${maxWidth}px"` : ''}>${innerHTML}</div>`;
+  document.body.appendChild(el);
+  el.addEventListener('click', (e) => { if (e.target === el) el.remove(); });
+  return { el, close: () => el.remove(), $: s => el.querySelector(s), $$: s => el.querySelectorAll(s) };
+}
+
+/* ============ ЗАПУСК ============ */
 function boot() {
   loadTests();
   if (mode === 'developer') {
