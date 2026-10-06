@@ -443,6 +443,20 @@ onAuthStateChanged(auth, () => {
     background: linear-gradient(135deg, #7c3aed, #a855f7); color: #fff;
     font-size: 12px; font-weight: 800; }
 
+  /* === Таблица ступеней бонуса === */
+  .tier-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px;
+    align-items: center; margin-bottom: 8px; padding: 8px 12px;
+    background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0; }
+  .tier-row .tier-field { display: flex; align-items: center; gap: 6px; }
+  .tier-row input[type=number] { margin: 0; padding: 8px 12px; font-size: 14px; }
+  .tier-row .tier-lbl { font-size: 12px; color: var(--muted); font-weight: 700; white-space: nowrap; }
+  .tier-row .tier-del { width: 34px; height: 34px; padding: 0; border-radius: 8px;
+    background: #fee2e2; color: #b91c1c; box-shadow: none; font-size: 14px; }
+  .tier-add-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px;
+    background: #f0fdf4; color: #16a34a; border: 2px dashed #86efac; border-radius: 10px;
+    font-size: 13px; font-weight: 800; cursor: pointer; box-shadow: none; }
+  .tier-add-btn:hover { background: #dcfce7; border-color: #4ade80; }
+
   .cover-preview { background: #f8f5ff; border: 2px dashed #c4b5fd; border-radius: 12px;
     min-height: 160px; display: flex; flex-direction: column; align-items: center;
     justify-content: center; color: var(--violet); font-size: 12px; font-weight: 700;
@@ -605,14 +619,19 @@ onAuthStateChanged(auth, () => {
 
 <script>
 /* ==================================================================
-   KVANT-QUIZ — FULL FIXED VERSION
-   Правила баллов:
-     • 5 баллов за каждый верный ответ (база)
-     • до +50% за скорость (настраивается, десятые доли)
+   KVANT-QUIZ — FULL VERSION
+   Гибкая система баллов:
+     • basePoints — сколько баллов за правильный ответ
+     • speedBonusTiers — таблица: за какое время сколько доп. баллов
+     • десятичные значения (0.1)
      • без ограничения сверху
    ================================================================== */
-const BASE_POINTS_PER_QUESTION = 5;
-const DEFAULT_SPEED_BONUS = 50;
+const DEFAULT_BASE_POINTS = 5;
+const DEFAULT_SPEED_TIERS = [
+  { timeSec: 5,  bonus: 3 },
+  { timeSec: 10, bonus: 2 },
+  { timeSec: 15, bonus: 1 }
+];
 const MAX_STUDENTS = 30;
 const SESSION_TTL_MS = 10 * 24 * 60 * 60 * 1000;
 const OLD_RESULTS_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -628,7 +647,12 @@ const DEFAULT_TESTS = {
     shortName: 'ТВ_тест_БПЛА',
     status: 'published',
     antiCheatMode: 'soft',
-    speedBonusPct: 50,
+    basePoints: 5,
+    speedBonusTiers: [
+      { timeSec: 5,  bonus: 3 },
+      { timeSec: 10, bonus: 2 },
+      { timeSec: 15, bonus: 1 }
+    ],
     questions: [
       { q: "Как называется коптер с 8 моторами?", options: ["Пентакоптер","Октокоптер","Трикоптер","Гексакоптер"], correct: 1, image: '', time: null },
       { q: "Как обозначается сопротивление в законе Ома?", options: ["R","I","U","S"], correct: 0, image: '', time: null },
@@ -640,7 +664,12 @@ const DEFAULT_TESTS = {
     shortName: 'Компл_квадро',
     status: 'published',
     antiCheatMode: 'soft',
-    speedBonusPct: 50,
+    basePoints: 5,
+    speedBonusTiers: [
+      { timeSec: 5,  bonus: 3 },
+      { timeSec: 10, bonus: 2 },
+      { timeSec: 15, bonus: 1 }
+    ],
     questions: [
       { q: "На какую основу крепятся все элементы дрона?", options: ["Полётный контроллер","Рама","Клей","ESC"], correct: 1, image: '', time: null },
       { q: "Какой компонент обрабатывает сигналы датчиков?", options: ["Приёмник","Аккумулятор","Полётный контроллер","Хомяк"], correct: 2, image: '', time: null }
@@ -671,15 +700,57 @@ let allResultsCache = [];
 
 /* ============ ХЕЛПЕРЫ БАЛЛОВ ============ */
 function round1(n) { return Math.round(Number(n) * 10) / 10; }
+function round2(n) { return Math.round(Number(n) * 100) / 100; }
 function formatScore(n) {
   const v = Number(n) || 0;
-  return (Math.abs(v - Math.round(v)) < 0.05) ? String(Math.round(v)) : v.toFixed(1);
+  if (Math.abs(v - Math.round(v)) < 0.05) return String(Math.round(v));
+  return String(v).replace('.', ',');
+}
+function getBasePoints(test) {
+  if (!test) return DEFAULT_BASE_POINTS;
+  if (test.basePoints != null) return round1(test.basePoints);
+  return DEFAULT_BASE_POINTS;
+}
+function getSpeedTiers(test) {
+  if (!test) return [];
+  if (Array.isArray(test.speedBonusTiers)) {
+    return test.speedBonusTiers
+      .map(t => ({ timeSec: Number(t.timeSec) || 0, bonus: round1(t.bonus) }))
+      .filter(t => t.timeSec > 0)
+      .sort((a, b) => a.timeSec - b.timeSec);
+  }
+  // миграция со старого поля speedBonusPct
+  if (test.speedBonusPct != null && test.speedBonusPct > 0) {
+    const base = getBasePoints(test);
+    const maxBonus = round1(base * test.speedBonusPct / 100);
+    return [
+      { timeSec: 5,  bonus: round1(maxBonus * 0.8) },
+      { timeSec: 10, bonus: round1(maxBonus * 0.5) },
+      { timeSec: 15, bonus: round1(maxBonus * 0.2) }
+    ];
+  }
+  return JSON.parse(JSON.stringify(DEFAULT_SPEED_TIERS));
+}
+function getMaxBonus(test) {
+  const tiers = getSpeedTiers(test);
+  if (!tiers.length) return 0;
+  return tiers.reduce((m, t) => Math.max(m, t.bonus), 0);
+}
+function getMaxPerQuestion(test) {
+  return round1(getBasePoints(test) + getMaxBonus(test));
 }
 function getMaxScore(test) {
   if (!test) return 0;
   const q = (test.questions || []).length;
-  const bonus = (test.speedBonusPct != null) ? test.speedBonusPct : DEFAULT_SPEED_BONUS;
-  return round1(q * BASE_POINTS_PER_QUESTION * (1 + bonus / 100));
+  return round1(q * getMaxPerQuestion(test));
+}
+function calcSpeedBonus(test, timeSpentSec) {
+  const tiers = getSpeedTiers(test);
+  if (!tiers.length) return 0;
+  for (const tier of tiers) {
+    if (timeSpentSec < tier.timeSec) return tier.bonus;
+  }
+  return 0;
 }
 function interpretPct(pct) {
   if (pct >= 90) return '🏆 Отличное знание материала';
@@ -859,7 +930,7 @@ function studentSheetHTML(rec) {
     const verdict = a.correct ? '<span class="ok">✔ верно</span>' : '<span class="bad">✘ неверно</span>';
     const imgCell = a.image ? `<td class="img-cell"><img src="${escapeAttr(a.image)}" alt=""></td>` : `<td class="c">—</td>`;
     const bonusCell = a.speedBonus ? `<span class="ok">⚡ +${formatScore(a.speedBonus)}</span>` : '—';
-    const pointsCell = a.correct ? `<b>${formatScore(a.points || BASE_POINTS_PER_QUESTION)}</b>` : '0';
+    const pointsCell = a.correct ? `<b>${formatScore(a.points || getBasePoints(null))}</b>` : '0';
     rows += `<tr><td class="c">${i+1}</td>${imgCell}<td>${escapeHtml(a.questionText)}</td><td>${escapeHtml(a.correctText)}</td><td>${ans}</td><td class="c">${verdict}</td><td class="c">${pointsCell}</td><td class="c">${bonusCell}</td></tr>`;
   });
   const tRow = rec.teacherEmail ? `<tr><td colspan="2" class="summary-label">Учитель</td><td colspan="6" class="summary-value">${escapeHtml(rec.teacherEmail)}</td></tr>` : '';
@@ -1286,7 +1357,13 @@ function renderDeveloperTestsList() {
       ? '<span class="badge draft">ЧЕРНОВИК</span>'
       : '<span class="badge published">ОПУБЛИКОВАН</span>';
     const shortInfo = t.shortName ? `<div style="font-size:11px;color:#94a3b8;font-weight:700;margin-top:3px;">🏷 ${escapeHtml(t.shortName)}</div>` : '';
-    const bonusInfo = `<div style="font-size:11px;color:#b45309;font-weight:700;margin-top:3px;">⚡ ${BASE_POINTS_PER_QUESTION} б/вопрос + ${(t.speedBonusPct != null ? t.speedBonusPct : DEFAULT_SPEED_BONUS)}% за скорость</div>`;
+    const baseP = getBasePoints(t);
+    const maxBonus = getMaxBonus(t);
+    const tiers = getSpeedTiers(t);
+    const tiersInfo = tiers.length
+      ? `⚡ ${baseP} б + до +${formatScore(maxBonus)} за скорость (${tiers.length} ступ.)`
+      : `⚡ ${baseP} б/вопрос (без бонуса)`;
+    const bonusInfo = `<div style="font-size:11px;color:#b45309;font-weight:700;margin-top:3px;">${tiersInfo}</div>`;
     return `<tr>
       <td style="font-family:monospace;font-size:12px;color:#94a3b8;">${escapeHtml(id)}</td>
       <td>${escapeHtml(t.title)}${shortInfo}${bonusInfo}</td>
@@ -1599,12 +1676,28 @@ function openCreateTeacherModal() {
    ================================================================== */
 function openTestEditor(testId, testData) {
   const isNew = !testId;
+  const initialTiers = (() => {
+    if (testData && Array.isArray(testData.speedBonusTiers)) {
+      return testData.speedBonusTiers.map(t => ({ timeSec: Number(t.timeSec) || 5, bonus: round1(t.bonus) }));
+    }
+    if (testData && testData.speedBonusPct != null && testData.speedBonusPct > 0) {
+      const base = (testData.basePoints != null) ? testData.basePoints : DEFAULT_BASE_POINTS;
+      const maxBonus = round1(base * testData.speedBonusPct / 100);
+      return [
+        { timeSec: 5,  bonus: round1(maxBonus * 0.8) },
+        { timeSec: 10, bonus: round1(maxBonus * 0.5) },
+        { timeSec: 15, bonus: round1(maxBonus * 0.2) }
+      ];
+    }
+    return JSON.parse(JSON.stringify(DEFAULT_SPEED_TIERS));
+  })();
+
   const initial = testData || {
     title: '', shortName: '', intro: '', introImage: '', timePerQuestion: 20,
-    speedBonusPct: DEFAULT_SPEED_BONUS,
     status: 'draft', antiCheatMode: 'soft',
     questions: [{ q: '', options: ['','','',''], correct: 0, image: '', time: null }]
   };
+
   const m = openModal(`
     <div class="editor-modal">
       <aside class="editor-side">
@@ -1628,7 +1721,8 @@ function openTestEditor(testId, testData) {
           </div>
           <div class="editor-footer-right">
             ${!isNew ? `<button id="deleteTestBtn" class="danger">🗑 Удалить</button>` : ''}
-            <button id="saveTestBtn" class="green">💾 Сохранить</button>
+            <button id="saveDraftBtn" style="background:#fef3c7;color:#b45309;border:2px solid #fde68a;box-shadow:none;">📝 Сохранить черновик</button>
+            <button id="saveTestBtn" class="green">💾 Сохранить и опубликовать</button>
           </div>
         </div>
       </main>
@@ -1645,7 +1739,8 @@ function openTestEditor(testId, testData) {
     intro: initial.intro || '',
     introImage: initial.introImage || '',
     timePerQuestion: initial.timePerQuestion || 20,
-    speedBonusPct: (initial.speedBonusPct != null) ? initial.speedBonusPct : DEFAULT_SPEED_BONUS,
+    basePoints: (testData && testData.basePoints != null) ? testData.basePoints : DEFAULT_BASE_POINTS,
+    speedTiers: initialTiers,
     published: (initial.status || 'draft') === 'published',
     antiCheatMode: initial.antiCheatMode || 'soft'
   };
@@ -1672,7 +1767,33 @@ function openTestEditor(testId, testData) {
   }
   function renderMain() { if (activeTab === 'settings') renderSettings(); else renderQuestionEditor(); }
 
+  function renderTierRows() {
+    if (settings.speedTiers.length === 0) {
+      return `<div style="padding:12px;background:#fef3c7;border-radius:10px;font-size:13px;color:#b45309;font-weight:700;">
+        ⚠️ Нет ни одной ступени — бонусы за скорость не будут начисляться
+      </div>`;
+    }
+    return settings.speedTiers.map((tier, i) => `
+      <div class="tier-row" data-tier-idx="${i}">
+        <div class="tier-field">
+          <span class="tier-lbl">⏱ до</span>
+          <input type="number" class="tier-time" data-idx="${i}" min="1" max="300" step="1" value="${tier.timeSec}">
+          <span class="tier-lbl">сек</span>
+        </div>
+        <div class="tier-field">
+          <span class="tier-lbl">⚡ +</span>
+          <input type="number" class="tier-bonus" data-idx="${i}" min="0" max="100" step="0.1" value="${tier.bonus}">
+          <span class="tier-lbl">балла</span>
+        </div>
+        <button type="button" class="tier-del" data-del-tier="${i}" title="Удалить">🗑</button>
+      </div>
+    `).join('');
+  }
+
   function renderSettings() {
+    const maxPerQ = round1(Number(settings.basePoints) || 0 + Math.max(0, ...settings.speedTiers.map(t => Number(t.bonus) || 0)));
+    const totalMax = round1(questions.length * maxPerQ);
+
     editorHead.innerHTML = `<h3>⚙️ Настройки теста</h3>`;
     editorBody.innerHTML = `
       <div class="editor-settings-section">
@@ -1685,66 +1806,109 @@ function openTestEditor(testId, testData) {
         <label class="field-label" style="margin-top:12px;">Вводный текст</label>
         <textarea id="setIntro" placeholder="Ученик увидит текст перед началом" style="min-height:80px;">${escapeHtml(settings.intro)}</textarea>
       </div>
+
       <div class="editor-settings-section">
         <h4><span class="step-num">2</span> Публикация</h4>
-        <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;padding:14px 16px;background:${settings.published ? '#f0fdf4' : '#fef3c7'};border:2px solid ${settings.published ? '#86efac' : '#fde68a'};border-radius:12px;margin:0;">
-          <input type="checkbox" id="setPublished" ${settings.published ? 'checked' : ''} style="width:26px;height:26px;margin:0;flex-shrink:0;accent-color:#10b981;cursor:pointer;">
-          <div style="flex:1;">
-            <div style="font-weight:800;font-size:15px;color:${settings.published ? '#047857' : '#b45309'};" id="publishedTitle">
-              ${settings.published ? '✅ Опубликован — виден учителям' : '📝 Черновик — виден только вам'}
-            </div>
-            <div style="font-size:12px;color:#64748b;font-weight:600;margin-top:4px;" id="publishedHint">
-              ${settings.published
-                ? 'Тест появится в списке у учителей для создания сессий.'
-                : 'Тест НЕ появится у учителей, пока вы его не опубликуете.'}
-            </div>
+        <div style="padding:14px 16px;background:${(initial.status === 'published') ? '#f0fdf4' : '#fef3c7'};border:2px solid ${(initial.status === 'published') ? '#86efac' : '#fde68a'};border-radius:12px;">
+          <div style="font-weight:800;font-size:14px;color:${(initial.status === 'published') ? '#047857' : '#b45309'};">
+            Текущий статус: ${(initial.status === 'published') ? '✅ Опубликован — виден учителям' : '📝 Черновик — виден только вам'}
           </div>
-        </label>
+          <div style="font-size:12px;color:#64748b;font-weight:600;margin-top:6px;line-height:1.5;">
+            Статус меняется <b>кнопками внизу</b>:<br>
+            • <b>💾 Сохранить и опубликовать</b> — учителя увидят тест<br>
+            • <b>📝 Сохранить черновик</b> — тест останется скрытым от учителей
+          </div>
+        </div>
       </div>
+
       <div class="editor-settings-section">
         <h4><span class="step-num">3</span> Обложка</h4>
         <input type="text" id="setIntroImage" value="${escapeHtml(settings.introImage)}" placeholder="URL картинки">
         <input type="file" id="setIntroFile" accept="image/*">
         <div class="cover-preview" id="coverPreview">${settings.introImage ? `<img src="${escapeAttr(settings.introImage)}" alt="">` : '🖼 Превью'}</div>
       </div>
+
       <div class="editor-settings-section">
-        <h4><span class="step-num">4</span> Параметры</h4>
-        <label class="field-label">⏱ Время на вопрос по умолчанию (сек)</label>
+        <h4><span class="step-num">4</span> ⏱ Время на вопрос</h4>
+        <label class="field-label">Время по умолчанию (секунд)</label>
         <input type="number" id="setTime" min="5" max="300" value="${settings.timePerQuestion}">
-        <label class="field-label" style="margin-top:12px;">⚡ Бонус за быстрый ответ (%)</label>
-        <input type="number" id="setSpeedBonus" min="0" max="100" step="5" value="${settings.speedBonusPct}">
-        <p class="hint" id="speedBonusHint" style="margin:4px 0 0;">
-          За каждый правильный ответ <b>${BASE_POINTS_PER_QUESTION} баллов</b>. Мгновенный ответ даст до <b>+${formatScore(BASE_POINTS_PER_QUESTION * settings.speedBonusPct / 100)} балла</b>. Поставьте <b>0</b>, чтобы отключить бонус.
-        </p>
-        <label class="field-label" style="margin-top:12px;">🛡 Античит</label>
+        <p class="hint" style="margin:4px 0 0;">Можно задать своё время для каждого вопроса отдельно во вкладке «Вопросы».</p>
+      </div>
+
+      <div class="editor-settings-section">
+        <h4><span class="step-num">5</span> 🎯 Система баллов</h4>
+
+        <label class="field-label">Баллов за правильный ответ (можно с десятыми)</label>
+        <input type="number" id="setBasePoints" min="0.1" max="1000" step="0.1" value="${settings.basePoints}">
+        <p class="hint" style="margin:4px 0 12px;">По умолчанию 5. Введите, например, 2.5 или 10.</p>
+
+        <div style="border-top:2px dashed #e2e8f0;padding-top:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+            <div>
+              <div style="font-weight:800;font-size:14px;color:var(--ink);">⚡ Бонусы за скорость</div>
+              <div style="font-size:12px;color:var(--muted);font-weight:600;">Доп. баллы за ответ за определённое время</div>
+            </div>
+            <button type="button" id="addTierBtn" class="tier-add-btn">➕ Добавить ступень</button>
+          </div>
+
+          <div id="tiersBox">
+            ${renderTierRows()}
+          </div>
+
+          <p class="hint" style="margin:10px 0 0;">
+            Пример: «до 5 сек → +3 балла» означает, что ученик, ответивший верно за первые 5 секунд, получит
+            <b>${formatScore(settings.basePoints)} + 3 = ${formatScore(Number(settings.basePoints) + 3)}</b> балла.
+            Ступени сортируются автоматически. Пустая таблица — бонусов нет.
+          </p>
+        </div>
+      </div>
+
+      <div class="editor-settings-section">
+        <h4><span class="step-num">6</span> 🛡 Античит</h4>
         <select id="setAntiCheat">
           <option value="soft" ${settings.antiCheatMode === 'soft' ? 'selected' : ''}>⚠️ Мягкий (только счётчики)</option>
           <option value="hard" ${settings.antiCheatMode === 'hard' ? 'selected' : ''}>🔒 Жёсткий</option>
         </select>
+      </div>
+
+      <div class="editor-settings-section" style="background:#f5f3ff;border-color:#c4b5fd;">
+        <div style="font-size:14px;font-weight:800;color:var(--violet);margin-bottom:10px;">📊 Итог по текущему тесту</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">
+          <div style="background:#fff;border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:22px;font-weight:900;color:var(--violet);">${questions.length}</div>
+            <div style="font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;">Вопросов</div>
+          </div>
+          <div style="background:#fff;border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:22px;font-weight:900;color:var(--green);">${formatScore(settings.basePoints)}</div>
+            <div style="font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;">Базовый балл</div>
+          </div>
+          <div style="background:#fff;border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:22px;font-weight:900;color:var(--yellow);">+${formatScore(maxPerQ - Number(settings.basePoints))}</div>
+            <div style="font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;">Макс. бонус</div>
+          </div>
+          <div style="background:#fff;border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:22px;font-weight:900;color:var(--pink);">${formatScore(maxPerQ)}</div>
+            <div style="font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;">За вопрос</div>
+          </div>
+          <div style="background:#fff;border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:22px;font-weight:900;color:var(--blue);">${formatScore(totalMax)}</div>
+            <div style="font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;">Максимум</div>
+          </div>
+        </div>
       </div>`;
+
     m.$('#setTitle').oninput = (e) => { settings.title = e.target.value; };
     m.$('#setShortName').oninput = (e) => { settings.shortName = e.target.value; };
     m.$('#setIntro').oninput = (e) => { settings.intro = e.target.value; };
     m.$('#setAntiCheat').onchange = (e) => { settings.antiCheatMode = e.target.value; };
-    m.$('#setPublished').onchange = (e) => {
-      settings.published = e.target.checked;
-      const label = e.target.closest('label');
-      const title = m.$('#publishedTitle');
-      const hint = m.$('#publishedHint');
-      if (label) {
-        label.style.background = settings.published ? '#f0fdf4' : '#fef3c7';
-        label.style.borderColor = settings.published ? '#86efac' : '#fde68a';
-      }
-      if (title) {
-        title.textContent = settings.published ? '✅ Опубликован — виден учителям' : '📝 Черновик — виден только вам';
-        title.style.color = settings.published ? '#047857' : '#b45309';
-      }
-      if (hint) {
-        hint.textContent = settings.published
-          ? 'Тест появится в списке у учителей для создания сессий.'
-          : 'Тест НЕ появится у учителей, пока вы его не опубликуете.';
-      }
+
+    m.$('#setBasePoints').oninput = (e) => {
+      const v = parseFloat(e.target.value);
+      settings.basePoints = isNaN(v) ? 0 : Math.max(0, Math.min(1000, round1(v)));
+      // Обновим блок "Итог" и подсказку
+      refreshSummary();
     };
+
     m.$('#setIntroImage').oninput = (e) => {
       settings.introImage = e.target.value.trim();
       m.$('#coverPreview').innerHTML = settings.introImage ? `<img src="${escapeAttr(settings.introImage)}" alt="">` : '🖼 Превью';
@@ -1759,12 +1923,64 @@ function openTestEditor(testId, testData) {
       } catch (err) { alert(err.message); }
     };
     m.$('#setTime').oninput = (e) => { settings.timePerQuestion = parseInt(e.target.value, 10) || 20; };
-    m.$('#setSpeedBonus').oninput = (e) => {
-      const v = parseInt(e.target.value, 10);
-      settings.speedBonusPct = isNaN(v) ? 0 : Math.max(0, Math.min(100, v));
-      const hintEl = m.$('#speedBonusHint');
-      if (hintEl) hintEl.innerHTML = `За каждый правильный ответ <b>${BASE_POINTS_PER_QUESTION} баллов</b>. Мгновенный ответ даст до <b>+${formatScore(BASE_POINTS_PER_QUESTION * settings.speedBonusPct / 100)} балла</b>. Поставьте <b>0</b>, чтобы отключить бонус.`;
+
+    // === Tier UI ===
+    function bindTierInputs() {
+      editorBody.querySelectorAll('.tier-time').forEach(inp => {
+        inp.oninput = (e) => {
+          const i = +e.target.dataset.idx;
+          const v = parseInt(e.target.value, 10);
+          if (!isNaN(v)) settings.speedTiers[i].timeSec = Math.max(1, Math.min(300, v));
+          refreshSummary();
+        };
+      });
+      editorBody.querySelectorAll('.tier-bonus').forEach(inp => {
+        inp.oninput = (e) => {
+          const i = +e.target.dataset.idx;
+          const v = parseFloat(e.target.value);
+          if (!isNaN(v)) settings.speedTiers[i].bonus = Math.max(0, round1(v));
+          refreshSummary();
+        };
+      });
+      editorBody.querySelectorAll('[data-del-tier]').forEach(btn => {
+        btn.onclick = () => {
+          const i = +btn.dataset.delTier;
+          settings.speedTiers.splice(i, 1);
+          renderSettings();
+        };
+      });
+    }
+    bindTierInputs();
+
+    m.$('#addTierBtn').onclick = () => {
+      // Дефолт: следующая ступень на 5 секунд позже предыдущей
+      const last = settings.speedTiers.length
+        ? Math.max(...settings.speedTiers.map(t => t.timeSec))
+        : 5;
+      settings.speedTiers.push({ timeSec: last + 5, bonus: 1 });
+      settings.speedTiers.sort((a, b) => a.timeSec - b.timeSec);
+      renderSettings();
     };
+
+    function refreshSummary() {
+      const box = editorBody.querySelector('.editor-settings-section[style*="f5f3ff"]');
+      if (!box) return;
+      const maxBonus = Math.max(0, ...settings.speedTiers.map(t => Number(t.bonus) || 0));
+      const maxPerQ = round1(Number(settings.basePoints) + maxBonus);
+      const totalMax = round1(questions.length * maxPerQ);
+      box.querySelectorAll('div').forEach(el => {
+        const t = el.querySelector('.tier-lbl'); // not needed
+      });
+      // Простой путь — перерисуем числа по индексу
+      const cells = box.querySelectorAll('div[style*="background:#fff"]');
+      if (cells.length >= 5) {
+        cells[0].querySelector('div').textContent = questions.length;
+        cells[1].querySelector('div').textContent = formatScore(settings.basePoints);
+        cells[2].querySelector('div').textContent = '+' + formatScore(maxBonus);
+        cells[3].querySelector('div').textContent = formatScore(maxPerQ);
+        cells[4].querySelector('div').textContent = formatScore(totalMax);
+      }
+    }
   }
   function renderQuestionEditor() {
     const q = questions[activeQ];
@@ -1863,12 +2079,13 @@ function openTestEditor(testId, testData) {
     renderSidebar(); renderMain();
   };
   m.$('#closeEditor').onclick = () => { if (confirm('Закрыть редактор?')) m.close(); };
-  m.$('#saveTestBtn').onclick = async () => {
-    if (!settings.title.trim()) { alert('Укажите название'); return; }
-    if (questions.length === 0) { alert('Добавьте вопрос'); return; }
+
+  async function saveTest(publish) {
+    if (!settings.title.trim()) { alert('Укажите название'); return false; }
+    if (questions.length === 0) { alert('Добавьте вопрос'); return false; }
     for (let i = 0; i < questions.length; i++) {
-      if (!questions[i].q.trim()) { alert(`Вопрос ${i+1}: пустая формулировка`); return; }
-      if (questions[i].options.some(o => !o.trim())) { alert(`Вопрос ${i+1}: заполните все 4 варианта`); return; }
+      if (!questions[i].q.trim()) { alert(`Вопрос ${i+1}: пустая формулировка`); return false; }
+      if (questions[i].options.some(o => !o.trim())) { alert(`Вопрос ${i+1}: заполните все 4 варианта`); return false; }
     }
     const now = Date.now();
     const id = testId || genId('t');
@@ -1878,8 +2095,11 @@ function openTestEditor(testId, testData) {
       intro: settings.intro.trim(),
       introImage: settings.introImage.trim(),
       timePerQuestion: settings.timePerQuestion,
-      speedBonusPct: settings.speedBonusPct,
-      status: settings.published ? 'published' : 'draft',
+      basePoints: round1(settings.basePoints),
+      speedBonusTiers: settings.speedTiers
+        .map(t => ({ timeSec: Math.max(1, parseInt(t.timeSec, 10) || 5), bonus: round1(t.bonus) }))
+        .sort((a, b) => a.timeSec - b.timeSec),
+      status: publish ? 'published' : 'draft',
       antiCheatMode: settings.antiCheatMode,
       questions: questions.map(q => ({ q: q.q, options: q.options, correct: q.correct, image: q.image || '', time: q.time || null })),
       createdBy: currentUser.uid, updatedAt: now
@@ -1890,9 +2110,19 @@ function openTestEditor(testId, testData) {
       else await window.FB.update(window.FB.ref(window.FB.db, `tests/${id}`), payload);
       testsCache[id] = payload;
       renderDeveloperTestsList();
-      m.close();
-    } catch (e) { alert('Ошибка сохранения: ' + e.message); }
+      return true;
+    } catch (e) { alert('Ошибка сохранения: ' + e.message); return false; }
+  }
+
+  m.$('#saveTestBtn').onclick = async () => {
+    const ok = await saveTest(true);
+    if (ok) { m.close(); alert('✅ Тест опубликован — теперь виден учителям'); }
   };
+  m.$('#saveDraftBtn').onclick = async () => {
+    const ok = await saveTest(false);
+    if (ok) { m.close(); alert('📝 Тест сохранён как черновик — учителям он не виден'); }
+  };
+
   if (!isNew) {
     m.$('#deleteTestBtn').onclick = async () => {
       if (!confirm(`Удалить тест «${initial.title}»?`)) return;
@@ -2091,7 +2321,7 @@ async function renderTeacherHome() {
   const publishedTests = Object.entries(testsCache).filter(([_, t]) => !t.status || t.status === 'published');
   const testOptions = publishedTests.length === 0
     ? `<option value="">— Нет доступных тестов —</option>`
-    : publishedTests.map(([id, t]) => `<option value="${id}">${escapeHtml(t.title.slice(0, 70))}</option>`).join('');
+    : publishedTests.map(([id, t]) => `<option value="${id}">${escapeHtml(t.title.slice(0, 70))} · макс ${formatScore(getMaxScore(t))} б.</option>`).join('');
 
   const classList = Object.entries(classesCache);
   const classOptions = `<option value="">Без класса</option>` +
@@ -2107,8 +2337,8 @@ async function renderTeacherHome() {
       <div class="select-wrap" style="margin-top:-6px;"><select id="newSessionClass">${classOptions}</select></div>
       <div class="select-wrap">
         <select id="newSessionAuto">
-          <option value="manual">🎛 Ручное управление (вы нажимаете «Дальше»)</option>
           <option value="auto">⏱ Автоматически (после таймера)</option>
+          <option value="manual">🎛 Ручное управление (вы нажимаете «Дальше»)</option>
         </select>
       </div>
       <button id="createSessionBtn" class="btn-create">➕ Создать сессию</button>
@@ -2234,7 +2464,7 @@ async function renderTeacherSession() {
 function buildSessionResults(session, test) {
   const students = session.students || {};
   const totalQ = (test && test.questions && test.questions.length) || session.testQuestionCount || 0;
-  const maxScore = test ? getMaxScore(test) : round1(totalQ * BASE_POINTS_PER_QUESTION * (1 + DEFAULT_SPEED_BONUS / 100));
+  const maxScore = test ? getMaxScore(test) : 0;
   const results = [];
 
   Object.values(students).forEach(st => {
@@ -2311,7 +2541,7 @@ async function exportSessionSummary(code, test) {
 
     students.sort((a, b) => (b.score || 0) - (a.score || 0));
     const totalQ = (test && test.questions && test.questions.length) || session.testQuestionCount || 0;
-    const maxScore = test ? getMaxScore(test) : round1(totalQ * BASE_POINTS_PER_QUESTION * (1 + DEFAULT_SPEED_BONUS / 100));
+    const maxScore = test ? getMaxScore(test) : 0;
 
     const rows = students.map((st, i) => {
       const correct = st.correctCount || 0;
@@ -2342,7 +2572,7 @@ async function exportSessionSummary(code, test) {
   <tr><td colspan="3" class="header-meta"><b>Учеников:</b> ${students.length}</td>
       <td colspan="3" class="header-meta"><b>Максимум:</b> ${formatScore(maxScore)} баллов</td></tr>
   <tr><td colspan="3" class="header-meta"><b>Средний балл:</b> ${formatScore(avg)}</td>
-      <td colspan="3" class="header-meta"><b>Формула:</b> ${BASE_POINTS_PER_QUESTION} б/вопрос + бонус за скорость</td></tr>
+      <td colspan="3" class="header-meta"><b>Базовый балл за вопрос:</b> ${test ? formatScore(getBasePoints(test)) : '—'}</td></tr>
   <tr><td colspan="6" style="height:10px;border:none;"></td></tr>
   <tr>
     <th class="c" style="width:50px;">Место</th>
@@ -2386,7 +2616,7 @@ async function printSessionSummary(code, test) {
     if (students.length === 0) { alert('Нет данных'); return; }
     students.sort((a, b) => (b.score || 0) - (a.score || 0));
     const totalQ = (test && test.questions && test.questions.length) || session.testQuestionCount || 0;
-    const maxScore = test ? getMaxScore(test) : round1(totalQ * BASE_POINTS_PER_QUESTION * (1 + DEFAULT_SPEED_BONUS / 100));
+    const maxScore = test ? getMaxScore(test) : 0;
     const avg = students.length ? round1(students.reduce((s, st) => s + (st.score || 0), 0) / students.length) : 0;
 
     const existing = document.getElementById('printForm');
@@ -2444,7 +2674,7 @@ async function exportSessionCSV(code, test) {
     if (students.length === 0) { alert('Нет данных'); return; }
     students.sort((a, b) => (b.score || 0) - (a.score || 0));
     const totalQ = (test && test.questions && test.questions.length) || session.testQuestionCount || 0;
-    const maxScore = test ? getMaxScore(test) : round1(totalQ * BASE_POINTS_PER_QUESTION * (1 + DEFAULT_SPEED_BONUS / 100));
+    const maxScore = test ? getMaxScore(test) : 0;
 
     const lines = ['Место;ФИО;Верно;Неверно;Балл;Максимум;Оценка'];
     students.forEach((st, i) => {
@@ -2566,7 +2796,9 @@ function renderTeacherSyncPanel(s, test, code) {
     const timeTotal = q.time || test.timePerQuestion || TIME_PER_QUESTION;
     const elapsed = s.questionStartedAt ? Math.floor((Date.now() - s.questionStartedAt) / 1000) : 0;
     const remaining = Math.max(0, timeTotal - elapsed);
-    const maxPerQ = round1(BASE_POINTS_PER_QUESTION * (1 + (test.speedBonusPct || DEFAULT_SPEED_BONUS) / 100));
+    const baseP = getBasePoints(test);
+    const maxBonus = getMaxBonus(test);
+    const maxPerQ = round1(baseP + maxBonus);
     html = `
       <div class="sync-progress">
         <div class="sp-item"><div class="sp-n">${totalStudents}</div><div class="sp-l">Учеников</div></div>
@@ -2582,7 +2814,9 @@ function renderTeacherSyncPanel(s, test, code) {
             ${escapeHtml(opt)}
           </div>`).join('')}
         </div>
-        <p style="font-size:12px;color:#94a3b8;font-weight:700;margin-top:12px;">За верный ответ: ${BASE_POINTS_PER_QUESTION} – ${formatScore(maxPerQ)} баллов</p>
+        <p style="font-size:12px;color:#94a3b8;font-weight:700;margin-top:12px;">
+          За верный ответ: ${formatScore(baseP)}${maxBonus > 0 ? ` – ${formatScore(maxPerQ)} б. (с бонусом)` : ' б.'}
+        </p>
       </div>
       <div class="sync-controls">
         <button class="primary" id="revealBtn">📊 Показать ответы (${answeredThisQ}/${totalStudents})</button>
@@ -2953,11 +3187,12 @@ function renderStudentSyncView(s, code) {
   }
   const sss = document.getElementById('sss');
 
+  const showScore = phase === 'finished' || phase === 'leaderboard' || (phase === 'question' && !!myAnswer);
   const topbar = `
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;
       background:rgba(255,255,255,0.15);padding:12px 18px;border-radius:14px;margin-bottom:14px;color:#fff;font-weight:700;">
       <span>👤 ${escapeHtml(syncState.studentName)}</span>
-      <span>🎮 Играем</span>
+      <span>${showScore ? '⭐ ' + formatScore(syncState.score) + ' б.' : '🎮 Играем'}</span>
     </div>`;
 
   if (phase === 'lobby') {
@@ -2982,11 +3217,26 @@ function renderStudentSyncView(s, code) {
     const warning = remaining <= 5;
 
     if (myAnswer) {
+      const earned = round1(myAnswer.points || 0);
+      const bonus = round1(myAnswer.speedBonus || 0);
+      const baseP = getBasePoints(test);
+      const earnedHTML = earned > 0
+        ? `<div style="display:inline-block;padding:12px 26px;background:#f0fdf4;
+             border:2px solid #86efac;border-radius:14px;margin:10px 0;">
+             <div style="font-size:32px;font-weight:900;color:#10b981;line-height:1;">+${formatScore(earned)}</div>
+             <div style="font-size:13px;color:#64748b;font-weight:700;margin-top:4px;">баллов</div>
+             ${bonus > 0 ? `<div style="font-size:12px;color:#b45309;font-weight:800;margin-top:6px;">⚡ из них +${formatScore(bonus)} за скорость</div>` : ''}
+           </div>`
+        : `<div style="display:inline-block;padding:10px 24px;background:#fef2f2;
+             border:2px solid #fecaca;border-radius:14px;margin:10px 0;">
+             <span style="font-size:16px;font-weight:800;color:#b91c1c;">Без баллов</span>
+           </div>`;
       sss.innerHTML = topbar + `
         <div class="sss-hero">
-          <div style="font-size:64px;margin-bottom:8px;">✅</div>
+          <div style="font-size:64px;margin-bottom:4px;">✅</div>
           <h2 style="color:var(--violet);margin:0 0 8px;">Ответ принят!</h2>
-          <p style="color:var(--muted);font-weight:600;">Ваш ответ записан. Ожидайте остальных участников…</p>
+          ${earnedHTML}
+          <p style="color:var(--muted);font-weight:600;margin-top:12px;">Ожидайте остальных участников…</p>
           <div class="waiting-dots" style="margin-top:18px;"><span></span><span></span><span></span></div>
         </div>`;
       return;
@@ -3102,12 +3352,11 @@ async function submitSyncAnswer(code, idx, oi, questionStartedAt, timeTotal) {
   const q = test.questions[idx];
   const isCorrect = oi === q.correct;
   const timeSpentMs = questionStartedAt ? (Date.now() - questionStartedAt) : 0;
-  const timeLeftSec = Math.max(0, timeTotal - timeSpentMs / 1000);
+  const timeSpentSec = timeSpentMs / 1000;
 
-  const base = BASE_POINTS_PER_QUESTION;
-  const bonusPct = (test.speedBonusPct != null) ? test.speedBonusPct : DEFAULT_SPEED_BONUS;
-  const speedRatio = timeTotal > 0 ? Math.max(0, Math.min(1, timeLeftSec / timeTotal)) : 0;
-  const speedBonus = isCorrect ? round1(base * (bonusPct / 100) * speedRatio) : 0;
+  const base = getBasePoints(test);
+  // Ступенчатый бонус: ищем первую ступень, в которую укладывается время
+  const speedBonus = isCorrect ? calcSpeedBonus(test, timeSpentSec) : 0;
   const points = isCorrect ? round1(base + speedBonus) : 0;
 
   if (isCorrect) syncState.currentStreak = (syncState.currentStreak || 0) + 1;
@@ -3126,10 +3375,16 @@ async function submitSyncAnswer(code, idx, oi, questionStartedAt, timeTotal) {
     image: q.image || '',
     points,
     basePoints: base,
-    speedBonus: speedBonus,
+    speedBonus: round1(speedBonus),
     timeSpentMs,
+    timeSpentSec: round2(timeSpentSec),
     answeredAt: Date.now()
   };
+
+  console.log(
+    `[BONUS] Q${idx + 1}: correct=${isCorrect}, base=${base}, ` +
+    `timeSpent=${timeSpentSec.toFixed(2)}s, bonus=${speedBonus}, total=${points}`
+  );
 
   try {
     await window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}/students/${syncState.studentId}`), {
