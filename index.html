@@ -493,15 +493,6 @@ onAuthStateChanged(auth, () => {
     margin-right: 8px; vertical-align: middle; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .sync-lobby { text-align: center; padding: 30px 20px; background: #fff;
-    border-radius: 26px; box-shadow: 0 24px 60px rgba(0,0,0,0.25); }
-  .sync-lobby .code-big { font-size: 68px; font-weight: 900; letter-spacing: 8px;
-    font-family: 'JetBrains Mono', monospace; color: var(--violet);
-    padding: 16px 24px; background: #ede9fe; border-radius: 20px; display: inline-block;
-    margin: 16px 0; box-shadow: inset 0 -4px 0 rgba(124,58,237,0.15); }
-  .sync-lobby h2 { font-size: 26px; margin: 8px 0; }
-  .sync-lobby .join-hint { font-size: 14px; color: var(--muted); font-weight: 600; }
-
   .sync-teacher-panel { background: #fff; border-radius: 22px; padding: 26px;
     box-shadow: 0 12px 40px rgba(124,58,237,0.15); margin-bottom: 16px; }
   .sync-teacher-panel .stp-header { display: flex; justify-content: space-between;
@@ -572,7 +563,6 @@ onAuthStateChanged(auth, () => {
   .waiting-dots span:nth-child(3) { animation-delay: 0.3s; }
   @keyframes bounceDot { 0%, 80%, 100% { transform: scale(1); opacity: 0.5; } 40% { transform: scale(1.4); opacity: 1; } }
 
-  /* === Печать / PDF === */
   .print-form { display: none; }
   @media print {
     body * { visibility: hidden; }
@@ -616,9 +606,13 @@ onAuthStateChanged(auth, () => {
 <script>
 /* ==================================================================
    KVANT-QUIZ — FULL FIXED VERSION
+   Правила баллов:
+     • 5 баллов за каждый верный ответ (база)
+     • до +50% за скорость (настраивается, десятые доли)
+     • без ограничения сверху
    ================================================================== */
-const TIME_PER_QUESTION = 20;
-const TOTAL_POINTS = 100;
+const BASE_POINTS_PER_QUESTION = 5;
+const DEFAULT_SPEED_BONUS = 50;
 const MAX_STUDENTS = 30;
 const SESSION_TTL_MS = 10 * 24 * 60 * 60 * 1000;
 const OLD_RESULTS_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -626,7 +620,7 @@ const MAX_NAME_LEN = 25;
 const MAX_IMG_SIZE_KB = 400;
 const FIGURES = ['⬤', '⬛', '▲', '★'];
 const SCHOOL_NAME = 'Кванториум';
-const DEFAULT_SPEED_BONUS = 50;
+const TIME_PER_QUESTION = 20;
 
 const DEFAULT_TESTS = {
   seed_1: {
@@ -664,10 +658,8 @@ let testsCache = {};
 let classesCache = {};
 let activeUnsubs = [];
 function trackUnsub(fn) { if (typeof fn === 'function') activeUnsubs.push(fn); }
-function clearAllUnsubs() {
-  activeUnsubs.forEach(fn => { try { fn(); } catch (e) {} });
-  activeUnsubs = [];
-}
+function clearAllUnsubs() { activeUnsubs.forEach(fn => { try { fn(); } catch (e) {} }); activeUnsubs = []; }
+
 let antiCheatActive = false, antiCheatRef = null;
 let antiCheatTabSwitches = 0, antiCheatCopyAttempts = 0;
 let syncState = {};
@@ -677,6 +669,29 @@ let teachersUsersCache = {};
 let teachersStatsCache = { sessions: {}, results: {} };
 let allResultsCache = [];
 
+/* ============ ХЕЛПЕРЫ БАЛЛОВ ============ */
+function round1(n) { return Math.round(Number(n) * 10) / 10; }
+function formatScore(n) {
+  const v = Number(n) || 0;
+  return (Math.abs(v - Math.round(v)) < 0.05) ? String(Math.round(v)) : v.toFixed(1);
+}
+function getMaxScore(test) {
+  if (!test) return 0;
+  const q = (test.questions || []).length;
+  const bonus = (test.speedBonusPct != null) ? test.speedBonusPct : DEFAULT_SPEED_BONUS;
+  return round1(q * BASE_POINTS_PER_QUESTION * (1 + bonus / 100));
+}
+function interpretPct(pct) {
+  if (pct >= 90) return '🏆 Отличное знание материала';
+  if (pct >= 75) return '👍 Хорошее знание';
+  if (pct >= 50) return '📘 Средний уровень, есть пробелы';
+  return '⚠️ Материал усвоен плохо';
+}
+function interpretScore(score, maxScore) {
+  const pct = maxScore > 0 ? Math.round((score || 0) / maxScore * 100) : 0;
+  return interpretPct(pct);
+}
+
 /* ============ БЕЗОПАСНЫЙ ОБРАБОТЧИК ============ */
 function onClick(id, handler) {
   const el = document.getElementById(id);
@@ -685,14 +700,6 @@ function onClick(id, handler) {
 }
 
 /* ============ УТИЛИТЫ ============ */
-function shuffleArray(arr) {
-  const a = arr.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
 const NAME_REGEX = /^[А-Яа-яЁёA-Za-z\-\s]+$/;
 function isValidName(s) {
   const t = String(s).trim();
@@ -706,12 +713,6 @@ function escapeXml(s) {
   return String(s).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&apos;'})[c]);
 }
 function escapeAttr(s) { return escapeHtml(s); }
-function interpret(s) {
-  if (s >= 90) return '🏆 Отличное знание материала';
-  if (s >= 75) return '👍 Хорошее знание';
-  if (s >= 50) return '📘 Средний уровень, есть пробелы';
-  return '⚠️ Материал усвоен плохо';
-}
 function genSessionCode() { return String(Math.floor(100000 + Math.random() * 900000)); }
 function genId(prefix) { return (prefix||'id') + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7); }
 function sanitizeSheetName(name, idx) {
@@ -857,26 +858,29 @@ function studentSheetHTML(rec) {
     const ans = a.selectedText ? escapeHtml(a.selectedText) : '<i>нет ответа</i>';
     const verdict = a.correct ? '<span class="ok">✔ верно</span>' : '<span class="bad">✘ неверно</span>';
     const imgCell = a.image ? `<td class="img-cell"><img src="${escapeAttr(a.image)}" alt=""></td>` : `<td class="c">—</td>`;
-    const bonusCell = a.speedBonus ? `<span class="ok">⚡ +${a.speedBonus}</span>` : '—';
-    rows += `<tr><td class="c">${i+1}</td>${imgCell}<td>${escapeHtml(a.questionText)}</td><td>${escapeHtml(a.correctText)}</td><td>${ans}</td><td class="c">${verdict}</td><td class="c">${bonusCell}</td></tr>`;
+    const bonusCell = a.speedBonus ? `<span class="ok">⚡ +${formatScore(a.speedBonus)}</span>` : '—';
+    const pointsCell = a.correct ? `<b>${formatScore(a.points || BASE_POINTS_PER_QUESTION)}</b>` : '0';
+    rows += `<tr><td class="c">${i+1}</td>${imgCell}<td>${escapeHtml(a.questionText)}</td><td>${escapeHtml(a.correctText)}</td><td>${ans}</td><td class="c">${verdict}</td><td class="c">${pointsCell}</td><td class="c">${bonusCell}</td></tr>`;
   });
-  const tRow = rec.teacherEmail ? `<tr><td colspan="2" class="summary-label">Учитель</td><td colspan="5" class="summary-value">${escapeHtml(rec.teacherEmail)}</td></tr>` : '';
+  const tRow = rec.teacherEmail ? `<tr><td colspan="2" class="summary-label">Учитель</td><td colspan="6" class="summary-value">${escapeHtml(rec.teacherEmail)}</td></tr>` : '';
+  const maxScore = rec.maxScore || 100;
+  const scoreStr = `${formatScore(rec.score)} / ${formatScore(maxScore)}`;
   return `<table>
-    <colgroup><col style="width:50px;"><col style="width:150px;"><col style="width:400px;"><col style="width:280px;"><col style="width:280px;"><col style="width:100px;"><col style="width:100px;"></colgroup>
-    <tr><td colspan="7" class="title">${escapeHtml(rec.testTitle)}</td></tr>
-    <tr><td colspan="7" style="height:8px;border:none;"></td></tr>
-    <tr><td colspan="2" class="summary-label">Ученик</td><td colspan="5" class="summary-value">${escapeHtml(rec.studentName)}</td></tr>
+    <colgroup><col style="width:50px;"><col style="width:130px;"><col style="width:340px;"><col style="width:240px;"><col style="width:240px;"><col style="width:90px;"><col style="width:70px;"><col style="width:70px;"></colgroup>
+    <tr><td colspan="8" class="title">${escapeHtml(rec.testTitle)}</td></tr>
+    <tr><td colspan="8" style="height:8px;border:none;"></td></tr>
+    <tr><td colspan="2" class="summary-label">Ученик</td><td colspan="6" class="summary-value">${escapeHtml(rec.studentName)}</td></tr>
     ${tRow}
-    <tr><td colspan="2" class="summary-label">Дата</td><td colspan="5" class="summary-value">${escapeHtml(rec.date)}</td></tr>
-    <tr><td colspan="2" class="summary-label">Правильных</td><td colspan="5" class="summary-value"><span class="ok">${rec.correct}</span></td></tr>
-    <tr><td colspan="2" class="summary-label">Неправильных</td><td colspan="5" class="summary-value"><span class="bad">${rec.wrong}</span></td></tr>
-    <tr><td colspan="2" class="summary-label">Баллов</td><td colspan="5" class="summary-value"><b>${rec.score} / 100</b></td></tr>
-    <tr><td colspan="2" class="summary-label">Оценка</td><td colspan="5" class="summary-value">${escapeHtml(interpret(rec.score))}</td></tr>
-    <tr><td colspan="7" style="height:12px;border:none;"></td></tr>
-    <tr><th class="c">#</th><th class="c">Рисунок</th><th>Вопрос</th><th>Правильный ответ</th><th>Ответ ученика</th><th class="c">Итог</th><th class="c">Бонус</th></tr>
+    <tr><td colspan="2" class="summary-label">Дата</td><td colspan="6" class="summary-value">${escapeHtml(rec.date)}</td></tr>
+    <tr><td colspan="2" class="summary-label">Правильных</td><td colspan="6" class="summary-value"><span class="ok">${rec.correct}</span></td></tr>
+    <tr><td colspan="2" class="summary-label">Неправильных</td><td colspan="6" class="summary-value"><span class="bad">${rec.wrong}</span></td></tr>
+    <tr><td colspan="2" class="summary-label">Баллов</td><td colspan="6" class="summary-value"><b>${scoreStr}</b></td></tr>
+    <tr><td colspan="2" class="summary-label">Оценка</td><td colspan="6" class="summary-value">${escapeHtml(interpretScore(rec.score, maxScore))}</td></tr>
+    <tr><td colspan="8" style="height:12px;border:none;"></td></tr>
+    <tr><th class="c">#</th><th class="c">Рисунок</th><th>Вопрос</th><th>Правильный ответ</th><th>Ответ ученика</th><th class="c">Итог</th><th class="c">Балл</th><th class="c">Бонус</th></tr>
     ${rows}
-    <tr><td colspan="7" style="height:16px;border:none;"></td></tr>
-    <tr><td colspan="7" style="border:none;padding:6px 8px;text-align:left;">Подпись учителя: _______________________ &nbsp;&nbsp; Дата: _______________________</td></tr>
+    <tr><td colspan="8" style="height:16px;border:none;"></td></tr>
+    <tr><td colspan="8" style="border:none;padding:6px 8px;text-align:left;">Подпись учителя: _______________________ &nbsp;&nbsp; Дата: _______________________</td></tr>
   </table>`;
 }
 function downloadBlob(content, filename, mime) {
@@ -889,9 +893,7 @@ function downloadBlob(content, filename, mime) {
 }
 function exportStudentsWorkbook(results, testTitle, testId, shortName) {
   if (!results || results.length === 0) { alert('Нет результатов'); return; }
-  if (!shortName && testId && testsCache[testId]) {
-    shortName = testsCache[testId].shortName || '';
-  }
+  if (!shortName && testId && testsCache[testId]) shortName = testsCache[testId].shortName || '';
   const names = uniqueSheetNames(results.map(r => r.studentName));
   const sheetsXML = names.map(n => `<x:ExcelWorksheet><x:Name>${escapeXml(n)}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet>`).join('');
   const tables = results.map(r => studentSheetHTML(r)).join('');
@@ -902,21 +904,25 @@ function exportStudentsWorkbook(results, testTitle, testId, shortName) {
 }
 function exportFlatSummary(results, title, filename) {
   if (!results || results.length === 0) { alert('Нет данных'); return; }
-  const rows = results.sort((a,b) => b.timestamp - a.timestamp).map((r, i) => `<tr>
-    <td class="c">${results.length - i}</td>
-    <td>${escapeHtml(r.date)}</td><td>${escapeHtml(r.teacherEmail || '')}</td>
-    <td>${escapeHtml(r.testTitle || '')}</td><td>${escapeHtml(r.studentName || '')}</td>
-    <td class="c ok">${r.correct}</td><td class="c bad">${r.wrong}</td>
-    <td class="c"><b>${r.score}</b></td>
-    <td>${escapeHtml(interpret(r.score))}</td></tr>`).join('');
+  const rows = results.sort((a,b) => b.timestamp - a.timestamp).map((r, i) => {
+    const ms = r.maxScore || 100;
+    return `<tr>
+      <td class="c">${results.length - i}</td>
+      <td>${escapeHtml(r.date)}</td><td>${escapeHtml(r.teacherEmail || '')}</td>
+      <td>${escapeHtml(r.testTitle || '')}</td><td>${escapeHtml(r.studentName || '')}</td>
+      <td class="c ok">${r.correct}</td><td class="c bad">${r.wrong}</td>
+      <td class="c"><b>${formatScore(r.score)}</b></td>
+      <td class="c" style="font-size:9pt;color:#666;">${formatScore(ms)}</td>
+      <td>${escapeHtml(interpretScore(r.score, ms))}</td></tr>`;
+  }).join('');
   const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
 <head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
 <x:Name>Сводка</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
 <style>${excelStyles()}</style></head><body><table>
-  <tr><td colspan="9" class="title">${escapeHtml(title)}</td></tr>
-  <tr><td colspan="9" style="height:8px;border:none;"></td></tr>
+  <tr><td colspan="10" class="title">${escapeHtml(title)}</td></tr>
+  <tr><td colspan="10" style="height:8px;border:none;"></td></tr>
   <tr><th class="c">№</th><th>Дата</th><th>Учитель</th><th>Тест</th><th>Ученик</th>
-  <th class="c">Верно</th><th class="c">Неверно</th><th class="c">Балл</th><th>Оценка</th></tr>
+  <th class="c">Верно</th><th class="c">Неверно</th><th class="c">Балл</th><th class="c">Макс</th><th>Оценка</th></tr>
   ${rows}</table></body></html>`.trim();
   downloadBlob(html, filename, 'application/vnd.ms-excel;charset=utf-8;');
 }
@@ -938,6 +944,7 @@ function printStudentResult(rec) {
       <td style="text-align:center;">${a.correct ? '✓' : '✗'}</td>
     </tr>`;
   });
+  const maxScore = rec.maxScore || 100;
   form.innerHTML = `
     <div class="pf-header">
       <div class="pf-school">${escapeHtml(SCHOOL_NAME)}</div>
@@ -949,7 +956,7 @@ function printStudentResult(rec) {
       <div><b>Ученик:</b> ${escapeHtml(rec.studentName)}</div>
       <div><b>Дата:</b> ${escapeHtml(rec.date)}</div>
       <div><b>Учитель:</b> ${escapeHtml(rec.teacherEmail || '—')}</div>
-      <div><b>Баллов:</b> ${rec.score} / 100</div>
+      <div><b>Баллов:</b> ${formatScore(rec.score)} / ${formatScore(maxScore)}</div>
     </div>
     <table>
       <thead><tr><th style="width:40px;">#</th><th>Вопрос</th><th>Правильный ответ</th><th>Ответ ученика</th><th style="width:60px;">Итог</th></tr></thead>
@@ -959,8 +966,8 @@ function printStudentResult(rec) {
       <div><b>Правильных:</b> ${rec.correct}</div>
       <div><b>Неправильных:</b> ${rec.wrong}</div>
     </div>
-    <div class="pf-score">${rec.score} / 100</div>
-    <div style="text-align:center;font-size:12pt;font-style:italic;margin-bottom:24px;">${escapeHtml(interpret(rec.score))}</div>
+    <div class="pf-score">${formatScore(rec.score)} / ${formatScore(maxScore)}</div>
+    <div style="text-align:center;font-size:12pt;font-style:italic;margin-bottom:24px;">${escapeHtml(interpretScore(rec.score, maxScore))}</div>
     <div class="pf-signature">
       <div>Подпись учителя</div>
       <div>Дата</div>
@@ -1279,19 +1286,20 @@ function renderDeveloperTestsList() {
       ? '<span class="badge draft">ЧЕРНОВИК</span>'
       : '<span class="badge published">ОПУБЛИКОВАН</span>';
     const shortInfo = t.shortName ? `<div style="font-size:11px;color:#94a3b8;font-weight:700;margin-top:3px;">🏷 ${escapeHtml(t.shortName)}</div>` : '';
-    const bonusInfo = (t.speedBonusPct != null && t.speedBonusPct > 0) ? `<div style="font-size:11px;color:#b45309;font-weight:700;margin-top:3px;">⚡ Бонус: ${t.speedBonusPct}%</div>` : '';
+    const bonusInfo = `<div style="font-size:11px;color:#b45309;font-weight:700;margin-top:3px;">⚡ ${BASE_POINTS_PER_QUESTION} б/вопрос + ${(t.speedBonusPct != null ? t.speedBonusPct : DEFAULT_SPEED_BONUS)}% за скорость</div>`;
     return `<tr>
       <td style="font-family:monospace;font-size:12px;color:#94a3b8;">${escapeHtml(id)}</td>
       <td>${escapeHtml(t.title)}${shortInfo}${bonusInfo}</td>
       <td style="text-align:center;">${statusBadge}</td>
       <td style="text-align:center;">${(t.questions || []).length}</td>
+      <td style="text-align:center;font-weight:800;color:var(--violet);">${formatScore(getMaxScore(t))}</td>
       <td class="action-cell">
         <button class="small" data-edit="${id}">✏</button>
         <button class="small danger" data-del="${id}">✕</button>
       </td>
     </tr>`;
   }).join('');
-  el.innerHTML = `<table><thead><tr><th style="width:180px;">ID</th><th>Название</th><th style="width:130px;">Статус</th><th style="width:90px;">Вопросов</th><th style="width:120px;">Действия</th></tr></thead><tbody>${rows}</tbody></table>`;
+  el.innerHTML = `<table><thead><tr><th style="width:160px;">ID</th><th>Название</th><th style="width:120px;">Статус</th><th style="width:80px;">Вопросов</th><th style="width:90px;">Макс. балл</th><th style="width:120px;">Действия</th></tr></thead><tbody>${rows}</tbody></table>`;
   el.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => openTestEditor(b.dataset.edit, testsCache[b.dataset.edit]));
   el.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
     const id = b.dataset.del;
@@ -1377,7 +1385,6 @@ async function loadTeachersData() {
     teachersStatsCache.sessions = sessionsSnap.val() || {};
     teachersStatsCache.results = resultsSnap.val() || {};
   } catch (e) {
-    console.error('loadTeachersData:', e);
     teachersUsersCache = {};
     teachersStatsCache = { sessions: {}, results: {} };
   }
@@ -1387,47 +1394,36 @@ async function renderTeachersList() {
   const el = document.getElementById('teachersArea');
   if (!el) return;
   el.innerHTML = `<p class="hint"><span class="loading-spinner"></span>Загрузка статистики…</p>`;
-
   await loadTeachersData();
 
   const users = teachersUsersCache;
-  const teachers = Object.entries(users)
-    .filter(([_, u]) => u && u.role === 'teacher')
-    .map(([uid, u]) => ({ uid, ...u }));
-
-  if (teachers.length === 0) {
-    el.innerHTML = `<p class="hint">Учителей пока нет. Нажмите «Создать учителя».</p>`;
-    return;
-  }
+  const teachers = Object.entries(users).filter(([_, u]) => u && u.role === 'teacher').map(([uid, u]) => ({ uid, ...u }));
+  if (teachers.length === 0) { el.innerHTML = `<p class="hint">Учителей пока нет.</p>`; return; }
 
   const sessions = teachersStatsCache.sessions || {};
   const results = teachersStatsCache.results || {};
 
   const stats = {};
-  teachers.forEach(t => {
-    stats[t.uid] = { sessionsTotal: 0, sessionsActive: 0, studentsTotal: 0, resultsTotal: 0, avgScore: 0, lastActivityAt: 0 };
-  });
+  teachers.forEach(t => { stats[t.uid] = { sessionsTotal: 0, sessionsActive: 0, studentsTotal: 0, resultsTotal: 0, avgScore: 0, lastActivityAt: 0 }; });
 
   Object.values(sessions).forEach(s => {
-    if (!s || !s.teacherId) return;
-    if (!stats[s.teacherId]) return;
+    if (!s || !s.teacherId || !stats[s.teacherId]) return;
     stats[s.teacherId].sessionsTotal++;
     if (s.status === 'active') stats[s.teacherId].sessionsActive++;
     stats[s.teacherId].studentsTotal += Object.keys(s.students || {}).length;
-    if (s.createdAt && s.createdAt > stats[s.teacherId].lastActivityAt) stats[s.teacherId].lastActivityAt = s.createdAt;
+    if (s.createdAt > stats[s.teacherId].lastActivityAt) stats[s.teacherId].lastActivityAt = s.createdAt;
   });
 
   Object.values(results).forEach(r => {
-    if (!r || !r.teacherId) return;
-    if (!stats[r.teacherId]) return;
+    if (!r || !r.teacherId || !stats[r.teacherId]) return;
     stats[r.teacherId].resultsTotal++;
     stats[r.teacherId]._sumScore = (stats[r.teacherId]._sumScore || 0) + (r.score || 0);
-    if (r.timestamp && r.timestamp > stats[r.teacherId].lastActivityAt) stats[r.teacherId].lastActivityAt = r.timestamp;
+    if (r.timestamp > stats[r.teacherId].lastActivityAt) stats[r.teacherId].lastActivityAt = r.timestamp;
   });
 
   Object.keys(stats).forEach(uid => {
     const st = stats[uid];
-    st.avgScore = st.resultsTotal > 0 ? Math.round((st._sumScore || 0) / st.resultsTotal) : 0;
+    st.avgScore = st.resultsTotal > 0 ? round1((st._sumScore || 0) / st.resultsTotal) : 0;
     delete st._sumScore;
   });
 
@@ -1447,8 +1443,7 @@ async function renderTeachersList() {
                 display:flex;align-items:center;justify-content:center;
                 color:#fff;font-weight:900;font-size:18px;flex-shrink:0;">${initials}</div>
               <div style="flex:1;min-width:0;">
-                <div style="font-weight:800;color:var(--ink);font-size:14px;
-                  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+                <div style="font-weight:800;color:var(--ink);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
                   title="${escapeHtml(t.email || '')}">${escapeHtml(t.email || '—')}</div>
                 <div style="font-size:11px;color:var(--muted);font-weight:700;margin-top:2px;">
                   ${t.role === 'teacher' ? '👨‍🏫 Учитель' : escapeHtml(t.role || '')}
@@ -1470,11 +1465,11 @@ async function renderTeachersList() {
                 <div style="font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:0.05em;margin-top:3px;">Учеников</div>
               </div>
               <div style="background:#f8fafc;border-radius:10px;padding:8px 10px;text-align:center;">
-                <div style="font-size:20px;font-weight:900;color:var(--yellow);line-height:1;">${st.avgScore}</div>
+                <div style="font-size:20px;font-weight:900;color:var(--yellow);line-height:1;">${formatScore(st.avgScore)}</div>
                 <div style="font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:0.05em;margin-top:3px;">Ср. балл</div>
               </div>
             </div>
-            ${st.sessionsActive > 0 ? `<div style="font-size:11px;font-weight:800;color:#10b981;margin-bottom:6px;">● ${st.sessionsActive} активных сессий</div>` : ''}
+            ${st.sessionsActive > 0 ? `<div style="font-size:11px;font-weight:800;color:#10b981;margin-bottom:6px;">● ${st.sessionsActive} активных</div>` : ''}
             <div style="font-size:11px;color:#94a3b8;font-weight:600;margin-bottom:10px;">Последняя активность: ${lastAct}</div>
             <div style="display:flex;gap:6px;">
               <button class="small back" data-teacher-view="${t.uid}" style="flex:1;">📊 Детали</button>
@@ -1484,18 +1479,14 @@ async function renderTeachersList() {
       }).join('')}
     </div>`;
 
-  el.querySelectorAll('[data-teacher-view]').forEach(b => {
-    b.onclick = () => showTeacherDetails(b.dataset.teacherView);
-  });
-  el.querySelectorAll('[data-teacher-del]').forEach(b => {
-    b.onclick = async () => {
-      const uid = b.dataset.teacherDel;
-      const t = teachers.find(x => x.uid === uid);
-      if (!confirm(`Удалить профиль учителя «${t.email}»?\n\n⚠️ Аккаунт в Firebase Auth останется.`)) return;
-      await window.FB.remove(window.FB.ref(window.FB.db, `users/${uid}`));
-      renderTeachersList();
-      renderDeveloperMetrics();
-    };
+  el.querySelectorAll('[data-teacher-view]').forEach(b => b.onclick = () => showTeacherDetails(b.dataset.teacherView));
+  el.querySelectorAll('[data-teacher-del]').forEach(b => b.onclick = async () => {
+    const uid = b.dataset.teacherDel;
+    const t = teachers.find(x => x.uid === uid);
+    if (!confirm(`Удалить профиль учителя «${t.email}»?`)) return;
+    await window.FB.remove(window.FB.ref(window.FB.db, `users/${uid}`));
+    renderTeachersList();
+    renderDeveloperMetrics();
   });
 }
 
@@ -1519,7 +1510,7 @@ function showTeacherDetails(uid) {
       <td>${escapeHtml(r.date || '')}</td>
       <td>${escapeHtml((r.testTitle || '').slice(0, 35))}</td>
       <td>${escapeHtml(r.studentName || '')}</td>
-      <td style="text-align:center;"><b>${r.score || 0}</b></td>
+      <td style="text-align:center;"><b>${formatScore(r.score)}</b></td>
     </tr>`).join('') || '<tr><td colspan="4" style="text-align:center;color:#94a3b8;">Нет результатов</td></tr>';
 
   const m = openModal(`<div class="modal-body">
@@ -1531,7 +1522,7 @@ function showTeacherDetails(uid) {
       <div class="kpi"><div class="icon">🎫</div><div class="n">${sessions.length}</div><div class="t">Сессий</div></div>
       <div class="kpi"><div class="icon">📈</div><div class="n">${results.length}</div><div class="t">Прохождений</div></div>
       <div class="kpi"><div class="icon">👥</div><div class="n">${sessions.reduce((sum, s) => sum + Object.keys(s.students || {}).length, 0)}</div><div class="t">Учеников</div></div>
-      <div class="kpi"><div class="icon">⭐</div><div class="n">${results.length ? Math.round(results.reduce((s, r) => s + (r.score || 0), 0) / results.length) : 0}</div><div class="t">Ср. балл</div></div>
+      <div class="kpi"><div class="icon">⭐</div><div class="n">${results.length ? formatScore(results.reduce((s, r) => s + (r.score || 0), 0) / results.length) : 0}</div><div class="t">Ср. балл</div></div>
     </div>
     <h3 style="margin-top:20px;">🎫 Последние сессии</h3>
     <table><thead><tr><th>Дата</th><th>Код</th><th>Тест</th><th style="width:80px;">Уч.</th><th style="width:100px;">Статус</th></tr></thead>
@@ -1655,7 +1646,7 @@ function openTestEditor(testId, testData) {
     introImage: initial.introImage || '',
     timePerQuestion: initial.timePerQuestion || 20,
     speedBonusPct: (initial.speedBonusPct != null) ? initial.speedBonusPct : DEFAULT_SPEED_BONUS,
-    status: initial.status || 'draft',
+    published: (initial.status || 'draft') === 'published',
     antiCheatMode: initial.antiCheatMode || 'soft'
   };
 
@@ -1679,10 +1670,7 @@ function openTestEditor(testId, testData) {
       });
     }
   }
-  function renderMain() {
-    if (activeTab === 'settings') renderSettings();
-    else renderQuestionEditor();
-  }
+  function renderMain() { if (activeTab === 'settings') renderSettings(); else renderQuestionEditor(); }
 
   function renderSettings() {
     editorHead.innerHTML = `<h3>⚙️ Настройки теста</h3>`;
@@ -1693,17 +1681,25 @@ function openTestEditor(testId, testData) {
         <input type="text" id="setTitle" value="${escapeHtml(settings.title)}" placeholder="Например: Входной тест по БПЛА">
         <label class="field-label" style="margin-top:12px;">🏷 Короткое имя для файла Excel</label>
         <input type="text" id="setShortName" value="${escapeHtml(settings.shortName)}" placeholder="Например: ТВ_тест_БПЛА" maxlength="30">
-        <p class="hint" style="margin:4px 0 0;">Будет использоваться как имя файла: <b>&lt;короткое_имя&gt;_ДДММ_ЧЧММ.xls</b>. Если пусто — возьмётся название теста.</p>
+        <p class="hint" style="margin:4px 0 0;">Будет использоваться как имя файла: <b>&lt;короткое_имя&gt;_ДДММ_ЧЧММ.xls</b>.</p>
         <label class="field-label" style="margin-top:12px;">Вводный текст</label>
         <textarea id="setIntro" placeholder="Ученик увидит текст перед началом" style="min-height:80px;">${escapeHtml(settings.intro)}</textarea>
       </div>
       <div class="editor-settings-section">
         <h4><span class="step-num">2</span> Публикация</h4>
-        <label class="field-label">Статус</label>
-        <select id="setStatus">
-          <option value="draft" ${settings.status === 'draft' ? 'selected' : ''}>📝 Черновик</option>
-          <option value="published" ${settings.status === 'published' ? 'selected' : ''}>✅ Опубликован</option>
-        </select>
+        <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;padding:14px 16px;background:${settings.published ? '#f0fdf4' : '#fef3c7'};border:2px solid ${settings.published ? '#86efac' : '#fde68a'};border-radius:12px;margin:0;">
+          <input type="checkbox" id="setPublished" ${settings.published ? 'checked' : ''} style="width:26px;height:26px;margin:0;flex-shrink:0;accent-color:#10b981;cursor:pointer;">
+          <div style="flex:1;">
+            <div style="font-weight:800;font-size:15px;color:${settings.published ? '#047857' : '#b45309'};" id="publishedTitle">
+              ${settings.published ? '✅ Опубликован — виден учителям' : '📝 Черновик — виден только вам'}
+            </div>
+            <div style="font-size:12px;color:#64748b;font-weight:600;margin-top:4px;" id="publishedHint">
+              ${settings.published
+                ? 'Тест появится в списке у учителей для создания сессий.'
+                : 'Тест НЕ появится у учителей, пока вы его не опубликуете.'}
+            </div>
+          </div>
+        </label>
       </div>
       <div class="editor-settings-section">
         <h4><span class="step-num">3</span> Обложка</h4>
@@ -1717,7 +1713,9 @@ function openTestEditor(testId, testData) {
         <input type="number" id="setTime" min="5" max="300" value="${settings.timePerQuestion}">
         <label class="field-label" style="margin-top:12px;">⚡ Бонус за быстрый ответ (%)</label>
         <input type="number" id="setSpeedBonus" min="0" max="100" step="5" value="${settings.speedBonusPct}">
-        <p class="hint" id="speedBonusHint" style="margin:4px 0 0;">Мгновенный правильный ответ даст до <b>+${settings.speedBonusPct}%</b> к базовому баллу. Ответ на последней секунде — без бонуса. Поставьте <b>0</b>, чтобы отключить.</p>
+        <p class="hint" id="speedBonusHint" style="margin:4px 0 0;">
+          За каждый правильный ответ <b>${BASE_POINTS_PER_QUESTION} баллов</b>. Мгновенный ответ даст до <b>+${formatScore(BASE_POINTS_PER_QUESTION * settings.speedBonusPct / 100)} балла</b>. Поставьте <b>0</b>, чтобы отключить бонус.
+        </p>
         <label class="field-label" style="margin-top:12px;">🛡 Античит</label>
         <select id="setAntiCheat">
           <option value="soft" ${settings.antiCheatMode === 'soft' ? 'selected' : ''}>⚠️ Мягкий (только счётчики)</option>
@@ -1727,8 +1725,26 @@ function openTestEditor(testId, testData) {
     m.$('#setTitle').oninput = (e) => { settings.title = e.target.value; };
     m.$('#setShortName').oninput = (e) => { settings.shortName = e.target.value; };
     m.$('#setIntro').oninput = (e) => { settings.intro = e.target.value; };
-    m.$('#setStatus').onchange = (e) => { settings.status = e.target.value; };
     m.$('#setAntiCheat').onchange = (e) => { settings.antiCheatMode = e.target.value; };
+    m.$('#setPublished').onchange = (e) => {
+      settings.published = e.target.checked;
+      const label = e.target.closest('label');
+      const title = m.$('#publishedTitle');
+      const hint = m.$('#publishedHint');
+      if (label) {
+        label.style.background = settings.published ? '#f0fdf4' : '#fef3c7';
+        label.style.borderColor = settings.published ? '#86efac' : '#fde68a';
+      }
+      if (title) {
+        title.textContent = settings.published ? '✅ Опубликован — виден учителям' : '📝 Черновик — виден только вам';
+        title.style.color = settings.published ? '#047857' : '#b45309';
+      }
+      if (hint) {
+        hint.textContent = settings.published
+          ? 'Тест появится в списке у учителей для создания сессий.'
+          : 'Тест НЕ появится у учителей, пока вы его не опубликуете.';
+      }
+    };
     m.$('#setIntroImage').oninput = (e) => {
       settings.introImage = e.target.value.trim();
       m.$('#coverPreview').innerHTML = settings.introImage ? `<img src="${escapeAttr(settings.introImage)}" alt="">` : '🖼 Превью';
@@ -1747,7 +1763,7 @@ function openTestEditor(testId, testData) {
       const v = parseInt(e.target.value, 10);
       settings.speedBonusPct = isNaN(v) ? 0 : Math.max(0, Math.min(100, v));
       const hintEl = m.$('#speedBonusHint');
-      if (hintEl) hintEl.innerHTML = `Мгновенный правильный ответ даст до <b>+${settings.speedBonusPct}%</b> к базовому баллу. Ответ на последней секунде — без бонуса. Поставьте <b>0</b>, чтобы отключить.`;
+      if (hintEl) hintEl.innerHTML = `За каждый правильный ответ <b>${BASE_POINTS_PER_QUESTION} баллов</b>. Мгновенный ответ даст до <b>+${formatScore(BASE_POINTS_PER_QUESTION * settings.speedBonusPct / 100)} балла</b>. Поставьте <b>0</b>, чтобы отключить бонус.`;
     };
   }
   function renderQuestionEditor() {
@@ -1863,7 +1879,7 @@ function openTestEditor(testId, testData) {
       introImage: settings.introImage.trim(),
       timePerQuestion: settings.timePerQuestion,
       speedBonusPct: settings.speedBonusPct,
-      status: settings.status,
+      status: settings.published ? 'published' : 'draft',
       antiCheatMode: settings.antiCheatMode,
       questions: questions.map(q => ({ q: q.q, options: q.options, correct: q.correct, image: q.image || '', time: q.time || null })),
       createdBy: currentUser.uid, updatedAt: now
@@ -1912,9 +1928,7 @@ function parseCSVQuestions(text) {
   return result;
 }
 
-/* ==================================================================
-   СЕССИИ (общие)
-   ================================================================== */
+/* ============ СЕССИИ ============ */
 function subscribeAllSessions() {
   const el = document.getElementById('allSessionsArea');
   if (!el) return;
@@ -2001,7 +2015,7 @@ function renderResultsWithFilter() {
       <td>${escapeHtml(r.studentName)}</td>
       <td class="ok">${r.correct}</td>
       <td class="bad">${r.wrong}</td>
-      <td><b>${r.score}</b></td>
+      <td><b>${formatScore(r.score)}</b></td>
     </tr>`).join('')}</tbody></table>`;
 }
 
@@ -2013,7 +2027,7 @@ async function exportWholeSchool() {
     if (list.length === 0) { alert('Результатов нет'); return; }
     const filename = `kviz_svod_${shortDateStamp()}.xls`;
     exportFlatSummary(list, 'Сводная по всей школе', filename);
-  } catch (e) { console.error(e); alert('Не удалось выгрузить: ' + (e.message || 'ошибка')); }
+  } catch (e) { alert('Не удалось выгрузить: ' + (e.message || 'ошибка')); }
 }
 async function clearAllResults() {
   try {
@@ -2022,16 +2036,13 @@ async function clearAllResults() {
     const ids = Object.keys(data);
     if (ids.length === 0) { alert('Результатов нет.'); return; }
     if (!confirm(`Удалить ВСЕ результаты (${ids.length} шт.)? Это действие необратимо.`)) return;
-
     let deleted = 0, failed = 0;
     for (const id of ids) {
-      try {
-        await window.FB.remove(window.FB.ref(window.FB.db, `results/${id}`));
-        deleted++;
-      } catch (err) { console.warn('Не удалось удалить', id, err); failed++; }
+      try { await window.FB.remove(window.FB.ref(window.FB.db, `results/${id}`)); deleted++; }
+      catch (err) { failed++; }
     }
     if (failed === 0) alert(`✅ Удалено ${deleted}.`);
-    else alert(`⚠️ Удалено ${deleted}, не удалось ${failed}.\nПроверьте права в Firebase Rules.`);
+    else alert(`⚠️ Удалено ${deleted}, не удалось ${failed}.`);
   } catch (e) { alert('Ошибка: ' + (e.message || 'неизвестная')); }
 }
 async function clearOldResults() {
@@ -2042,13 +2053,10 @@ async function clearOldResults() {
     const now = Date.now();
     const toDelete = Object.entries(data).filter(([_, r]) => now - (r.timestamp || 0) > OLD_RESULTS_TTL_MS);
     if (toDelete.length === 0) { alert('Нет результатов старше 30 дней.'); return; }
-
     let deleted = 0, failed = 0;
     for (const [id] of toDelete) {
-      try {
-        await window.FB.remove(window.FB.ref(window.FB.db, `results/${id}`));
-        deleted++;
-      } catch (err) { failed++; }
+      try { await window.FB.remove(window.FB.ref(window.FB.db, `results/${id}`)); deleted++; }
+      catch (err) { failed++; }
     }
     if (failed === 0) alert(`✅ Удалено ${deleted}.`);
     else alert(`⚠️ Удалено ${deleted}, не удалось ${failed}.`);
@@ -2113,8 +2121,8 @@ async function renderTeacherHome() {
 
   bindTopNav();
   onClick('createSessionBtn', createSession);
-  try { cleanupOldSessions();       } catch (e) { console.warn(e); }
-  try { subscribeTeacherSessions(); } catch (e) { console.warn(e); }
+  try { cleanupOldSessions();       } catch (e) {}
+  try { subscribeTeacherSessions(); } catch (e) {}
 }
 
 async function createSession() {
@@ -2129,11 +2137,8 @@ async function createSession() {
     const payload = {
       testId, testTitle: test.title, teacherId: currentUser.uid, teacherEmail: currentUser.email,
       createdAt: Date.now(), status: 'active', mode: 'sync',
-      phase: 'lobby',
-      currentQuestion: -1,
-      questionStartedAt: 0,
-      autoAdvance,
-      autoAdvanceDelaySec: 5,
+      phase: 'lobby', currentQuestion: -1, questionStartedAt: 0,
+      autoAdvance, autoAdvanceDelaySec: 5,
       testQuestionCount: (test.questions || []).length
     };
     if (classId) { payload.classId = classId; payload.className = cls?.name || ''; }
@@ -2155,7 +2160,7 @@ function subscribeTeacherSessions() {
 }
 
 /* ==================================================================
-   УЧИТЕЛЬ: СЕССИЯ (синхронная)
+   УЧИТЕЛЬ: СЕССИЯ
    ================================================================== */
 async function renderTeacherSession() {
   clearAllUnsubs();
@@ -2182,7 +2187,7 @@ async function renderTeacherSession() {
       👨‍🏫 Сессия
       <span style="color:#10b981;">${code}</span>
     </h1>
-    <p class="no-print"><b>Тест:</b> ${escapeHtml(test.title)} · Вопросов: ${test.questions.length}</p>
+    <p class="no-print"><b>Тест:</b> ${escapeHtml(test.title)} · Вопросов: ${test.questions.length} · Макс. балл: ${formatScore(getMaxScore(test))}</p>
 
     <div class="sync-teacher-panel" id="syncPanel">
       <div class="stp-header">
@@ -2226,14 +2231,17 @@ async function renderTeacherSession() {
   subscribeTeacherSessionLive(code, test);
 }
 
-/* Собирает массив results из синхронной сессии */
 function buildSessionResults(session, test) {
   const students = session.students || {};
   const totalQ = (test && test.questions && test.questions.length) || session.testQuestionCount || 0;
+  const maxScore = test ? getMaxScore(test) : round1(totalQ * BASE_POINTS_PER_QUESTION * (1 + DEFAULT_SPEED_BONUS / 100));
   const results = [];
 
   Object.values(students).forEach(st => {
-    if (st.result && Array.isArray(st.result.answers)) { results.push(st.result); return; }
+    if (st.result && Array.isArray(st.result.answers)) {
+      results.push({ ...st.result, maxScore: st.result.maxScore || maxScore });
+      return;
+    }
 
     const answersMap = st.answers || {};
     const answersArr = [];
@@ -2248,6 +2256,7 @@ function buildSessionResults(session, test) {
           selectedText: a.selectedText || null,
           correct:      !!a.correct,
           image:        a.image || (test && test.questions[i] ? (test.questions[i].image || '') : ''),
+          points:       a.points || 0,
           speedBonus:   a.speedBonus || 0
         });
       } else {
@@ -2258,7 +2267,7 @@ function buildSessionResults(session, test) {
           selectedText: null,
           correct: false,
           image: tq ? (tq.image || '') : '',
-          speedBonus: 0
+          points: 0, speedBonus: 0
         });
       }
     }
@@ -2273,7 +2282,8 @@ function buildSessionResults(session, test) {
       testTitle:     session.testTitle,
       date:          formatDate(st.finishedAt || st.joinedAt || Date.now()),
       timestamp:     st.finishedAt || st.joinedAt || Date.now(),
-      score:         st.score || 0,
+      score:         round1(st.score || 0),
+      maxScore,
       correct, wrong, total,
       teacherId:     session.teacherId,
       teacherEmail:  session.teacherEmail,
@@ -2290,7 +2300,7 @@ function buildSessionResults(session, test) {
   return results;
 }
 
-/* ===== СВОДНАЯ ТАБЛИЦА (ФИО + баллы) ===== */
+/* ===== СВОДНАЯ ===== */
 async function exportSessionSummary(code, test) {
   try {
     const sSnap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
@@ -2301,23 +2311,25 @@ async function exportSessionSummary(code, test) {
 
     students.sort((a, b) => (b.score || 0) - (a.score || 0));
     const totalQ = (test && test.questions && test.questions.length) || session.testQuestionCount || 0;
+    const maxScore = test ? getMaxScore(test) : round1(totalQ * BASE_POINTS_PER_QUESTION * (1 + DEFAULT_SPEED_BONUS / 100));
 
     const rows = students.map((st, i) => {
       const correct = st.correctCount || 0;
       const wrong = Math.max(0, totalQ - correct);
-      const score = st.score || 0;
-      const color = score >= 75 ? '#16a34a' : score >= 50 ? '#b45309' : '#dc2626';
+      const score = round1(st.score || 0);
+      const pct = maxScore > 0 ? Math.round(score / maxScore * 100) : 0;
+      const color = pct >= 75 ? '#16a34a' : pct >= 50 ? '#b45309' : '#dc2626';
       return `<tr>
         <td class="c" style="font-weight:bold;">${i + 1}</td>
         <td>${escapeHtml(st.studentName || '—')}</td>
         <td class="c ok">${correct}</td>
         <td class="c bad">${wrong}</td>
-        <td class="c" style="font-weight:bold;color:${color};font-size:14pt;">${score}</td>
-        <td style="font-size:9pt;color:#666;">${escapeHtml(interpret(score))}</td>
+        <td class="c" style="font-weight:bold;color:${color};font-size:14pt;">${formatScore(score)}</td>
+        <td style="font-size:9pt;color:#666;">${escapeHtml(interpretScore(score, maxScore))}</td>
       </tr>`;
     }).join('');
 
-    const avg = Math.round(students.reduce((s, st) => s + (st.score || 0), 0) / students.length);
+    const avg = students.length ? round1(students.reduce((s, st) => s + (st.score || 0), 0) / students.length) : 0;
 
     const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
 <head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
@@ -2328,7 +2340,9 @@ async function exportSessionSummary(code, test) {
   <tr><td colspan="3" class="header-meta"><b>Учитель:</b> ${escapeHtml(session.teacherEmail || '—')}</td>
       <td colspan="3" class="header-meta"><b>Дата:</b> ${escapeHtml(formatDate(Date.now()))}</td></tr>
   <tr><td colspan="3" class="header-meta"><b>Учеников:</b> ${students.length}</td>
-      <td colspan="3" class="header-meta"><b>Средний балл:</b> ${avg}</td></tr>
+      <td colspan="3" class="header-meta"><b>Максимум:</b> ${formatScore(maxScore)} баллов</td></tr>
+  <tr><td colspan="3" class="header-meta"><b>Средний балл:</b> ${formatScore(avg)}</td>
+      <td colspan="3" class="header-meta"><b>Формула:</b> ${BASE_POINTS_PER_QUESTION} б/вопрос + бонус за скорость</td></tr>
   <tr><td colspan="6" style="height:10px;border:none;"></td></tr>
   <tr>
     <th class="c" style="width:50px;">Место</th>
@@ -2348,13 +2362,9 @@ async function exportSessionSummary(code, test) {
     const shortName = (test && test.shortName) || 'сводная';
     const filename = buildExcelFilename(session.testTitle, shortName, 'Сводная');
     downloadBlob(html, filename, 'application/vnd.ms-excel;charset=utf-8;');
-  } catch (e) {
-    console.error('exportSessionSummary:', e);
-    alert('Ошибка экспорта: ' + (e.message || 'неизвестная'));
-  }
+  } catch (e) { alert('Ошибка экспорта: ' + (e.message || 'неизвестная')); }
 }
 
-/* ===== ПОЛНАЯ ТАБЛИЦА (все ответы) ===== */
 async function exportSessionFull(code, test) {
   try {
     const sSnap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
@@ -2364,13 +2374,9 @@ async function exportSessionFull(code, test) {
     if (results.length === 0) { alert('Нет данных для экспорта'); return; }
     const sn = (test && test.shortName) || '';
     exportStudentsWorkbook(results, session.testTitle, session.testId, sn);
-  } catch (e) {
-    console.error('exportSessionFull:', e);
-    alert('Ошибка экспорта: ' + (e.message || 'неизвестная'));
-  }
+  } catch (e) { alert('Ошибка экспорта: ' + (e.message || 'неизвестная')); }
 }
 
-/* ===== ПЕЧАТЬ СПИСКА ===== */
 async function printSessionSummary(code, test) {
   try {
     const sSnap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
@@ -2380,7 +2386,8 @@ async function printSessionSummary(code, test) {
     if (students.length === 0) { alert('Нет данных'); return; }
     students.sort((a, b) => (b.score || 0) - (a.score || 0));
     const totalQ = (test && test.questions && test.questions.length) || session.testQuestionCount || 0;
-    const avg = Math.round(students.reduce((s, st) => s + (st.score || 0), 0) / students.length);
+    const maxScore = test ? getMaxScore(test) : round1(totalQ * BASE_POINTS_PER_QUESTION * (1 + DEFAULT_SPEED_BONUS / 100));
+    const avg = students.length ? round1(students.reduce((s, st) => s + (st.score || 0), 0) / students.length) : 0;
 
     const existing = document.getElementById('printForm');
     if (existing) existing.remove();
@@ -2392,7 +2399,7 @@ async function printSessionSummary(code, test) {
       <td>${escapeHtml(st.studentName || '—')}</td>
       <td style="text-align:center;">${st.correctCount || 0}</td>
       <td style="text-align:center;">${Math.max(0, totalQ - (st.correctCount || 0))}</td>
-      <td style="text-align:center;font-weight:bold;">${st.score || 0}</td>
+      <td style="text-align:center;font-weight:bold;">${formatScore(st.score || 0)}</td>
     </tr>`).join('');
     form.innerHTML = `
       <div class="pf-header">
@@ -2405,7 +2412,8 @@ async function printSessionSummary(code, test) {
         <div><b>Учитель:</b> ${escapeHtml(session.teacherEmail || '—')}</div>
         <div><b>Дата:</b> ${escapeHtml(formatDate(Date.now()))}</div>
         <div><b>Учеников:</b> ${students.length}</div>
-        <div><b>Средний балл:</b> ${avg}</div>
+        <div><b>Максимум:</b> ${formatScore(maxScore)} баллов</div>
+        <div><b>Средний балл:</b> ${formatScore(avg)}</div>
       </div>
       <table>
         <thead><tr>
@@ -2427,7 +2435,6 @@ async function printSessionSummary(code, test) {
   } catch (e) { alert('Ошибка печати: ' + e.message); }
 }
 
-/* ===== CSV ДЛЯ КОПИРОВАНИЯ ===== */
 async function exportSessionCSV(code, test) {
   try {
     const sSnap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
@@ -2437,16 +2444,20 @@ async function exportSessionCSV(code, test) {
     if (students.length === 0) { alert('Нет данных'); return; }
     students.sort((a, b) => (b.score || 0) - (a.score || 0));
     const totalQ = (test && test.questions && test.questions.length) || session.testQuestionCount || 0;
+    const maxScore = test ? getMaxScore(test) : round1(totalQ * BASE_POINTS_PER_QUESTION * (1 + DEFAULT_SPEED_BONUS / 100));
 
-    const lines = ['Место;ФИО;Верно;Неверно;Балл;Оценка'];
+    const lines = ['Место;ФИО;Верно;Неверно;Балл;Максимум;Оценка'];
     students.forEach((st, i) => {
       const correct = st.correctCount || 0;
       const wrong = Math.max(0, totalQ - correct);
+      const score = round1(st.score || 0);
       lines.push([
         i + 1,
         '"' + String(st.studentName || '').replace(/"/g, '""') + '"',
-        correct, wrong, st.score || 0,
-        '"' + interpret(st.score || 0).replace(/"/g, '""') + '"'
+        correct, wrong,
+        formatScore(score),
+        formatScore(maxScore),
+        '"' + interpretScore(score, maxScore).replace(/"/g, '""') + '"'
       ].join(';'));
     });
 
@@ -2466,19 +2477,15 @@ function subscribeTeacherSessionLive(code, test) {
   startAutoAdvance(code, test);
 }
 
-/* === АВТОПЕРЕХОД === */
 function startAutoAdvance(code, test) {
   if (autoAdvanceInterval) { clearInterval(autoAdvanceInterval); autoAdvanceInterval = null; }
-
   autoAdvanceInterval = setInterval(async () => {
     try {
       const snap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
       const s = snap.val();
       if (!s) return;
-      if (!s.autoAdvance) return;
-      if (s.status !== 'active') return;
+      if (!s.autoAdvance || s.status !== 'active') return;
       if (s.phase === 'finished' || s.phase === 'lobby') return;
-
       const idx = typeof s.currentQuestion === 'number' ? s.currentQuestion : -1;
 
       if (s.phase === 'question' && idx >= 0) {
@@ -2492,22 +2499,17 @@ function startAutoAdvance(code, test) {
           if (elapsed >= timeTotal - 200) await revealQuestion(code, idx, test);
         }
       }
-
       if (s.phase === 'results') {
         const delaySec = s.autoAdvanceDelaySec || 5;
         const elapsed = Date.now() - (s.revealedAt || 0);
         const cdEl = document.getElementById('autoCountdown');
-        if (cdEl) {
-          const remain = Math.max(0, Math.ceil(delaySec - elapsed / 1000));
-          cdEl.textContent = remain;
-        }
+        if (cdEl) cdEl.textContent = Math.max(0, Math.ceil(delaySec - elapsed / 1000));
         if (elapsed >= delaySec * 1000) {
           const nextIdx = idx + 1;
           if (nextIdx < test.questions.length) await startQuestion(code, nextIdx, test);
           else await showLeaderboard(code);
         }
       }
-
       if (s.phase === 'leaderboard') {
         const delaySec = s.autoAdvanceDelaySec || 5;
         const elapsed = Date.now() - (s.leaderboardAt || 0);
@@ -2564,6 +2566,7 @@ function renderTeacherSyncPanel(s, test, code) {
     const timeTotal = q.time || test.timePerQuestion || TIME_PER_QUESTION;
     const elapsed = s.questionStartedAt ? Math.floor((Date.now() - s.questionStartedAt) / 1000) : 0;
     const remaining = Math.max(0, timeTotal - elapsed);
+    const maxPerQ = round1(BASE_POINTS_PER_QUESTION * (1 + (test.speedBonusPct || DEFAULT_SPEED_BONUS) / 100));
     html = `
       <div class="sync-progress">
         <div class="sp-item"><div class="sp-n">${totalStudents}</div><div class="sp-l">Учеников</div></div>
@@ -2579,6 +2582,7 @@ function renderTeacherSyncPanel(s, test, code) {
             ${escapeHtml(opt)}
           </div>`).join('')}
         </div>
+        <p style="font-size:12px;color:#94a3b8;font-weight:700;margin-top:12px;">За верный ответ: ${BASE_POINTS_PER_QUESTION} – ${formatScore(maxPerQ)} баллов</p>
       </div>
       <div class="sync-controls">
         <button class="primary" id="revealBtn">📊 Показать ответы (${answeredThisQ}/${totalStudents})</button>
@@ -2639,7 +2643,7 @@ function renderTeacherSyncPanel(s, test, code) {
             return `<div class="lb-item" style="background:#fff;color:var(--ink);">
               <div class="lb-rank ${medal}">${i + 1}</div>
               <div class="lb-name">${escapeHtml(st.studentName || '—')}</div>
-              <div class="lb-score">${st.score || 0}</div>
+              <div class="lb-score">${formatScore(st.score || 0)}</div>
             </div>`;
           }).join('') || '<p class="hint">Нет данных</p>'}
         </div>
@@ -2657,15 +2661,14 @@ function renderTeacherSyncPanel(s, test, code) {
 
   if (phase === 'finished') {
     const studentsFin = Object.values(s.students || {});
-    const avg = studentsFin.length
-      ? Math.round(studentsFin.reduce((sum, st) => sum + (st.score || 0), 0) / studentsFin.length)
-      : 0;
+    const avg = studentsFin.length ? round1(studentsFin.reduce((sum, st) => sum + (st.score || 0), 0) / studentsFin.length) : 0;
+    const maxScore = getMaxScore(test);
     html = `
       <div style="text-align:center;padding:24px 0;">
         <div style="font-size:64px;">🏁</div>
         <h2 style="margin:8px 0;">Тест завершён!</h2>
         <p style="color:#64748b;font-weight:600;">
-          Учеников: <b>${studentsFin.length}</b> · Средний балл: <b>${avg}</b>
+          Учеников: <b>${studentsFin.length}</b> · Средний балл: <b>${formatScore(avg)}</b> / ${formatScore(maxScore)}
         </p>
 
         <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:22px;">
@@ -2712,11 +2715,11 @@ function renderTeacherStudentsList(s, test) {
     const cls = hasAnswered ? 'answered' : '';
     let status = 'В игре';
     if (hasAnswered) status = '✅ Ответил';
-    if (st.status === 'finished') status = `Завершил — ${st.score || 0} б.`;
+    if (st.status === 'finished') status = `Завершил — ${formatScore(st.score || 0)} б.`;
     return `<div class="student-card ${cls}">
       <div class="name">${escapeHtml(st.studentName || '—')}</div>
       <div class="status">${escapeHtml(status)}</div>
-      <div class="progress">Всего: ${st.correctCount || 0} верно · ${st.score || 0} б.</div>
+      <div class="progress">Всего: ${st.correctCount || 0} верно · ${formatScore(st.score || 0)} б.</div>
     </div>`;
   }).join('');
 }
@@ -2753,16 +2756,14 @@ async function finishSession(code) {
           const rid = 'sync_' + code + '_' + (r.studentName || 'x').replace(/\s+/g, '_') + '_' + r.timestamp;
           updates[rid] = r;
         });
-        if (Object.keys(updates).length > 0) {
-          await window.FB.update(window.FB.ref(window.FB.db, 'results'), updates);
-        }
+        if (Object.keys(updates).length > 0) await window.FB.update(window.FB.ref(window.FB.db, 'results'), updates);
       }
     } catch (e) { console.warn('Не сохранилось в общий список:', e); }
   } catch (e) { alert('Ошибка: ' + e.message); }
 }
 
 /* ==================================================================
-   УЧЕНИК: ВВОД КОДА
+   УЧЕНИК
    ================================================================== */
 function renderStudentEnterCode() {
   clearAllUnsubs();
@@ -2802,9 +2803,6 @@ function renderStudentEnterCode() {
   };
 }
 
-/* ==================================================================
-   УЧЕНИК: СИНХРОННАЯ СЕССИЯ
-   ================================================================== */
 async function renderStudentSession() {
   clearAllUnsubs();
   document.body.className = 'theme-student';
@@ -2839,6 +2837,7 @@ async function renderStudentSession() {
       return;
     }
 
+    const maxScore = getMaxScore(test);
     const classInfo = s.classId ? `<p class="student-sub" style="color:#7c3aed;">Класс: <b>${escapeHtml(s.className || '')}</b></p>` : '';
     app.innerHTML = `
       <div class="student-wrap" style="margin-top:20px;">
@@ -2858,7 +2857,7 @@ async function renderStudentSession() {
           <div class="student-facts">
             <div class="student-fact">📚 ${test.questions.length} вопросов</div>
             <div class="student-fact">⏱ ${test.timePerQuestion || TIME_PER_QUESTION} сек</div>
-            <div class="student-fact">👥 Все отвечают одновременно</div>
+            <div class="student-fact">🎯 макс ${formatScore(maxScore)} баллов</div>
           </div>
         </div>
       </div>`;
@@ -3056,7 +3055,7 @@ function renderStudentSyncView(s, code) {
           ${studentsArr.slice(0, 10).map((st, i) => `<div class="lb-item ${st.id === syncState.studentId ? 'me' : ''}">
             <div class="lb-rank ${medal(i)}">${i + 1}</div>
             <div class="lb-name">${escapeHtml(st.studentName || '—')}</div>
-            <div class="lb-score">${st.score || 0}</div>
+            <div class="lb-score">${formatScore(st.score || 0)}</div>
           </div>`).join('')}
         </div>
         <div class="waiting-dots"><span></span><span></span><span></span></div>
@@ -3066,12 +3065,15 @@ function renderStudentSyncView(s, code) {
 
   if (phase === 'finished') {
     const myRec = (s.students || {})[syncState.studentId] || {};
+    const maxScore = getMaxScore(test);
+    const score = myRec.score || 0;
     sss.innerHTML = topbar + `
       <div class="sss-hero">
         <div style="font-size:72px;margin-bottom:8px;">🏁</div>
         <h2 style="color:var(--violet);margin:0 0 8px;">Тест завершён!</h2>
-        <div class="score">${myRec.score || 0} / 100</div>
-        <p style="color:#475569;font-weight:700;">${interpret(myRec.score || 0)}</p>
+        <div class="score">${formatScore(score)}</div>
+        <p style="color:#94a3b8;font-weight:700;font-size:14px;">из ${formatScore(maxScore)} возможных</p>
+        <p style="color:#475569;font-weight:700;margin-top:8px;">${interpretScore(score, maxScore)}</p>
         <div style="display:flex;justify-content:center;gap:24px;margin-top:18px;padding-top:18px;border-top:2px solid #f1f5f9;">
           <div style="text-align:center;">
             <div class="ok" style="font-size:26px;font-weight:900;">${myRec.correctCount || 0}</div>
@@ -3082,7 +3084,14 @@ function renderStudentSyncView(s, code) {
             <div style="font-size:11px;color:#94a3b8;font-weight:700;text-transform:uppercase;">Неверных</div>
           </div>
         </div>
+        <button id="goHomeBtn" class="btn-start" style="margin-top:22px;">🏠 На главную</button>
+        <p style="text-align:center;margin-top:14px;color:#94a3b8;font-weight:600;font-size:13px;">Можете закрыть вкладку или вернуться и ввести другой код</p>
       </div>`;
+    onClick('goHomeBtn', () => {
+      if (syncTimerInterval) { clearInterval(syncTimerInterval); syncTimerInterval = null; }
+      disableAntiCheat();
+      location.href = '?mode=student';
+    });
     return;
   }
 }
@@ -3095,19 +3104,18 @@ async function submitSyncAnswer(code, idx, oi, questionStartedAt, timeTotal) {
   const timeSpentMs = questionStartedAt ? (Date.now() - questionStartedAt) : 0;
   const timeLeftSec = Math.max(0, timeTotal - timeSpentMs / 1000);
 
-  const base = TOTAL_POINTS / test.questions.length;
+  const base = BASE_POINTS_PER_QUESTION;
   const bonusPct = (test.speedBonusPct != null) ? test.speedBonusPct : DEFAULT_SPEED_BONUS;
   const speedRatio = timeTotal > 0 ? Math.max(0, Math.min(1, timeLeftSec / timeTotal)) : 0;
-  const speedBonus = isCorrect ? base * (bonusPct / 100) * speedRatio : 0;
-  const points = isCorrect ? Math.round(base + speedBonus) : 0;
-  const bonusOnly = Math.round(speedBonus);
+  const speedBonus = isCorrect ? round1(base * (bonusPct / 100) * speedRatio) : 0;
+  const points = isCorrect ? round1(base + speedBonus) : 0;
 
   if (isCorrect) syncState.currentStreak = (syncState.currentStreak || 0) + 1;
   else syncState.currentStreak = 0;
   const newMaxStreak = Math.max(syncState.maxStreak || 0, syncState.currentStreak || 0);
 
   const newCorrectCount = (syncState.correctCount || 0) + (isCorrect ? 1 : 0);
-  const newScore = Math.min(100, (syncState.score || 0) + points);
+  const newScore = round1((syncState.score || 0) + points);
 
   const answerRecord = {
     selected: oi,
@@ -3117,8 +3125,8 @@ async function submitSyncAnswer(code, idx, oi, questionStartedAt, timeTotal) {
     correctText: q.options[q.correct],
     image: q.image || '',
     points,
-    basePoints: Math.round(base),
-    speedBonus: bonusOnly,
+    basePoints: base,
+    speedBonus: speedBonus,
     timeSpentMs,
     answeredAt: Date.now()
   };
@@ -3139,7 +3147,7 @@ async function submitSyncAnswer(code, idx, oi, questionStartedAt, timeTotal) {
 }
 
 /* ==================================================================
-   MODAL HELPER
+   MODAL
    ================================================================== */
 function openModal(innerHTML, maxWidth, wide) {
   const el = document.createElement('div');
