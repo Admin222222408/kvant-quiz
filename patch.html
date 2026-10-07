@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Патчер логотипа kvant-quiz</title>
+<style>
+  body { font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; max-width: 640px;
+         margin: 40px auto; padding: 24px; color: #1e1b4b;
+         background: linear-gradient(135deg, #f5f3ff, #ede9fe); min-height: 100vh; }
+  h1 { font-size: 22px; }
+  .card { background: #fff; border-radius: 18px; padding: 26px;
+          box-shadow: 0 6px 24px rgba(124,58,237,0.12); }
+  ol { padding-left: 22px; line-height: 1.7; }
+  code { background: #f1f5f9; color: #b91c1c; padding: 2px 8px;
+         border-radius: 6px; font-size: 13px; }
+  label { display: block; margin: 20px 0 12px; font-weight: 700; font-size: 14px; }
+  input[type=file] { padding: 14px; border: 2px dashed #c4b5fd; border-radius: 12px;
+                     width: 100%; box-sizing: border-box; cursor: pointer; background: #faf5ff; }
+  #status { margin-top: 16px; padding: 14px 18px; border-radius: 12px;
+            font-weight: 700; display: none; }
+  #status.ok { display: block; background: #f0fdf4; color: #166534;
+               border-left: 4px solid #10b981; }
+  #status.err { display: block; background: #fef2f2; color: #991b1b;
+                border-left: 4px solid #ef4444; }
+  #status.load { display: block; background: #eff6ff; color: #1e40af;
+                 border-left: 4px solid #3b82f6; }
+  .note { font-size: 13px; color: #64748b; margin-top: 18px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>🧩 Патчер логотипа</h1>
+    <p>Заменяет старый SVG-логотип <code>KVANT_EMBLEM_SVG</code>
+       на новый логотип Кванториума (картинка с ImgBB).</p>
+
+    <ol>
+      <li>Выбери свой <code>index.html</code> ниже</li>
+      <li>Дождись зелёной галочки</li>
+      <li>Скачается исправленный <code>index.html</code> — просто замени свой</li>
+    </ol>
+
+    <label>📁 Выбери index.html</label>
+    <input type="file" id="fileIn" accept=".html,text/html">
+
+    <div id="status"></div>
+
+    <p class="note">Если в файле нет строки <code>const KVANT_EMBLEM_SVG = ...</code> —
+       патчер скажет об этом. Тогда пришли файл, разберёмся отдельно.</p>
+  </div>
+
+<script>
+const NEW_LINE =
+  'const KVANT_EMBLEM_SVG = `<img src="https://i.ibb.co/HWKj49M/image.png" ' +
+  'alt="Кванториум" style="width:96px;height:96px;object-fit:contain;display:block;">`;';
+
+document.getElementById('fileIn').onchange = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const status = document.getElementById('status');
+
+  status.className = 'load';
+  status.textContent = '⏳ Читаю файл…';
+
+  let text;
+  try {
+    text = await file.text();
+  } catch (err) {
+    status.className = 'err';
+    status.textContent = '❌ Не смог прочитать файл: ' + err.message;
+    return;
+  }
+
+  const re = /const KVANT_EMBLEM_SVG = `[\s\S]*?`;/;
+
+  if (!re.test(text)) {
+    status.className = 'err';
+    status.textContent = '❌ В файле нет строки const KVANT_EMBLEM_SVG. Это точно тот index.html?';
+    return;
+  }
+
+  const out = text.replace(re, NEW_LINE);
+
+  const blob = new Blob([out], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'index.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  status.className = 'ok';
+  status.textContent = '✅ Готово! Файл скачан — замени свой index.html и открой в браузере.';
+};
+</script>
+</body>
+</html>
