@@ -10,11 +10,16 @@
 <link rel="dns-prefetch" href="https://firebaseapp.com">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&display=swap"></noscript>
+
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js">
 
 <script type="module">
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, set, push, onValue, update, remove, get, child, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, set, push, onValue, update, remove, get, child, serverTimestamp, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -31,12 +36,20 @@ const fbApp = initializeApp(firebaseConfig);
 const db = getDatabase(fbApp);
 const auth = getAuth(fbApp);
 
-const _existingSec = getApps().find(a => a.name === 'secondary');
-const secondaryApp = _existingSec || initializeApp(firebaseConfig, 'secondary');
-const secondaryAuth = getAuth(secondaryApp);
-
-window.FB = { db, auth, secondaryAuth, ref, set, push, onValue, update, remove, get, child, serverTimestamp,
+window.FB = { db, auth, ref, set, push, onValue, update, remove, get, child, serverTimestamp, query, orderByChild, equalTo,
   signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail, ready: false };
+
+// Вторая auth нужна только разработчику при создании учителя — создаём её по требованию
+let _secondaryAuth = null;
+Object.defineProperty(window.FB, 'secondaryAuth', {
+  get() {
+    if (!_secondaryAuth) {
+      const app = getApps().find(a => a.name === 'secondary') || initializeApp(firebaseConfig, 'secondary');
+      _secondaryAuth = getAuth(app);
+    }
+    return _secondaryAuth;
+  }
+});
 
 onAuthStateChanged(auth, () => {
   if (!window.FB.ready) {
@@ -192,8 +205,8 @@ onAuthStateChanged(auth, () => {
   @media (max-width: 700px) { .orbit-group { --k: 0.55; } }
   @media (prefers-reduced-motion: reduce) { .orbit, .orbit-core { animation: none; } }
 
-  .join-card { max-width: 440px; padding: 34px 30px 28px; border-radius: 26px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
-    box-shadow: 0 30px 80px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+  .join-card { max-width: 440px; padding: 34px 30px 28px; border-radius: 26px; background: rgba(16,20,50,0.62); border: 1px solid rgba(255,255,255,0.14);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08); }
   .join-logo { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #c4b5fd; margin-bottom: 16px; }
   .join-logo::before { content: ''; width: 10px; height: 10px; border-radius: 50%; background: #22d3ee; box-shadow: 0 0 12px 3px rgba(34,211,238,0.8); }
   .join-title { font-size: 30px; letter-spacing: -0.02em; margin: 0 0 8px;
@@ -219,60 +232,57 @@ onAuthStateChanged(auth, () => {
   .join-foot { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; z-index: 1; font-size: 12px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(199,210,254,0.55); pointer-events: none; }
   @media (max-width: 700px) { .join-foot { font-size: 10px; letter-spacing: 0.14em; } }
 
-  /* ===== ФОН КАБИНЕТОВ: тематический гекс-паттерн + эмблема Кванториума + свечения ===== */
+  /* ===== ФОН КАБИНЕТОВ: гекс-паттерн + эмблема + свечения (анимация только через transform) ===== */
   body.theme-developer { --c1: 99,102,241; --c2: 14,165,233; --c3: 45,212,191; --c4: 167,139,250; --hex: 99,102,241; }
   body.theme-teacher   { --c1: 28,78,156; --c2: 200,30,30; --c3: 46,154,61; --c4: 240,123,30; --hex: 28,78,156; }
 
   body.theme-developer::before, body.theme-teacher::before {
     content: ''; position: fixed; inset: 0; z-index: -2; pointer-events: none;
     background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cg fill='none' stroke='%231c4e9c' stroke-opacity='0.09' stroke-width='14' stroke-linecap='round'%3E%3Cpath d='M 46 100 A 54 54 0 0 1 100 46'/%3E%3Cpath d='M 100 46 A 54 54 0 0 1 154 100'/%3E%3Cpath d='M 154 100 A 54 54 0 0 1 100 154'/%3E%3Cpath d='M 100 154 A 54 54 0 0 1 46 100'/%3E%3C/g%3E%3Cg stroke='%231c4e9c' stroke-opacity='0.09' stroke-width='4'%3E%3Cline x1='100' y1='100' x2='62' y2='62'/%3E%3Cline x1='100' y1='100' x2='138' y2='62'/%3E%3Cline x1='100' y1='100' x2='62' y2='138'/%3E%3Cline x1='100' y1='100' x2='138' y2='138'/%3E%3C/g%3E%3Ccircle cx='100' cy='100' r='26' fill='%231c4e9c' fill-opacity='0.09'/%3E%3Ccircle cx='100' cy='100' r='12' fill='%23ffffff'/%3E%3C/svg%3E"),
       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100' viewBox='0 0 56 100'%3E%3Cpath d='M28 66L0 50L0 16L28 0L56 16L56 50L28 66L28 100' fill='none' stroke='%237c3aed' stroke-opacity='0.14' stroke-width='1.4'/%3E%3Cpath d='M28 0L28 34L0 50L0 84L28 100L56 84L56 50L28 34' fill='none' stroke='%237c3aed' stroke-opacity='0.14' stroke-width='1.4'/%3E%3C/svg%3E"),
       linear-gradient(160deg, #f8f8fe 0%, #f1f2fb 100%);
-    background-size: 56px 100px, auto;
-    background-position: 0 0, 0 0;
+    background-size: 620px 620px, 56px 100px, auto;
+    background-position: 50% 50%, 0 0, 0 0;
+    background-repeat: no-repeat, repeat, repeat;
   }
-
-  /* Водяной знак — эмблема Кванториума */
   body.theme-developer::after, body.theme-teacher::after {
-    content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    content: ''; position: fixed; inset: -18%; z-index: -1; pointer-events: none;
+    background-repeat: no-repeat;
+    background-size: 42.6% 51.5%, 45.6% 45.6%, 38.2% 44.1%, 35.3% 47.1%;
     background-image:
       radial-gradient(closest-side, rgba(var(--c1), 0.42), transparent),
       radial-gradient(closest-side, rgba(var(--c2), 0.34), transparent),
       radial-gradient(closest-side, rgba(var(--c3), 0.32), transparent),
-      radial-gradient(closest-side, rgba(var(--c4), 0.32), transparent),
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cg fill='none' stroke='%231c4e9c' stroke-opacity='0.09' stroke-width='14' stroke-linecap='round'%3E%3Cpath d='M 46 100 A 54 54 0 0 1 100 46'/%3E%3Cpath d='M 100 46 A 54 54 0 0 1 154 100'/%3E%3Cpath d='M 154 100 A 54 54 0 0 1 100 154'/%3E%3Cpath d='M 100 154 A 54 54 0 0 1 46 100'/%3E%3C/g%3E%3Cg stroke='%231c4e9c' stroke-opacity='0.09' stroke-width='4'%3E%3Cline x1='100' y1='100' x2='62' y2='62'/%3E%3Cline x1='100' y1='100' x2='138' y2='62'/%3E%3Cline x1='100' y1='100' x2='62' y2='138'/%3E%3Cline x1='100' y1='100' x2='138' y2='138'/%3E%3C/g%3E%3Ccircle cx='100' cy='100' r='26' fill='%231c4e9c' fill-opacity='0.09'/%3E%3Ccircle cx='100' cy='100' r='12' fill='%23ffffff'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-size: 58% 70%, 62% 62%, 52% 60%, 48% 64%, 620px 620px;
-    background-position: 0% 0%, 100% 10%, 15% 100%, 95% 95%, 50% 50%;
-    animation: auroraShift 30s ease-in-out infinite alternate;
+      radial-gradient(closest-side, rgba(var(--c4), 0.32), transparent);
+    background-position: 23.1% 27.3%, 75.7% 29.5%, 30.0% 76.3%, 76.6% 72.5%;
+    will-change: transform;
+    animation: glowSwirl 30s ease-in-out infinite alternate;
   }
-  @keyframes auroraShift {
-    0%   { background-position: 0% 0%, 100% 10%, 15% 100%, 95% 95%, 50% 50%; }
-    50%  { background-position: 22% 28%, 78% 34%, 38% 72%, 72% 62%, 50% 50%; }
-    100% { background-position: 8% 45%, 90% 55%, 60% 90%, 40% 40%, 50% 50%; }
+  @keyframes glowSwirl {
+    from { transform: rotate(0deg) scale(1); }
+    to   { transform: rotate(8deg) scale(1.08); }
   }
   @media (prefers-reduced-motion: reduce) { body.theme-developer::after, body.theme-teacher::after { animation: none; } }
+  /* вкладка скрыта — не крутим анимации впустую */
+  html.tab-hidden *, html.tab-hidden *::before, html.tab-hidden *::after { animation-play-state: paused !important; }
   @media print { body.theme-developer::before, body.theme-developer::after, body.theme-teacher::before, body.theme-teacher::after { display: none; } }
 
   /* ===== ЭКРАНЫ УЧЕНИКА (регистрация, тест): тёмная «квантовая» тема ===== */
   body.theme-student { background: transparent; }
   body.theme-student::before { content: ''; position: fixed; inset: 0; z-index: -2; pointer-events: none;
     background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100' viewBox='0 0 56 100'%3E%3Cpath d='M28 66L0 50L0 16L28 0L56 16L56 50L28 66L28 100' fill='none' stroke='%23a5b4fc' stroke-opacity='0.07' stroke-width='1.2'/%3E%3Cpath d='M28 0L28 34L0 50L0 84L28 100L56 84L56 50L28 34' fill='none' stroke='%23a5b4fc' stroke-opacity='0.07' stroke-width='1.2'/%3E%3C/svg%3E") 0 0 / 56px 100px, linear-gradient(160deg, #0a0e22 0%, #111634 55%, #0d1b2e 100%); }
-  body.theme-student::after { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  body.theme-student::after { content: ''; position: fixed; inset: -18%; z-index: -1; pointer-events: none;
     background-repeat: no-repeat;
-    background-size: 62% 75%, 58% 65%, 50% 60%, 46% 62%;
+    background-size: 45.6% 55.1%, 42.6% 47.8%, 36.8% 44.1%, 33.8% 45.6%;
     background-image:
       radial-gradient(closest-side, rgba(124,58,237,0.50), transparent),
       radial-gradient(closest-side, rgba(34,211,238,0.30), transparent),
       radial-gradient(closest-side, rgba(99,102,241,0.34), transparent),
       radial-gradient(closest-side, rgba(236,72,153,0.20), transparent);
-    background-position: 0% 0%, 100% 100%, 90% 5%, 8% 95%;
-    animation: studentGlow 26s ease-in-out infinite alternate; }
-  @keyframes studentGlow {
-    0%   { background-position: 0% 0%, 100% 100%, 90% 5%, 8% 95%; }
-    50%  { background-position: 14% 20%, 84% 82%, 72% 22%, 24% 78%; }
-    100% { background-position: 6% 34%, 92% 66%, 80% 38%, 16% 62%; }
-  }
+    background-position: 24.3% 29.5%, 76.9% 74.6%, 73.3% 26.3%, 24.8% 73.1%;
+    will-change: transform;
+    animation: glowSwirl 26s ease-in-out infinite alternate; }
   @media (prefers-reduced-motion: reduce) { body.theme-student::after { animation: none; } }
 
   .student-wrap { max-width: 720px; margin: 0 auto; }
@@ -420,20 +430,15 @@ onAuthStateChanged(auth, () => {
     mask-image: radial-gradient(ellipse at center, #000 30%, transparent 78%);
   }
   .dev-art::after {
-    content: '';
-    position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    content: ''; position: absolute; inset: -18%; z-index: 0; pointer-events: none;
     background-repeat: no-repeat;
-    background-size: 60% 65%, 55% 60%;
+    background-size: 44.1% 47.8%, 40.4% 44.1%;
     background-image:
       radial-gradient(closest-side, rgba(124,58,237,0.45), transparent),
       radial-gradient(closest-side, rgba(34,211,238,0.35), transparent);
-    background-position: 15% 25%, 85% 75%;
-    animation: devGlow 18s ease-in-out infinite alternate;
-  }
-  @keyframes devGlow {
-    0%   { background-position: 15% 25%, 85% 75%; }
-    50%  { background-position: 28% 48%, 72% 52%; }
-    100% { background-position: 10% 55%, 90% 40%; }
+    background-position: 31.6% 37.7%, 69.4% 63.2%;
+    will-change: transform;
+    animation: glowSwirl 18s ease-in-out infinite alternate;
   }
   .dev-scene {
     position: relative;
@@ -558,21 +563,16 @@ onAuthStateChanged(auth, () => {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100' viewBox='0 0 56 100'%3E%3Cpath d='M28 66L0 50L0 16L28 0L56 16L56 50L28 66L28 100' fill='none' stroke='%231c4e9c' stroke-opacity='0.14' stroke-width='1.4'/%3E%3Cpath d='M28 0L28 34L0 50L0 84L28 100L56 84L56 50L28 34' fill='none' stroke='%231c4e9c' stroke-opacity='0.14' stroke-width='1.4'/%3E%3C/svg%3E") 0 0 / 56px 100px;
   }
   .auth-art::after {
-    content: '';
-    position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    content: ''; position: absolute; inset: -18%; z-index: 0; pointer-events: none;
     background-repeat: no-repeat;
-    background-size: 60% 70%, 55% 65%, 50% 60%;
+    background-size: 44.1% 51.5%, 40.4% 47.8%, 36.8% 44.1%;
     background-image:
       radial-gradient(closest-side, rgba(28,78,156,0.30), transparent),
       radial-gradient(closest-side, rgba(240,123,30,0.20), transparent),
       radial-gradient(closest-side, rgba(200,30,30,0.18), transparent);
-    background-position: 0% 0%, 100% 100%, 50% 45%;
-    animation: authGlow 24s ease-in-out infinite alternate;
-  }
-  @keyframes authGlow {
-    0%   { background-position: 0% 0%, 100% 100%, 50% 45%; }
-    50%  { background-position: 18% 28%, 82% 72%, 40% 55%; }
-    100% { background-position: 5% 50%, 95% 45%, 60% 40%; }
+    background-position: 23.7% 27.3%, 77.8% 74.6%, 50.0% 47.4%;
+    will-change: transform;
+    animation: glowSwirl 24s ease-in-out infinite alternate;
   }
   .art-scene {
     position: relative;
@@ -816,6 +816,20 @@ let testsCache = {};
 let classesCache = {};
 let directionsCache = {};
 let activeUnsubs = [];
+// Не чаще раза в ms: первый вызов сразу, последующие склеиваются в один (с последними данными)
+function leadThrottle(fn, ms) {
+  let last = -Infinity, timer = null, lastArgs;
+  return function (...a) {
+    lastArgs = a;
+    const wait = ms - (performance.now() - last);
+    if (wait <= 0) { last = performance.now(); fn(...lastArgs); }
+    else if (!timer) {
+      timer = setTimeout(() => { timer = null; last = performance.now(); try { fn(...lastArgs); } catch (e) { console.warn(e); } }, wait);
+    }
+  };
+}
+function fbReadyP() { return new Promise(r => fbReady(r)); }
+document.addEventListener('visibilitychange', () => document.documentElement.classList.toggle('tab-hidden', document.hidden));
 function trackUnsub(fn) { if (typeof fn === 'function') activeUnsubs.push(fn); }
 function clearAllUnsubs() { activeUnsubs.forEach(fn => { try { fn(); } catch (e) {} }); activeUnsubs = []; }
 let antiCheatActive = false, antiCheatRef = null;
@@ -1527,11 +1541,10 @@ function renderAuth(expectedRole) {
     let lastMove = -1e9;
     let mouseOverPass = false;
 
+    // getBoundingClientRect на каждый mousemove вызывал пересчёт разметки — теперь только запоминаем координаты
     const onMove = e => {
       mouseX = e.clientX; mouseY = e.clientY;
       lastMove = performance.now();
-      const r = passInput.getBoundingClientRect();
-      mouseOverPass = mouseX >= r.left && mouseX <= r.right && mouseY >= r.top && mouseY <= r.bottom;
     };
     addEventListener('mousemove', onMove, { passive: true });
 
@@ -1541,7 +1554,13 @@ function renderAuth(expectedRole) {
 
     function frame(t) {
       if (!artEl.isConnected) { removeEventListener('mousemove', onMove); return; }
+      requestAnimationFrame(frame);
+      if (document.hidden) return;
+
+      // ---- 1) ЧТЕНИЕ разметки (одним пакетом, до любых записей стилей) ----
       const sr = scene.getBoundingClientRect();
+      const pr = passInput.getBoundingClientRect();
+      mouseOverPass = mouseX >= pr.left && mouseX <= pr.right && mouseY >= pr.top && mouseY <= pr.bottom;
       const scx = sr.left + sr.width / 2;
       const scy = sr.top + sr.height / 2;
       const away = document.activeElement === passInput || mouseOverPass;
@@ -1550,6 +1569,16 @@ function renderAuth(expectedRole) {
       const idleCycle = idleMs > 3000 ? Math.floor((idleMs - 3000) / 4500) % 2 : -1;
       const huddle = !sadLock && (currentState === 'password' || (!away && idleCycle === 0));
 
+      const bodyRects = huddle ? chars.map(c => c.body.getBoundingClientRect()) : null;
+      for (const c of chars) {
+        if (!c.ed) c.ed = c.eyes.map(eye => {
+          const pupil = eye.querySelector('.pupil');
+          return { pupil, max: pupil.classList.contains('dot') ? 2.6 : 4, eye, r: null, last: '' };
+        });
+        if (!sadLock) for (const d of c.ed) d.r = d.eye.getBoundingClientRect();
+      }
+
+      // ---- 2) РАСЧЁТ и ЗАПИСЬ ----
       let tx = mouseX, ty = mouseY;
       if (!away && idleCycle === 1) {
         tx = scx + Math.sin(t / 1500) * 300;
@@ -1571,7 +1600,7 @@ function renderAuth(expectedRole) {
           wantSkew = HUDDLE_SKEW[ci] * sway;
           wantFx   = HUDDLE_FX[ci] * sway;
           wantFy   = 2;
-          const nb = chars[HUDDLE_NB[ci]].body.getBoundingClientRect();
+          const nb = bodyRects[HUDDLE_NB[ci]];
           gx = nb.left + nb.width / 2;
           gy = nb.top + nb.height * 0.3;
         }
@@ -1583,8 +1612,10 @@ function renderAuth(expectedRole) {
         c.jv -= 0.7;
         if (c.jump < 0) { c.jump = 0; c.jv = 0; }
 
-        c.body.style.transform = 'translateY(' + (-c.jump).toFixed(2) + 'px) skewX(' + c.skew.toFixed(2) + 'deg)';
-        c.face.style.transform = 'translate(' + c.fx.toFixed(2) + 'px,' + c.fy.toFixed(2) + 'px)';
+        const bt = 'translateY(' + (-c.jump).toFixed(2) + 'px) skewX(' + c.skew.toFixed(2) + 'deg)';
+        if (bt !== c.bt) { c.bt = bt; c.body.style.transform = bt; }
+        const ft = 'translate(' + c.fx.toFixed(2) + 'px,' + c.fy.toFixed(2) + 'px)';
+        if (ft !== c.ft) { c.ft = ft; c.face.style.transform = ft; }
 
         let blink = 1;
         if (!c.blinking && t > c.nextBlink) { c.blinking = true; c.bStart = t; }
@@ -1593,16 +1624,16 @@ function renderAuth(expectedRole) {
           blink = p < 0.5 ? 1 - p * 2 * 0.9 : 0.1 + (p - 0.5) * 2 * 0.9;
           if (p >= 1) { blink = 1; c.blinking = false; c.nextBlink = t + 1500 + Math.random() * 3500; }
         }
-        for (const b of c.blinkEls) b.style.transform = 'scaleY(' + blink.toFixed(2) + ')';
+        const bl = 'scaleY(' + blink.toFixed(2) + ')';
+        if (bl !== c.bl) { c.bl = bl; for (const b of c.blinkEls) b.style.transform = bl; }
 
-        for (const eye of c.eyes) {
-          const pupil = eye.querySelector('.pupil');
-          const max = pupil.classList.contains('dot') ? 2.6 : 4;
+        for (const d of c.ed) {
+          const max = d.max;
           let ox, oy;
           if (sadLock) {
             ox = 0; oy = max * 0.75;
           } else {
-            const r = eye.getBoundingClientRect();
+            const r = d.r;
             const dx = gx - (r.left + r.width / 2);
             const dy = gy - (r.top + r.height / 2);
             const dist = Math.hypot(dx, dy) || 1;
@@ -1616,10 +1647,10 @@ function renderAuth(expectedRole) {
               ox = ux * k; oy = uy * k;
             }
           }
-          pupil.style.transform = 'translate(' + clamp(ox, -max, max).toFixed(2) + 'px,' + clamp(oy, -max, max).toFixed(2) + 'px)';
+          const pt = 'translate(' + clamp(ox, -max, max).toFixed(2) + 'px,' + clamp(oy, -max, max).toFixed(2) + 'px)';
+          if (pt !== d.last) { d.last = pt; d.pupil.style.transform = pt; }
         }
       }
-      requestAnimationFrame(frame);
     }
     if (!isMobile) requestAnimationFrame(frame);
 
@@ -2843,13 +2874,13 @@ function parseCSVQuestions(text) {
 function subscribeAllSessions() {
   const el = document.getElementById('allSessionsArea');
   if (!el) return;
-  trackUnsub(window.FB.onValue(window.FB.ref(window.FB.db, 'sessions'), (snapshot) => {
+  trackUnsub(window.FB.onValue(window.FB.ref(window.FB.db, 'sessions'), leadThrottle((snapshot) => {
     const data = snapshot.val() || {};
     const list = Object.entries(data).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
     if (list.length === 0) { el.innerHTML = `<p class="hint">Пока нет сессий.</p>`; return; }
     el.innerHTML = list.map(([code, s]) => sessionRowHTML(code, s, s.teacherName || s.teacherEmail || '')).join('');
     bindSessionActions(el);
-  }));
+  }, 250)));
 }
 function sessionRowHTML(code, s, teacherLabel) {
   const students = Object.keys(s.students || {}).length;
@@ -2903,11 +2934,11 @@ function bindSessionActions(el) {
 function subscribeAllResults() {
   const el = document.getElementById('allResultsArea');
   if (!el) return;
-  trackUnsub(window.FB.onValue(window.FB.ref(window.FB.db, 'results'), (snapshot) => {
+  trackUnsub(window.FB.onValue(window.FB.ref(window.FB.db, 'results'), leadThrottle((snapshot) => {
     const data = snapshot.val() || {};
     allResultsCache = Object.values(data).sort((a, b) => b.timestamp - a.timestamp);
     renderResultsWithFilter();
-  }));
+  }, 400)));
 }
 function renderResultsWithFilter() {
   const el = document.getElementById('allResultsArea');
@@ -3123,13 +3154,14 @@ async function createSession() {
 function subscribeTeacherSessions() {
   const el = document.getElementById('sessionsList');
   if (!el) return;
-  trackUnsub(window.FB.onValue(window.FB.ref(window.FB.db, 'sessions'), (snapshot) => {
+  const mineQuery = window.FB.query(window.FB.ref(window.FB.db, 'sessions'), window.FB.orderByChild('teacherId'), window.FB.equalTo(currentUser.uid));
+  trackUnsub(window.FB.onValue(mineQuery, leadThrottle((snapshot) => {
     const data = snapshot.val() || {};
     const mine = Object.entries(data).filter(([_, s]) => s && s.teacherId === currentUser.uid).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
     if (mine.length === 0) { el.innerHTML = `<p class="hint">Пока нет сессий.</p>`; return; }
     el.innerHTML = mine.map(([code, s]) => sessionRowHTML(code, s, '')).join('');
     bindSessionActions(el);
-  }));
+  }, 250)));
 }
 
 /* ==================================================================
@@ -3368,12 +3400,12 @@ async function exportSessionFull(code, test) {
 }
 
 function subscribeTeacherSessionLive(code, test) {
-  trackUnsub(window.FB.onValue(window.FB.ref(window.FB.db, `sessions/${code}`), (snapshot) => {
+  trackUnsub(window.FB.onValue(window.FB.ref(window.FB.db, `sessions/${code}`), leadThrottle((snapshot) => {
     const s = snapshot.val();
     if (!s) return;
     renderTeacherPanel(s, test, code);
     renderTeacherStudentsList(s, test);
-  }));
+  }, 200)));
   if (test) startAutoAdvance(code, test);
 }
 
@@ -3723,6 +3755,7 @@ function renderStudentEnterCode() {
     errBox.innerHTML = '';
     if (!/^\d{6}$/.test(code)) { errBox.innerHTML = `<div class="join-error">Код из 6 цифр</div>`; return; }
     try {
+      await fbReadyP();
       const snap = await window.FB.get(window.FB.ref(window.FB.db, `sessions/${code}`));
       const s = snap.val();
       if (!s) { errBox.innerHTML = `<div class="join-error">Сессия «${code}» не найдена</div>`; return; }
@@ -3896,6 +3929,7 @@ async function joinSession(code, test, sessionData) {
 }
 
 function subscribeStudentSession(code) {
+  let lastSig = null;
   trackUnsub(window.FB.onValue(window.FB.ref(window.FB.db, `sessions/${code}`), (snap) => {
     const s = snap.val();
     if (!s) return;
@@ -3907,6 +3941,16 @@ function subscribeStudentSession(code) {
     syncState.maxStreak = myRec.maxStreak || 0;
     syncState.status = myRec.status;
     syncState.currentQuestion = myRec.currentQuestion || 0;
+
+    // Экран зависит только от режима, фазы, вопроса и своей записи; чужие ответы — только на лидерборде/итоге.
+    // Раньше каждый чужой ответ пересобирал экран у всех (мигание, перезапуск таймера, повторная загрузка картинок).
+    let sig = [s.mode, s.phase, s.currentQuestion, myRec.status, myRec.currentQuestion, myRec.score,
+               myRec.correctCount, myRec.maxStreak, JSON.stringify(myRec.answers || {})].join('|');
+    if (s.phase === 'leaderboard' || s.phase === 'finished' || myRec.status === 'finished') {
+      sig += '|' + Object.entries(s.students || {}).map(([id, v]) => id + ':' + (v.score || 0) + ':' + (v.studentName || '')).join(',');
+    }
+    if (sig === lastSig && document.getElementById('sss')) return;
+    lastSig = sig;
     renderStudentScreen(s, code);
   }));
 }
@@ -4358,7 +4402,9 @@ function boot() {
     renderStudentEnterCode();
   }
 }
-fbReady(boot);
+// Экран ввода кода ученика не требует Firebase — показываем сразу, без ожидания загрузки SDK
+const fastEntry = mode === 'student' ? !sessionCode : (mode !== 'developer' && mode !== 'teacher');
+if (fastEntry) renderStudentEnterCode(); else fbReady(boot);
 </script>
 </body>
 </html>
