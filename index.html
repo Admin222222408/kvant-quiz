@@ -3958,6 +3958,7 @@ function subscribeStudentSession(code) {
 function renderStudentScreen(s, code) {
   const test = syncState.test;
   if (!test) return;
+  if (((s.students || {})[syncState.studentId] || {}).status === 'terminated') return;
   const isIndividual = s.mode === 'individual';
 
   const root = document.getElementById('app');
@@ -4202,6 +4203,7 @@ function renderFinishedScreen(sss, topbar, test, myRec, code) {
 }
 
 async function submitAnswer(code, idx, oi, timeTotal, sessionMode) {
+  if (acTerminated || syncState.status === 'terminated') return;
   if (syncState.answersByQ[idx]) return;
   const test = syncState.test;
   const q = test.questions[idx];
