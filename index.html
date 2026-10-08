@@ -4011,7 +4011,7 @@ function renderStudentScreen(s, code) {
   const idx = typeof s.currentQuestion === 'number' ? s.currentQuestion : -1;
   const myAnswer = syncState.answersByQ[idx];
 
-  if (phase === 'lobby' || myRec.status === 'waiting') {
+  if (phase === 'lobby') {
     sss.innerHTML = topbar + `
       <div class="sss-hero">
         <div style="font-size:64px;margin-bottom:12px;">⏳</div>
