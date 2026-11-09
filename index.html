@@ -789,18 +789,70 @@ onAuthStateChanged(auth, () => {
   }
 
   /* 2. Снег (крупный, падающий) */
+  
+  /* === 🎄 НОВЫЙ ГОД v3 === */
+  
+  /* 1. Фоны для ВСЕХ ролей */
+  body.season-newyear { background: radial-gradient(circle at 50% 0%, #0f172a 0%, #064e3b 100%) !important; }
+  body.season-newyear.theme-student-entry, body.season-newyear.theme-student { background: transparent !important; }
+  body.season-newyear.theme-teacher { background-image: radial-gradient(circle at 50% 0%, #0f172a 0%, #064e3b 100%) !important; }
+  body.season-newyear.theme-developer { background-image: radial-gradient(circle at 50% 0%, #0f172a 0%, #064e3b 100%) !important; }
+  body.season-newyear .join-screen { background: transparent !important; }
+  body.season-newyear.theme-teacher::before, body.season-newyear.theme-developer::before { opacity: 0 !important; }
+  body.season-newyear.theme-teacher::after, body.season-newyear.theme-developer::after { opacity: 0 !important; }
+
+  /* 2. Плавный снег */
   body.season-newyear::after {
-    content: ''; position: fixed; inset: 0; z-index: 9998; pointer-events: none;
+    content: ''; position: fixed; top: 0; left: 0; width: 100vw; height: 150vh; z-index: 1; pointer-events: none;
     background-image:
-      radial-gradient(3px 3px at 20px 30px, #fff, transparent),
-      radial-gradient(4px 4px at 40px 70px, rgba(255,255,255,0.8), transparent),
+      radial-gradient(2px 2px at 20px 30px, #fff, transparent),
+      radial-gradient(3px 3px at 40px 70px, rgba(255,255,255,0.8), transparent),
       radial-gradient(2px 2px at 90px 40px, #fff, transparent),
       radial-gradient(3px 3px at 130px 80px, rgba(255,255,255,0.9), transparent),
-      radial-gradient(5px 5px at 160px 120px, #fff, transparent);
+      radial-gradient(2px 2px at 160px 120px, #fff, transparent);
     background-size: 200px 200px;
-    animation: snowFall 10s linear infinite;
-    opacity: 0.85;
+    animation: snowFallSmooth 10s linear infinite;
   }
+  @keyframes snowFallSmooth { 0% { transform: translateY(0); } 100% { transform: translateY(200px); } }
+
+  /* 3. Ёлка и Снеговик */
+  .ny-decor { display: none; position: fixed; bottom: 0; z-index: 0; pointer-events: none; }
+  body.season-newyear .ny-decor { display: block; }
+  
+  .ny-tree { left: 5%; width: 300px; height: 400px; }
+  .ny-tree::before { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 40px; height: 60px; background: #451a03; border-radius: 4px 4px 0 0; }
+  .ny-tree::after { content: ''; position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 120px solid transparent; border-right: 120px solid transparent; border-bottom: 160px solid #065f46; filter: drop-shadow(0 -10px 20px rgba(16, 185, 129, 0.4)); }
+  .ny-tree-mid { position: absolute; bottom: 140px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 90px solid transparent; border-right: 90px solid transparent; border-bottom: 140px solid #047857; }
+  .ny-tree-top { position: absolute; bottom: 230px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 60px solid transparent; border-right: 60px solid transparent; border-bottom: 110px solid #059669; }
+  .ny-star { position: absolute; bottom: 340px; left: 50%; transform: translateX(-50%); width: 30px; height: 30px; background: #fbbf24; border-radius: 50%; box-shadow: 0 0 20px 10px rgba(251,191,36,0.6); animation: pulseStar 1.5s infinite alternate; }
+  @keyframes pulseStar { 0% { box-shadow: 0 0 15px 5px rgba(251,191,36,0.5); } 100% { box-shadow: 0 0 30px 15px rgba(251,191,36,0.9); } }
+  
+  .ny-ornament { position: absolute; border-radius: 50%; box-shadow: 0 0 10px currentColor; animation: twinkle 2s infinite alternate; }
+  @keyframes twinkle { 0% { opacity: 0.6; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1.1); } }
+  .ny-o1 { width: 14px; height: 14px; background: #ef4444; color: #ef4444; bottom: 70px; left: 80px; }
+  .ny-o2 { width: 12px; height: 12px; background: #fbbf24; color: #fbbf24; bottom: 110px; left: 140px; animation-delay: 0.5s; }
+  .ny-o3 { width: 16px; height: 16px; background: #3b82f6; color: #3b82f6; bottom: 160px; left: 200px; animation-delay: 1s; }
+  .ny-o4 { width: 10px; height: 10px; background: #ec4899; color: #ec4899; bottom: 200px; left: 110px; animation-delay: 0.2s; }
+  .ny-o5 { width: 12px; height: 12px; background: #fbbf24; color: #fbbf24; bottom: 250px; left: 160px; animation-delay: 0.8s; }
+
+  .ny-snowman { right: 5%; width: 150px; height: 250px; }
+  .ny-sm-bottom { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 100px; height: 100px; background: #fff; border-radius: 50%; box-shadow: inset -10px -10px 20px rgba(0,0,0,0.1); }
+  .ny-sm-mid { position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%); width: 70px; height: 70px; background: #fff; border-radius: 50%; box-shadow: inset -8px -8px 15px rgba(0,0,0,0.1); }
+  .ny-sm-top { position: absolute; bottom: 130px; left: 50%; transform: translateX(-50%); width: 50px; height: 50px; background: #fff; border-radius: 50%; }
+  .ny-sm-hat { position: absolute; bottom: 170px; left: 50%; transform: translateX(-50%); width: 44px; height: 8px; background: #111; border-radius: 2px; }
+  .ny-sm-hat-top { position: absolute; bottom: 178px; left: 50%; transform: translateX(-50%); width: 20px; height: 20px; background: #111; border-radius: 4px 4px 0 0; }
+  .ny-sm-eye1 { position: absolute; bottom: 155px; left: 42%; width: 6px; height: 6px; background: #111; border-radius: 50%; }
+  .ny-sm-eye2 { position: absolute; bottom: 155px; right: 42%; width: 6px; height: 6px; background: #111; border-radius: 50%; }
+  .ny-sm-nose { position: absolute; bottom: 145px; left: 50%; width: 16px; height: 16px; background: #f97316; border-radius: 50% 50% 50% 0; transform-origin: left; transform: translateX(-50%) rotate(45deg); }
+  .ny-sm-btn1 { position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%); width: 8px; height: 8px; background: #111; border-radius: 50%; }
+  .ny-sm-btn2 { position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%); width: 8px; height: 8px; background: #111; border-radius: 50%; }
+  
+  @media (max-width: 800px) {
+    .ny-decor { transform: scale(0.6); transform-origin: bottom; }
+    .ny-tree { left: -20px; }
+    .ny-snowman { right: -20px; }
+  }
+
   @keyframes snowFall {
     0% { background-position: 0px 0px, 0px 0px, 0px 0px, 0px 0px, 0px 0px; }
     100% { background-position: -50px 200px, -20px 200px, -70px 200px, -30px 200px, -80px 200px; }
@@ -951,6 +1003,31 @@ onAuthStateChanged(auth, () => {
 </style>
 </head>
 <body>
+
+<!-- 🎄 Новогодние украшения -->
+<div class="ny-decor ny-tree" aria-hidden="true">
+  <div class="ny-star"></div>
+  <div class="ny-tree-top"></div>
+  <div class="ny-tree-mid"></div>
+  <div class="ny-ornament ny-o1"></div>
+  <div class="ny-ornament ny-o2"></div>
+  <div class="ny-ornament ny-o3"></div>
+  <div class="ny-ornament ny-o4"></div>
+  <div class="ny-ornament ny-o5"></div>
+</div>
+<div class="ny-decor ny-snowman" aria-hidden="true">
+  <div class="ny-sm-bottom"></div>
+  <div class="ny-sm-mid"></div>
+  <div class="ny-sm-top"></div>
+  <div class="ny-sm-hat"></div>
+  <div class="ny-sm-hat-top"></div>
+  <div class="ny-sm-eye1"></div>
+  <div class="ny-sm-eye2"></div>
+  <div class="ny-sm-nose"></div>
+  <div class="ny-sm-btn1"></div>
+  <div class="ny-sm-btn2"></div>
+</div>
+
 <!-- 🎄 Новогодняя Ёлка (появляется только в сезон) -->
 <div class="ny-tree" aria-hidden="true">
   <div class="ny-star"></div>
@@ -1566,7 +1643,8 @@ function exportFlatSummary(results, title, filename) {
     return `<tr>
       <td class="c">${results.length - i}</td>
       <td>${escapeHtml(r.date)}</td><td>${escapeHtml(r.teacherName || r.teacherEmail || '')}</td>
-      <td>${escapeHtml(r.testTitle || '')}</td><td>${escapeHtml(r.studentName || '')}</td>
+      <td>${escapeHtml(r.testTitle || '')}</td>
+      <td>${escapeHtml(r.studentName || '')}${r.attemptNumber && r.attemptNumber > 1 ? ' (попытка ' + r.attemptNumber + ')' : ''}</td>
       <td class="c ok">${r.correct}</td><td class="c bad">${r.wrong}</td>
       <td class="c"><b>${formatScore(r.score)}</b></td>
       <td class="c" style="font-size:9pt;color:#666;">${formatScore(ms)}</td>
@@ -2906,7 +2984,8 @@ function openTestEditor(testId, testData) {
     timePerQuestion: initial.timePerQuestion || 20,
     basePoints: (testData && testData.basePoints != null) ? testData.basePoints : DEFAULT_BASE_POINTS,
     speedTiers: initialTiers,
-    antiCheatMode: initial.antiCheatMode || 'soft'
+    antiCheatMode: initial.antiCheatMode || 'soft',
+    maxAttempts: (testData && testData.maxAttempts != null) ? testData.maxAttempts : 1
   };
 
   const qList = m.$('#qList');
@@ -3009,6 +3088,12 @@ function openTestEditor(testId, testData) {
           <option value="soft" ${settings.antiCheatMode === 'soft' ? 'selected' : ''}>⚠️ Мягкий — 1 предупреждение, потом прерывание</option>
         </select>
       </div>
+      <div class="editor-settings-section">
+        <h4><span class="step-num">6</span> 🔁 Повторные прохождения</h4>
+        <label class="field-label">Сколько раз ученик может пройти тест</label>
+        <input type="number" id="setMaxAttempts" min="0" max="100" value="${settings.maxAttempts}">
+        <p class="hint" style="margin-top:-4px;">0 — безлимит. Учитель сможет изменить это при создании сессии.</p>
+      </div>
       <div class="editor-settings-section" style="background:#f5f3ff;border-color:#c4b5fd;">
         <div style="font-weight:800;color:var(--violet);margin-bottom:10px;">📊 Итог</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
@@ -3024,6 +3109,7 @@ function openTestEditor(testId, testData) {
     m.$('#setShortName').oninput = (e) => { settings.shortName = e.target.value; };
     m.$('#setIntro').oninput = (e) => { settings.intro = e.target.value; };
     m.$('#setAntiCheat').onchange = (e) => { settings.antiCheatMode = e.target.value; };
+    m.$('#setMaxAttempts').oninput = (e) => { settings.maxAttempts = parseInt(e.target.value, 10) || 0; };
     m.$('#setBasePoints').oninput = (e) => {
       const v = parseFloat(e.target.value);
       settings.basePoints = isNaN(v) ? 0 : Math.max(0, round1(v));
@@ -3211,6 +3297,7 @@ function openTestEditor(testId, testData) {
         .sort((a, b) => a.timeSec - b.timeSec),
       status: publish ? 'published' : 'draft',
       antiCheatMode: settings.antiCheatMode,
+      maxAttempts: parseInt(settings.maxAttempts, 10) || 0,
       questions: questions.map(q => ({ q: q.q, options: q.options, correct: q.correct, image: q.image || '', time: q.time || null })),
       createdBy: currentUser.uid, updatedAt: now
     };
@@ -3471,6 +3558,14 @@ async function renderTeacherHome() {
           <option value="manual">🎛 Ручное управление</option>
         </select>
       </div>
+      <div class="select-wrap" id="attemptsWrap" style="display:none;">
+        <select id="newSessionAttempts">
+          <option value="1">🔁 1 попытка</option>
+          <option value="2">🔁 2 попытки</option>
+          <option value="3">🔁 3 попытки</option>
+          <option value="0">🔁 Безлимит</option>
+        </select>
+      </div>
       <button id="createSessionBtn" class="btn-create">➕ Создать сессию</button>
     </div>
 
@@ -3512,10 +3607,34 @@ async function renderTeacherHome() {
     testSel.innerHTML = filtered.length === 0
       ? `<option value="">— Нет тестов —</option>`
       : filtered.map(([id, t]) => `<option value="${id}">${escapeHtml(t.title.slice(0, 70))} · макс ${formatScore(getMaxScore(t))} б.</option>`).join('');
+    updateAttemptsVisibility();
+  }
+
+  function updateAttemptsVisibility() {
+    const tid = testSel.value;
+    const t = testsCache[tid];
+    const wrap = document.getElementById('attemptsWrap');
+    const sel = document.getElementById('newSessionAttempts');
+    if (!wrap || !sel) return;
+    if (t) {
+      wrap.style.display = 'block';
+      const def = t.maxAttempts != null ? t.maxAttempts : 1;
+      sel.value = def;
+      if (!sel.querySelector('option[value="' + def + '"]')) {
+        const opt = document.createElement('option');
+        opt.value = def;
+        opt.textContent = '🔁 ' + def + ' попыток';
+        sel.appendChild(opt);
+        sel.value = def;
+      }
+    } else {
+      wrap.style.display = 'none';
+    }
   }
 
   if (dirSel) dirSel.onchange = refreshClassList;
   classSel.onchange = refreshTestList;
+  testSel.onchange = updateAttemptsVisibility;
   if (initialClasses.length > 0) refreshTestList();
 
   onClick('createSessionBtn', createSession);
@@ -3543,7 +3662,8 @@ async function createSession() {
       phase: sessionMode === 'individual' ? 'individual' : 'lobby',
       currentQuestion: -1, questionStartedAt: 0,
       autoAdvance, autoAdvanceDelaySec: 5,
-      testQuestionCount: (test.questions || []).length
+      testQuestionCount: (test.questions || []).length,
+      maxAttempts: parseInt(document.getElementById('newSessionAttempts')?.value, 10) || 1
     };
     if (classId) { payload.classId = classId; payload.className = cls?.name || ''; }
     if (dirId && dir) { payload.directionId = dirId; payload.directionName = dir.name || ''; }
@@ -4059,8 +4179,11 @@ function renderTeacherStudentsList(s, test) {
     if (st.tabSwitches > 0) warns.push(`<span style="background:#fef3c7;color:#b45309;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;margin-right:4px;">⚠ ${st.tabSwitches}</span>`);
     if (st.copyAttempts > 0) warns.push(`<span style="background:#fee2e2;color:#b91c1c;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">📋 ${st.copyAttempts}</span>`);
     const canDownload = st.status === 'finished' || st.status === 'terminated';
+    const attBadge = (st.attemptNumber && st.attemptNumber > 1) 
+      ? `<span style="background:#dbeafe;color:#1d4ed8;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:800;margin-left:6px;">Попытка ${st.attemptNumber}</span>` 
+      : '';
     return `<div class="student-card ${cls}">
-      <div class="name">${escapeHtml(st.studentName || '—')}</div>
+      <div class="name">${escapeHtml(st.studentName || '—')} ${attBadge}</div>
       <div class="status">${escapeHtml(status)}</div>
       <div class="progress">Верно: ${st.correctCount || 0} · ${formatScore(st.score || 0)} б. ${warns.join(' ')}</div>
       ${canDownload ? `<button class="small download" data-export-student="${st.id}" style="width:100%;margin-top:10px;font-size:11px;padding:7px 10px;">📥 Скачать таблицу</button>` : ''}
@@ -4213,12 +4336,31 @@ async function renderStudentSession() {
     }
     if (myRec && myRec.status === 'finished') {
       const maxScore = getMaxScore(test);
+      const maxAtt = s.maxAttempts != null ? s.maxAttempts : (test.maxAttempts != null ? test.maxAttempts : 1);
+      const curAtt = myRec.attemptNumber || 1;
+      const canRetry = maxAtt === 0 || curAtt < maxAtt;
+
       app.innerHTML = `<div class="student-wrap" style="margin-top:30px;"><div class="student-card-hero" style="text-align:center;">
         <div style="font-size:64px;">✅</div>
-        <h1 class="student-title">Тест уже пройден</h1>
-        <p class="student-sub">Ваш результат: <b>${formatScore(myRec.score || 0)} / ${formatScore(maxScore)}</b></p>
-        <a href="?mode=student"><button class="btn-start">← Ввести другой код</button></a>
+        <h1 class="student-title">Тест пройден!</h1>
+        <p class="student-sub">Результат: <b>${formatScore(myRec.score || 0)} / ${formatScore(maxScore)}</b></p>
+        <p style="font-size:14px;color:#64748b;font-weight:700;">Попытка ${curAtt} ${maxAtt > 0 ? 'из ' + maxAtt : '(безлимит)'}</p>
+        ${canRetry ? `<button id="retryBtn" class="btn-start" style="margin-top:16px;background:linear-gradient(135deg,#3b82f6,#60a5fa);">🔄 Пройти ещё раз</button>` : ''}
+        <a href="?mode=student" style="display:block;margin-top:16px;text-decoration:none;"><button class="btn-start" style="background:#f1f5f9;color:#475569;">← Ввести другой код</button></a>
       </div></div>`;
+
+      if (canRetry) {
+        document.getElementById('retryBtn').onclick = async () => {
+          const newRef = window.FB.ref(window.FB.db, `sessions/${code}/students/${myId}`);
+          await window.FB.update(newRef, {
+            status: (s.mode === 'individual' ? 'intro' : 'waiting'),
+            currentQuestion: 0, correctCount: 0, score: 0,
+            maxStreak: 0, answers: null,
+            attemptNumber: curAtt + 1, startedAt: Date.now()
+          });
+          location.reload();
+        };
+      }
       return;
     }
 
@@ -4318,7 +4460,7 @@ async function joinSession(code, test, sessionData) {
       studentName, joinedAt: Date.now(),
       status: isIndividual ? 'intro' : 'waiting',
       currentQuestion: 0, correctCount: 0, score: 0, maxStreak: 0,
-      tabSwitches: 0, copyAttempts: 0, answers: {}
+      attemptNumber: 1, tabSwitches: 0, copyAttempts: 0, answers: {}
     });
     syncState.studentName = studentName;
     syncState.sessionMode = sessionData.mode || 'lobby';
@@ -4724,6 +4866,7 @@ async function finishStudentIndividual(code) {
       teacherEmail: syncState.teacherEmail,
       teacherName: syncState.teacherName || syncState.teacherEmail,
       sessionCode: code, mode: 'individual',
+      attemptNumber: (myRec.attemptNumber || 1),
       answers: answers.map(a => ({
         questionText: a.questionText, correctText: a.correctText,
         selectedText: a.selectedText, correct: a.correct,
@@ -4759,6 +4902,7 @@ async function terminateStudent(reason, message) {
       teacherEmail: syncState.teacherEmail,
       teacherName: syncState.teacherName || syncState.teacherEmail,
       sessionCode: syncState.code,
+      attemptNumber: (syncState.attemptNumber || 1),
       tabSwitches: antiCheatTabSwitches, copyAttempts: antiCheatCopyAttempts,
       terminated: true, terminateReason: reason || 'tab_switch',
       answers: answers.map(a => ({
