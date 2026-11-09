@@ -185,6 +185,9 @@ onAuthStateChanged(auth, () => {
       radial-gradient(900px 600px at 0% 0%, rgba(124,58,237,0.38), transparent 60%),
       radial-gradient(900px 600px at 100% 100%, rgba(34,211,238,0.28), transparent 60%),
       linear-gradient(160deg, #0a0e22 0%, #111634 55%, #0d1b2e 100%); }
+  body.season-newyear .join-screen {
+    background: transparent !important;
+  }
   .orbit-group { --k: 1; position: absolute; width: 0; height: 0; z-index: 0; pointer-events: none; transform-origin: 0 0; animation: orbitIn 1.3s cubic-bezier(0.22, 0.9, 0.3, 1.1) both; }
   .orbit-group.tl { top: 0; left: 0; --c: 167,139,250; }
   .orbit-group.br { bottom: 0; right: 0; --c: 34,211,238; animation-delay: 0.15s; }
@@ -771,17 +774,99 @@ onAuthStateChanged(auth, () => {
     content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9998;
     background-repeat: repeat;
   }
-  body.season-newyear::after {
-    background-image:
-      radial-gradient(2px 2px at 20px 30px, #fff, transparent),
-      radial-gradient(2px 2px at 40px 70px, #fff, transparent),
-      radial-gradient(1.5px 1.5px at 90px 40px, #fff, transparent),
-      radial-gradient(2px 2px at 130px 80px, #fff, transparent),
-      radial-gradient(1.5px 1.5px at 160px 120px, #fff, transparent);
-    background-size: 200px 200px;
-    opacity: 0.6;
-    animation: seasonSnowFall 12s linear infinite;
+
+  /* ===== 🎄 НОВЫЙ ГОД: ЁЛКА + ФОН + СНЕГ ===== */
+  
+  /* 1. Праздничный фон (перекрывает звёзды на главной) */
+  body.season-newyear {
+    background: radial-gradient(circle at 50% 0%, #1e3a8a 0%, #0f172a 100%) !important;
   }
+  body.season-newyear::before {
+    content: ''; position: fixed; inset: 0; z-index: -2; pointer-events: none;
+    background-image: 
+      radial-gradient(ellipse at top, rgba(16, 185, 129, 0.2), transparent 60%),
+      radial-gradient(ellipse at bottom, rgba(59, 130, 246, 0.2), transparent 60%);
+  }
+
+  /* 2. Снег (крупный, падающий) */
+  body.season-newyear::after {
+    content: ''; position: fixed; inset: 0; z-index: 9998; pointer-events: none;
+    background-image:
+      radial-gradient(3px 3px at 20px 30px, #fff, transparent),
+      radial-gradient(4px 4px at 40px 70px, rgba(255,255,255,0.8), transparent),
+      radial-gradient(2px 2px at 90px 40px, #fff, transparent),
+      radial-gradient(3px 3px at 130px 80px, rgba(255,255,255,0.9), transparent),
+      radial-gradient(5px 5px at 160px 120px, #fff, transparent);
+    background-size: 200px 200px;
+    animation: snowFall 10s linear infinite;
+    opacity: 0.85;
+  }
+  @keyframes snowFall {
+    0% { background-position: 0px 0px, 0px 0px, 0px 0px, 0px 0px, 0px 0px; }
+    100% { background-position: -50px 200px, -20px 200px, -70px 200px, -30px 200px, -80px 200px; }
+  }
+
+  /* 3. Ёлка (рисуем через CSS градиенты) */
+  .ny-tree {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 300px; height: 400px; z-index: -1; pointer-events: none;
+    display: none;
+  }
+  body.season-newyear .ny-tree { display: block; }
+  
+  /* Ствол */
+  .ny-tree::before {
+    content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 40px; height: 60px; background: #451a03; border-radius: 4px 4px 0 0;
+    box-shadow: inset -10px 0 10px rgba(0,0,0,0.5);
+  }
+  /* Крона (3 треугольника) */
+  .ny-tree::after {
+    content: ''; position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 120px solid transparent; border-right: 120px solid transparent; border-bottom: 160px solid #065f46;
+    filter: drop-shadow(0 -10px 20px rgba(16, 185, 129, 0.4));
+  }
+  .ny-tree-mid {
+    position: absolute; bottom: 140px; left: 50%; transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 90px solid transparent; border-right: 90px solid transparent; border-bottom: 140px solid #047857;
+  }
+  .ny-tree-top {
+    position: absolute; bottom: 230px; left: 50%; transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 60px solid transparent; border-right: 60px solid transparent; border-bottom: 110px solid #059669;
+  }
+
+  /* Игрушки на ёлке */
+  .ny-ornament {
+    position: absolute; border-radius: 50%; box-shadow: 0 0 10px currentColor;
+    animation: twinkle 2s infinite alternate;
+  }
+  @keyframes twinkle { 0% { opacity: 0.6; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1.1); } }
+  .ny-o1 { width: 14px; height: 14px; background: #ef4444; color: #ef4444; bottom: 70px; left: 80px; }
+  .ny-o2 { width: 12px; height: 12px; background: #fbbf24; color: #fbbf24; bottom: 110px; left: 140px; animation-delay: 0.5s; }
+  .ny-o3 { width: 16px; height: 16px; background: #3b82f6; color: #3b82f6; bottom: 160px; left: 200px; animation-delay: 1s; }
+  .ny-o4 { width: 10px; height: 10px; background: #ec4899; color: #ec4899; bottom: 200px; left: 110px; animation-delay: 0.2s; }
+  .ny-o5 { width: 12px; height: 12px; background: #fbbf24; color: #fbbf24; bottom: 250px; left: 160px; animation-delay: 0.8s; }
+
+  /* Звезда */
+  .ny-star {
+    position: absolute; bottom: 340px; left: 50%; transform: translateX(-50%);
+    width: 30px; height: 30px; background: #fbbf24; border-radius: 50%;
+    box-shadow: 0 0 20px 10px rgba(251,191,36,0.6);
+    animation: pulseStar 1.5s infinite alternate;
+  }
+  @keyframes pulseStar { 0% { box-shadow: 0 0 15px 5px rgba(251,191,36,0.5); } 100% { box-shadow: 0 0 30px 15px rgba(251,191,36,0.9); } }
+
+  /* 4. Акценты для учителя и разработчика */
+  body.theme-teacher.season-newyear .top-nav { border-bottom: 3px solid #10b981 !important; background: #fff; }
+  body.theme-developer.season-newyear { background-image: linear-gradient(160deg, #f0fdf4 0%, #f8f8fe 100%); }
+  
+  @media (max-width: 700px) {
+    .ny-tree { transform: translateX(-50%) scale(0.7); transform-origin: bottom center; }
+  }
+
   body.season-cosmos::after {
     background-image:
       radial-gradient(1px 1px at 10px 10px, #fff, transparent),
@@ -866,6 +951,17 @@ onAuthStateChanged(auth, () => {
 </style>
 </head>
 <body>
+<!-- 🎄 Новогодняя Ёлка (появляется только в сезон) -->
+<div class="ny-tree" aria-hidden="true">
+  <div class="ny-star"></div>
+  <div class="ny-tree-top"></div>
+  <div class="ny-tree-mid"></div>
+  <div class="ny-ornament ny-o1"></div>
+  <div class="ny-ornament ny-o2"></div>
+  <div class="ny-ornament ny-o3"></div>
+  <div class="ny-ornament ny-o4"></div>
+  <div class="ny-ornament ny-o5"></div>
+</div>
 <div class="container" id="app">
   <p style="text-align:center; color:#94a3b8; padding:40px 0;">
     <span class="loading-spinner"></span>Подключение…
@@ -978,28 +1074,66 @@ let allResultsCache = [];
    СЕЗОНЫ (#992) — 5 вшитых тем, периоды в Firebase
    ============================================================ */
 const SEASON_THEMES = {
-  newyear:   { name: '🎄 Новый год',     fallback: 'Полная зимняя тема' },
-  cosmos:    { name: '🚀 Космос',         fallback: 'Звёздное небо' },
-  sept1:     { name: '🍁 1 сентября',     fallback: 'Осенние листья' },
-  drone:     { name: '🚁 День дрона',     fallback: 'Лёгкие акценты' },
-  halloween: { name: '🎃 Хэллоуин',       fallback: 'Тыквы и фиолет' }
+  newyear:   { name: '🎄 Новый год',             fallback: 'Зимняя тема' },
+  drons:     { name: '🚁 Майские праздники',     fallback: 'Лёгкие акценты' },
+  sept1:     { name: '🛡 23 февраля',            fallback: 'Осенние листья' },
+  cosmos:    { name: '🌷 8 марта',               fallback: 'Звёздное небо' },
+  halloween: { name: '🇷🇺 День России',          fallback: 'Тыквы и фиолет' }
 };
+
+/* Базовые периоды — вшиты в код, работают всегда. */
+const DEFAULT_SEASONS = [
+  { id: 'default_newyear',   name: '🎄 Новый год',              theme: 'newyear',   from: '12-11', to: '01-14', active: true },
+  { id: 'default_may',       name: '🚁 Майские праздники',      theme: 'drons',     from: '05-01', to: '05-12', active: true },
+  { id: 'default_feb23',     name: '🛡 23 февраля',             theme: 'sept1',     from: '02-21', to: '02-23', active: true },
+  { id: 'default_mar8',      name: '🌷 8 марта',                theme: 'cosmos',    from: '03-07', to: '03-09', active: true },
+  { id: 'default_ru_day',    name: '🇷🇺 День России',           theme: 'halloween', from: '06-11', to: '06-14', active: true }
+];
 
 let seasonalPeriodsCache = {};
 let seasonalForceCache = null;
 let seasonalReady = false;
 
+const SEASON_CACHE_KEY = 'kvant_quiz_seasons_cache_v1';
+function readSeasonsCache() {
+  try {
+    const raw = localStorage.getItem(SEASON_CACHE_KEY);
+    if (!raw) return false;
+    const obj = JSON.parse(raw);
+    if (obj && typeof obj === 'object') {
+      seasonalPeriodsCache = obj.periods || {};
+      seasonalForceCache = obj.force || null;
+      seasonalReady = true;
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
+function writeSeasonsCache() {
+  try {
+    localStorage.setItem(SEASON_CACHE_KEY, JSON.stringify({
+      periods: seasonalPeriodsCache,
+      force: seasonalForceCache,
+      ts: Date.now()
+    }));
+  } catch (e) {}
+}
 async function loadSeasons() {
   try {
-    const snap = await window.FB.get(window.FB.ref(window.FB.db, 'seasonal_periods'));
-    seasonalPeriodsCache = snap.val() || {};
-    const forceSnap = await window.FB.get(window.FB.ref(window.FB.db, 'seasonal_force'));
+    const [periodsSnap, forceSnap] = await Promise.all([
+      window.FB.get(window.FB.ref(window.FB.db, 'seasonal_periods')),
+      window.FB.get(window.FB.ref(window.FB.db, 'seasonal_force'))
+    ]);
+    seasonalPeriodsCache = periodsSnap.val() || {};
     seasonalForceCache = forceSnap.val() || null;
     seasonalReady = true;
+    writeSeasonsCache();
   } catch (e) {
     console.warn('loadSeasons:', e);
-    seasonalPeriodsCache = {};
-    seasonalForceCache = null;
+    if (!seasonalReady) {
+      seasonalPeriodsCache = {};
+      seasonalForceCache = null;
+    }
     seasonalReady = true;
   }
 }
@@ -1015,10 +1149,14 @@ function dateInRange(today, from, to) {
 }
 
 function getActiveSeason() {
+  // 1) Форс — приоритет №1
   if (seasonalForceCache && seasonalForceCache.theme && SEASON_THEMES[seasonalForceCache.theme]) {
     return { theme: seasonalForceCache.theme, name: SEASON_THEMES[seasonalForceCache.theme].name, forced: true };
   }
   const today = todayISO();
+  const y = today.slice(0, 4);
+
+  // 2) Свои периоды — приоритет №2
   let best = null;
   for (const [id, p] of Object.entries(seasonalPeriodsCache)) {
     if (!p || !p.active) continue;
@@ -1029,7 +1167,22 @@ function getActiveSeason() {
       best = { id, theme: p.theme, name: p.name || SEASON_THEMES[p.theme].name, forced: false };
     }
   }
-  return best;
+  if (best) return best;
+
+  // 3) Базовые периоды — приоритет №3 (берём только активные)
+  for (const d of DEFAULT_SEASONS) {
+    if (!d.active) continue;
+    const from = y + '-' + d.from;
+    const to = y + '-' + d.to;
+    // Поддержка перехода через год (Новый год: дек → янв)
+    const inRange = d.from > d.to
+      ? (today >= from || today <= to)
+      : dateInRange(today, from, to);
+    if (inRange) {
+      return { id: d.id, theme: d.theme, name: d.name, forced: false, isDefault: true };
+    }
+  }
+  return null;
 }
 
 function applySeasonTheme() {
@@ -1041,10 +1194,17 @@ function applySeasonTheme() {
 }
 
 async function refreshSeasonTheme() {
-  await loadSeasons();
-  const active = applySeasonTheme();
-  console.log('Сезон:', active);
-  return active;
+  // 1) мгновенно применяем из кэша (если есть)
+  const fromCache = readSeasonsCache();
+  if (fromCache) applySeasonTheme();
+  // 2) тянем свежие данные и применяем ещё раз
+  try {
+    await loadSeasons();
+    const active = applySeasonTheme();
+    return active;
+  } catch (e) {
+    return fromCache ? getActiveSeason() : null;
+  }
 }
 
 
@@ -1425,7 +1585,8 @@ function exportFlatSummary(results, title, filename) {
 }
 
 /* ============ ЗАГРУЗКА ============ */
-async function loadTests() {
+async function loadTests(force) {
+  if (!force && Object.keys(testsCache).length > 0) return;
   try {
     const snap = await window.FB.get(window.FB.ref(window.FB.db, 'tests'));
     testsCache = snap.val() || {};
@@ -2054,7 +2215,12 @@ async function renderDeveloperHome() {
   if (!currentUser || currentUser.role !== 'developer') { renderAuth('developer'); return; }
   document.body.style.padding = '';
   await seedTestsIfEmpty();
-  await Promise.all([loadDirections(), loadClasses(), loadTeachersData()]);
+  // Пропускаем повторные загрузки, если данные уже есть
+  const tasks = [];
+  if (Object.keys(directionsCache).length === 0) tasks.push(loadDirections());
+  if (Object.keys(classesCache).length === 0)    tasks.push(loadClasses());
+  tasks.push(loadTeachersData()); // статистика — всегда свежая
+  await Promise.all(tasks);
   document.body.className = 'theme-developer';
 
   app.innerHTML = `
@@ -2153,10 +2319,15 @@ async function renderDeveloperHome() {
   try { renderTeachersList();       } catch (e) {}
   try { subscribeAllSessions();     } catch (e) {}
   try { subscribeAllResults();      } catch (e) {}
-  try { renderSeasonsPanel();       } catch (e) {}
-  // Спец-обработка: клик по кнопке «Сезоны» в top-nav скроллит к панели
+  // Панель «Сезоны» грузим ЛЕНИВО — только по клику, чтобы не тратить 2 запроса при старте
+  let _seasonsPanelLoaded = false;
   const seasonsNavBtn = document.querySelector('[data-nav="seasons"]');
-  if (seasonsNavBtn) seasonsNavBtn.onclick = () => {
+  if (seasonsNavBtn) seasonsNavBtn.onclick = async () => {
+    if (!_seasonsPanelLoaded) {
+      _seasonsPanelLoaded = true;
+      try { await refreshSeasonTheme(); } catch (e) {}
+      try { renderSeasonsPanel(); } catch (e) {}
+    }
     const el = document.getElementById('seasonsPanel');
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -3229,7 +3400,12 @@ async function renderTeacherHome() {
   clearAllUnsubs();
   if (!currentUser || currentUser.role !== 'teacher') { renderAuth('teacher'); return; }
   document.body.style.padding = '';
-  await Promise.all([loadTests(), loadDirections(), loadClasses()]);
+  // Пропускаем повторные загрузки, если данные уже есть
+  const _tasks = [];
+  if (Object.keys(testsCache).length === 0)      _tasks.push(loadTests());
+  if (Object.keys(directionsCache).length === 0) _tasks.push(loadDirections());
+  if (Object.keys(classesCache).length === 0)    _tasks.push(loadClasses());
+  if (_tasks.length > 0) await Promise.all(_tasks);
   document.body.className = 'theme-teacher';
 
   const myDirs = getTeacherDirections(currentUser.uid);
@@ -4340,14 +4516,35 @@ function renderLobbyQuestion(sss, topbar, test, idx, code) {
   sss.querySelectorAll('[data-oi]').forEach(b => b.onclick = () => submitAnswer(code, idx, +b.dataset.oi, timeTotal, 'lobby'));
 
   if (syncTimerInterval) clearInterval(syncTimerInterval);
-  syncTimerInterval = setInterval(() => {
+  
+  function updateLobbyTimer() {
     const el = document.getElementById('syncTimer');
+    const circle = document.querySelector('.timer-circle .t-fg');
     if (!el) { clearInterval(syncTimerInterval); return; }
-    const rem = Math.max(0, Math.floor(timeTotal - (Date.now() - myStart) / 1000));
-    el.textContent = rem;
+    
+    const now = Date.now();
+    const elapsed = (now - myStart) / 1000;
+    const rem = Math.max(0, timeTotal - elapsed);
+    
+    // Обновляем цифру
+    el.textContent = Math.ceil(rem);
+    
+    // Плавно двигаем полоску (circumference = 2 * Math.PI * 32 ≈ 201.06)
+    if (circle) {
+      const circ = 201.06;
+      const offset = circ * (1 - rem / timeTotal);
+      circle.style.strokeDashoffset = offset;
+    }
+    
+    // Включаем пульсацию на последних 5 секундах
     if (rem <= 5) el.parentElement.classList.add('warning');
+    
+    // Останавливаем по нулю
     if (rem <= 0) clearInterval(syncTimerInterval);
-  }, 500);
+  }
+  
+  updateLobbyTimer();
+  syncTimerInterval = setInterval(updateLobbyTimer, 50);
 }
 
 function renderIndividualQuestion(sss, topbar, test, idx, code) {
@@ -4388,14 +4585,38 @@ function renderIndividualQuestion(sss, topbar, test, idx, code) {
   sss.querySelectorAll('[data-oi]').forEach(b => b.onclick = () => submitAnswer(code, idx, +b.dataset.oi, timeTotal, 'individual'));
 
   if (syncTimerInterval) clearInterval(syncTimerInterval);
-  syncTimerInterval = setInterval(() => {
+  
+  function updateIndividualTimer() {
     const el = document.getElementById('syncTimer');
+    const circle = document.querySelector('.timer-circle .t-fg');
     if (!el) { clearInterval(syncTimerInterval); return; }
-    const rem = Math.max(0, Math.floor(timeTotal - (Date.now() - myStart) / 1000));
-    el.textContent = rem;
+    
+    const now = Date.now();
+    const elapsed = (now - myStart) / 1000;
+    const rem = Math.max(0, timeTotal - elapsed);
+    
+    // Обновляем цифру
+    el.textContent = Math.ceil(rem);
+    
+    // Плавно двигаем полоску
+    if (circle) {
+      const circ = 201.06;
+      const offset = circ * (1 - rem / timeTotal);
+      circle.style.strokeDashoffset = offset;
+    }
+    
+    // Включаем пульсацию на последних 5 секундах
     if (rem <= 5) el.parentElement.classList.add('warning');
-    if (rem <= 0) { clearInterval(syncTimerInterval); submitAnswer(code, idx, null, timeTotal, 'individual'); }
-  }, 500);
+    
+    // Автоматический пропуск по нулю
+    if (rem <= 0) { 
+      clearInterval(syncTimerInterval); 
+      submitAnswer(code, idx, null, timeTotal, 'individual'); 
+    }
+  }
+  
+  updateIndividualTimer();
+  syncTimerInterval = setInterval(updateIndividualTimer, 50);
 }
 
 function renderFinishedScreen(sss, topbar, test, myRec, code) {
@@ -4581,7 +4802,13 @@ async function renderSeasonsPanel() {
   const forceEl = document.getElementById('seasonsForceArea');
   if (!listEl) return;
 
-  await loadSeasons();
+  // Обрабатываем возможную ошибку Firebase
+  let fbError = null;
+  try {
+    await loadSeasons();
+  } catch (e) {
+    fbError = e && e.message ? e.message : String(e);
+  }
 
   // --- Блок форс-переключателя ---
   const active = getActiveSeason();
@@ -4616,7 +4843,14 @@ async function renderSeasonsPanel() {
         }
         await refreshSeasonTheme();
         renderSeasonsPanel();
-      } catch (e) { alert('Ошибка: ' + e.message); }
+      } catch (e) {
+        const msg = e && e.message ? e.message : String(e);
+        if (msg.indexOf('PERMISSION_DENIED') !== -1) {
+          alert('Нет доступа к Firebase.\n\nПроверь правила (Rules) в Firebase Console:\nдобавь seasonal_force и seasonal_periods с ".write": "auth != null".');
+        } else {
+          alert('Ошибка: ' + msg);
+        }
+      }
     };
     const clearBtn = document.getElementById('clearForceBtn');
     if (clearBtn) clearBtn.onclick = async () => {
@@ -4628,39 +4862,68 @@ async function renderSeasonsPanel() {
     };
   }
 
-  // --- Список периодов ---
+  // --- Список: базовые + свои ---
+  const todayStr = todayISO();
+  const y = todayStr.slice(0, 4);
+
+  const defaultRows = DEFAULT_SEASONS.map((d, idx) => {
+    const isActiveNow = (() => {
+      const from = y + '-' + d.from;
+      const to = y + '-' + d.to;
+      return d.from > d.to
+        ? (todayStr >= from || todayStr <= to)
+        : dateInRange(todayStr, from, to);
+    })();
+    return `
+      <tr style="background:#faf5ff;">
+        <td><b>${escapeHtml(d.name)}</b> <span style="font-size:10px;color:#7c3aed;font-weight:800;background:#ede9fe;padding:2px 6px;border-radius:4px;">БАЗОВЫЙ</span></td>
+        <td>${escapeHtml(SEASON_THEMES[d.theme] ? SEASON_THEMES[d.theme].name : d.theme)}</td>
+        <td style="font-size:12px;font-weight:700;">${escapeHtml(d.from)} → ${escapeHtml(d.to)}</td>
+        <td style="text-align:center;">
+          ${d.active ? '<span class="badge published">ВКЛ</span>' : '<span class="badge draft">ВЫКЛ</span>'}
+          ${isActiveNow && d.active ? ' <span style="color:#10b981;font-weight:900;">● сейчас</span>' : ''}
+        </td>
+        <td class="action-cell">
+          <button class="small" data-toggle-default="${idx}">${d.active ? '🚫 Выкл' : '✅ Вкл'}</button>
+        </td>
+      </tr>`;
+  }).join('');
+
   const periods = Object.entries(seasonalPeriodsCache);
-  if (periods.length === 0) {
-    listEl.innerHTML = `<p class="hint">Периодов нет. Нажми «➕ Добавить период», чтобы создать первый.</p>`;
-    return;
-  }
-  const rows = periods
-    .sort((a, b) => (a[1].from || '').localeCompare(b[1].from || ''))
-    .map(([id, p]) => {
-      const isActive = p.active && p.theme && SEASON_THEMES[p.theme] && p.from && p.to && dateInRange(todayISO(), p.from, p.to);
-      const themeName = SEASON_THEMES[p.theme] ? SEASON_THEMES[p.theme].name : ('⚠️ неизвестная тема: ' + (p.theme || '—'));
-      return `
-        <tr>
-          <td>${escapeHtml(p.name || '—')}</td>
-          <td>${escapeHtml(themeName)}</td>
-          <td style="font-size:12px;font-weight:700;">${escapeHtml(p.from || '—')} → ${escapeHtml(p.to || '—')}</td>
-          <td style="text-align:center;">
-            ${p.active ? '<span class="badge published">ВКЛ</span>' : '<span class="badge draft">ВЫКЛ</span>'}
-            ${isActive ? ' <span style="color:#10b981;font-weight:900;">● сейчас</span>' : ''}
-          </td>
-          <td class="action-cell">
-            <button class="small" data-edit-season="${id}">✏</button>
-            <button class="small danger" data-del-season="${id}">✕</button>
-          </td>
-        </tr>
-      `;
-    }).join('');
+  const customRows = periods.length === 0
+    ? ''
+    : periods
+      .sort((a, b) => (a[1].from || '').localeCompare(b[1].from || ''))
+      .map(([id, p]) => {
+        const isActive = p.active && p.theme && SEASON_THEMES[p.theme] && p.from && p.to && dateInRange(todayStr, p.from, p.to);
+        const themeName = SEASON_THEMES[p.theme] ? SEASON_THEMES[p.theme].name : ('⚠️ ' + (p.theme || '—'));
+        return `
+          <tr>
+            <td>${escapeHtml(p.name || '—')} <span style="font-size:10px;color:#059669;font-weight:800;background:#d1fae5;padding:2px 6px;border-radius:4px;">МОЙ</span></td>
+            <td>${escapeHtml(themeName)}</td>
+            <td style="font-size:12px;font-weight:700;">${escapeHtml(p.from || '—')} → ${escapeHtml(p.to || '—')}</td>
+            <td style="text-align:center;">
+              ${p.active ? '<span class="badge published">ВКЛ</span>' : '<span class="badge draft">ВЫКЛ</span>'}
+              ${isActive ? ' <span style="color:#10b981;font-weight:900;">● сейчас</span>' : ''}
+            </td>
+            <td class="action-cell">
+              <button class="small" data-edit-season="${id}">✏</button>
+              <button class="small danger" data-del-season="${id}">✕</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
   listEl.innerHTML = `<table>
     <thead><tr>
       <th>Название</th><th>Тема</th><th>Период</th><th style="text-align:center;">Статус</th><th>Действия</th>
     </tr></thead>
-    <tbody>${rows}</tbody>
-  </table>`;
+    <tbody>
+      ${defaultRows}
+      ${customRows}
+    </tbody>
+  </table>
+  <p class="hint" style="margin-top:10px;">Мои периоды: ${periods.length} / 5. ${periods.length >= 5 ? '⚠️ Лимит достигнут' : ''}</p>`;
 
   listEl.querySelectorAll('[data-edit-season]').forEach(b => {
     b.onclick = () => openSeasonEditor(b.dataset.editSeason, seasonalPeriodsCache[b.dataset.editSeason]);
@@ -4677,10 +4940,37 @@ async function renderSeasonsPanel() {
       } catch (e) { alert('Ошибка: ' + e.message); }
     };
   });
+  // Переключатели базовых периодов
+  listEl.querySelectorAll('[data-toggle-default]').forEach(b => {
+    b.onclick = async () => {
+      const idx = parseInt(b.dataset.toggleDefault, 10);
+      if (isNaN(idx) || !DEFAULT_SEASONS[idx]) return;
+      // Храним в localStorage: какие базовые выключены
+      const key = 'season_default_disabled';
+      let dis = {};
+      try { dis = JSON.parse(localStorage.getItem(key) || '{}') || {}; } catch (e) {}
+      dis[DEFAULT_SEASONS[idx].id] = !dis[DEFAULT_SEASONS[idx].id] && !DEFAULT_SEASONS[idx].active ? true : !DEFAULT_SEASONS[idx].active;
+      // Упростим: просто инвертируем флаг
+      DEFAULT_SEASONS[idx].active = !DEFAULT_SEASONS[idx].active;
+      try { localStorage.setItem(key, JSON.stringify(DEFAULT_SEASONS.reduce((m, s) => { if (!s.active) m[s.id] = true; return m; }, {}))); } catch (e) {}
+      await refreshSeasonTheme();
+      renderSeasonsPanel();
+    };
+  });
+  if (fbError) {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:#fef2f2;border:2px solid #fecaca;border-radius:12px;padding:12px 16px;margin-bottom:12px;color:#b91c1c;font-weight:700;font-size:13px;';
+    banner.innerHTML = '⚠️ Не удалось загрузить периоды из Firebase: <b>' + escapeHtml(fbError) + '</b><br><span style="font-size:12px;font-weight:600;">Проверь правила Firebase (нужны <code>seasonal_periods</code> и <code>seasonal_force</code>).</span>';
+    listEl.parentNode.insertBefore(banner, listEl);
+  }
 }
 
 function openSeasonEditor(seasonId, seasonData) {
   const isNew = !seasonId;
+  if (isNew && Object.keys(seasonalPeriodsCache).length >= 5) {
+    alert('Достигнут лимит: можно создать не больше 5 своих периодов.\nУдали ненужный — и добавь новый.');
+    return;
+  }
   const initial = seasonData || {
     name: '', theme: 'newyear', from: todayISO(), to: todayISO(), active: true
   };
@@ -4761,8 +5051,8 @@ function openModal(innerHTML, maxWidth, wide) {
 function boot() {
   loadTests();
   loadDirections();
-  // #992: сезонные темы — грузим и применяем сразу
-  refreshSeasonTheme();
+  // #992: сезонные темы — сначала мгновенно из кэша, потом сеть в фоне
+  refreshSeasonTheme().catch(() => {});
   if (mode === 'developer') {
     document.body.className = 'theme-developer';
     window.FB.auth.onAuthStateChanged(async (user) => {
