@@ -300,6 +300,28 @@ onAuthStateChanged(auth, () => {
   .timer-circle .t-num { font-size: 24px; font-weight: 900; color: var(--ink); z-index: 1; }
   .timer-circle.warning .t-num { color: var(--red); }
   .timer-circle.warning .t-fg { stroke: var(--red); }
+
+  /* ===== #35: анимация таймера на последних секундах ===== */
+  .timer-circle.warning .t-num {
+    animation: timerPulse 1s ease-in-out infinite;
+    transform-origin: 50% 50%;
+  }
+  .timer-circle.warning .t-fg {
+    filter: drop-shadow(0 0 6px rgba(239,68,68,0.85));
+    animation: ringPulse 1s ease-in-out infinite;
+  }
+  @keyframes timerPulse {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.18); }
+  }
+  @keyframes ringPulse {
+    0%, 100% { filter: drop-shadow(0 0 4px rgba(239,68,68,0.6)); }
+    50%      { filter: drop-shadow(0 0 12px rgba(239,68,68,1)); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .timer-circle.warning .t-num,
+    .timer-circle.warning .t-fg { animation: none; }
+  }
   .question-text { font-size: 20px; font-weight: 800; color: var(--ink); text-align: center; margin: 0 0 20px; line-height: 1.3; }
   .question-image { text-align: center; margin: 16px 0; }
   .question-image img { max-width: 100%; max-height: 300px; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
@@ -734,6 +756,113 @@ onAuthStateChanged(auth, () => {
   .pass-toggle:hover { background: transparent; transform: translateY(-50%); box-shadow: none; }
   .btn-login-big { box-shadow: none; }
   .btn-login-big:disabled { background: #cbd5e1; transform: none; box-shadow: none; cursor: not-allowed; }
+
+
+  /* ===== Сезонные темы (5 вшитых) ===== */
+  body.season-newyear, body.season-cosmos, body.season-sept1, body.season-drone, body.season-halloween {
+    --season-accent: #7c3aed;
+  }
+  /* снежинки / звёзды / листья / дроны / тыквы — на псевдоэлементе ::after у body */
+  body.season-newyear::after,
+  body.season-cosmos::after,
+  body.season-sept1::after,
+  body.season-drone::after,
+  body.season-halloween::after {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9998;
+    background-repeat: repeat;
+  }
+  body.season-newyear::after {
+    background-image:
+      radial-gradient(2px 2px at 20px 30px, #fff, transparent),
+      radial-gradient(2px 2px at 40px 70px, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 90px 40px, #fff, transparent),
+      radial-gradient(2px 2px at 130px 80px, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 160px 120px, #fff, transparent);
+    background-size: 200px 200px;
+    opacity: 0.6;
+    animation: seasonSnowFall 12s linear infinite;
+  }
+  body.season-cosmos::after {
+    background-image:
+      radial-gradient(1px 1px at 10px 10px, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 60px 40px, #fff, transparent),
+      radial-gradient(1px 1px at 120px 80px, #fff, transparent),
+      radial-gradient(2px 2px at 180px 30px, #fff, transparent),
+      radial-gradient(1px 1px at 220px 120px, #fff, transparent);
+    background-size: 250px 150px;
+    opacity: 0.5;
+    animation: seasonTwinkle 4s ease-in-out infinite;
+  }
+  body.season-sept1::after {
+    background-image:
+      radial-gradient(4px 6px at 30px 40px, rgba(245,158,11,0.75), transparent),
+      radial-gradient(3px 5px at 90px 80px, rgba(239,68,68,0.65), transparent),
+      radial-gradient(4px 6px at 150px 50px, rgba(234,179,8,0.7), transparent),
+      radial-gradient(3px 5px at 200px 110px, rgba(217,119,6,0.65), transparent);
+    background-size: 260px 200px;
+    opacity: 0.55;
+    animation: seasonLeafFall 10s linear infinite;
+  }
+  body.season-drone::after {
+    background-image:
+      radial-gradient(3px 3px at 40px 40px, rgba(59,130,246,0.65), transparent),
+      radial-gradient(3px 3px at 120px 90px, rgba(59,130,246,0.55), transparent),
+      radial-gradient(2px 2px at 200px 50px, rgba(34,211,238,0.6), transparent);
+    background-size: 240px 180px;
+    opacity: 0.45;
+    animation: seasonDrift 14s linear infinite;
+  }
+  body.season-halloween::after {
+    background-image:
+      radial-gradient(6px 6px at 40px 60px, rgba(249,115,22,0.7), transparent),
+      radial-gradient(5px 5px at 120px 100px, rgba(168,85,247,0.6), transparent),
+      radial-gradient(6px 6px at 200px 40px, rgba(249,115,22,0.7), transparent);
+    background-size: 250px 160px;
+    opacity: 0.5;
+    animation: seasonTwinkle 6s ease-in-out infinite;
+  }
+  @keyframes seasonSnowFall { from { background-position: 0 0; } to { background-position: 0 200px; } }
+  @keyframes seasonLeafFall { from { background-position: 0 0; } to { background-position: 0 200px; } }
+  @keyframes seasonTwinkle  { 0%,100% { opacity: 0.35; } 50% { opacity: 0.7; } }
+  @keyframes seasonDrift    { from { background-position: 0 0; } to { background-position: 240px 0; } }
+
+  /* Полная тема для ученика */
+  body.theme-student.season-newyear    { --season-accent: #0ea5e9; }
+  body.theme-student.season-cosmos     { --season-accent: #8b5cf6; }
+  body.theme-student.season-sept1      { --season-accent: #f59e0b; }
+  body.theme-student.season-drone      { --season-accent: #3b82f6; }
+  body.theme-student.season-halloween  { --season-accent: #f97316; }
+
+  /* Лёгкий акцент в шапке для учителя */
+  body.theme-teacher.season-newyear   .top-nav { border-bottom-color: #0ea5e9 !important; }
+  body.theme-teacher.season-cosmos    .top-nav { border-bottom-color: #8b5cf6 !important; }
+  body.theme-teacher.season-sept1     .top-nav { border-bottom-color: #f59e0b !important; }
+  body.theme-teacher.season-drone     .top-nav { border-bottom-color: #3b82f6 !important; }
+  body.theme-teacher.season-halloween .top-nav { border-bottom-color: #f97316 !important; }
+
+  /* Лёгкий фон для разработчика */
+  body.theme-developer.season-newyear   { background-image: linear-gradient(160deg, #f0f9ff 0%, #f8f8fe 100%); }
+  body.theme-developer.season-cosmos    { background-image: linear-gradient(160deg, #f5f3ff 0%, #f8f8fe 100%); }
+  body.theme-developer.season-sept1     { background-image: linear-gradient(160deg, #fffbeb 0%, #f8f8fe 100%); }
+  body.theme-developer.season-drone     { background-image: linear-gradient(160deg, #eff6ff 0%, #f8f8fe 100%); }
+  body.theme-developer.season-halloween { background-image: linear-gradient(160deg, #fff7ed 0%, #f8f8fe 100%); }
+
+  /* Плашка «форсировано» */
+  .season-force-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 8px;
+    background: #fef3c7; color: #b45309; border: 2px solid #fde68a;
+    font-size: 11px; font-weight: 800; text-transform: uppercase;
+    margin-left: 8px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    body.season-newyear::after, body.season-cosmos::after,
+    body.season-sept1::after, body.season-drone::after, body.season-halloween::after {
+      animation: none !important;
+    }
+  }
+
 </style>
 </head>
 <body>
@@ -843,6 +972,81 @@ let autoAdvanceInterval = null;
 let teachersUsersCache = {};
 let teachersStatsCache = { sessions: {}, results: {} };
 let allResultsCache = [];
+
+
+/* ============================================================
+   СЕЗОНЫ (#992) — 5 вшитых тем, периоды в Firebase
+   ============================================================ */
+const SEASON_THEMES = {
+  newyear:   { name: '🎄 Новый год',     fallback: 'Полная зимняя тема' },
+  cosmos:    { name: '🚀 Космос',         fallback: 'Звёздное небо' },
+  sept1:     { name: '🍁 1 сентября',     fallback: 'Осенние листья' },
+  drone:     { name: '🚁 День дрона',     fallback: 'Лёгкие акценты' },
+  halloween: { name: '🎃 Хэллоуин',       fallback: 'Тыквы и фиолет' }
+};
+
+let seasonalPeriodsCache = {};
+let seasonalForceCache = null;
+let seasonalReady = false;
+
+async function loadSeasons() {
+  try {
+    const snap = await window.FB.get(window.FB.ref(window.FB.db, 'seasonal_periods'));
+    seasonalPeriodsCache = snap.val() || {};
+    const forceSnap = await window.FB.get(window.FB.ref(window.FB.db, 'seasonal_force'));
+    seasonalForceCache = forceSnap.val() || null;
+    seasonalReady = true;
+  } catch (e) {
+    console.warn('loadSeasons:', e);
+    seasonalPeriodsCache = {};
+    seasonalForceCache = null;
+    seasonalReady = true;
+  }
+}
+
+function todayISO() {
+  const d = new Date();
+  const p = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+}
+
+function dateInRange(today, from, to) {
+  return today >= from && today <= to;
+}
+
+function getActiveSeason() {
+  if (seasonalForceCache && seasonalForceCache.theme && SEASON_THEMES[seasonalForceCache.theme]) {
+    return { theme: seasonalForceCache.theme, name: SEASON_THEMES[seasonalForceCache.theme].name, forced: true };
+  }
+  const today = todayISO();
+  let best = null;
+  for (const [id, p] of Object.entries(seasonalPeriodsCache)) {
+    if (!p || !p.active) continue;
+    if (!p.theme || !SEASON_THEMES[p.theme]) continue;
+    if (!p.from || !p.to) continue;
+    if (!dateInRange(today, p.from, p.to)) continue;
+    if (!best || (p.updatedAt || 0) > (best.updatedAt || 0)) {
+      best = { id, theme: p.theme, name: p.name || SEASON_THEMES[p.theme].name, forced: false };
+    }
+  }
+  return best;
+}
+
+function applySeasonTheme() {
+  const all = Object.keys(SEASON_THEMES).map(k => 'season-' + k);
+  document.body.classList.remove(...all);
+  const active = getActiveSeason();
+  if (active) document.body.classList.add('season-' + active.theme);
+  return active;
+}
+
+async function refreshSeasonTheme() {
+  await loadSeasons();
+  const active = applySeasonTheme();
+  console.log('Сезон:', active);
+  return active;
+}
+
 
 /* ============ ХЕЛПЕРЫ ============ */
 function round1(n) { return Math.round(Number(n) * 10) / 10; }
@@ -1256,6 +1460,7 @@ function renderTopNav(role, active) {
         <button data-nav="directions" class="${active==='directions'?'active':''}">🎯 Направления</button>
         <button data-nav="classes" class="${active==='classes'?'active':''}">👥 Классы</button>
         <button data-nav="teachers" class="${active==='teachers'?'active':''}">👨‍🏫 Учителя</button>
+        <button data-nav="seasons" class="${active==='seasons'?'active':''}">🎉 Сезоны</button>
       ` : `
         <button data-nav="sessions" class="${active==='sessions'?'active':''}">🎫 Мои тесты</button>
       `}
@@ -1281,7 +1486,7 @@ function bindTopNav() {
     b.onclick = () => {
       const nav = b.dataset.nav;
       if (nav === 'help') { openHelpChat(); return; }
-      const map = { tests: 'testsPanel', directions: 'directionsPanel', classes: 'classesPanel', teachers: 'teachersPanel', sessions: 'sessionsList' };
+      const map = { tests: 'testsPanel', directions: 'directionsPanel', classes: 'classesPanel', teachers: 'teachersPanel', sessions: 'sessionsList', seasons: 'seasonsPanel' };
       const el = document.getElementById(map[nav]);
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
@@ -1897,6 +2102,17 @@ async function renderDeveloperHome() {
       <div id="teachersArea"><p class="hint"><span class="loading-spinner"></span>Загрузка…</p></div>
     </div>
 
+    <div class="panel" id="seasonsPanel">
+      <div class="panel-head"><h3>🎉 Сезоны (праздничные темы)</h3>
+        <div class="summary-actions" style="margin:0;">
+          <button id="addSeasonBtn" class="green">➕ Добавить период</button>
+          <button id="refreshSeasonsBtn" class="refresh">🔄 Обновить</button>
+        </div>
+      </div>
+      <div id="seasonsForceArea" style="margin-bottom:14px;"></div>
+      <div id="seasonsListArea"><p class="hint"><span class="loading-spinner"></span>Загрузка…</p></div>
+    </div>
+
     <div class="panel">
       <div class="panel-head"><h3>🎫 Все сессии</h3></div>
       <div id="allSessionsArea"><p class="hint"><span class="loading-spinner"></span>Загрузка…</p></div>
@@ -1922,6 +2138,8 @@ async function renderDeveloperHome() {
   onClick('refreshClassesBtn',     async () => { await loadClasses(); await loadDirections(); renderClassesList(); });
   onClick('addTeacherBtn',         () => openCreateTeacherModal());
   onClick('refreshTeachersBtn',    () => renderTeachersList());
+  onClick('addSeasonBtn',          () => openSeasonEditor(null));
+  onClick('refreshSeasonsBtn',     async () => { await refreshSeasonTheme(); renderSeasonsPanel(); });
   onClick('exportSchoolBtn',       exportWholeSchool);
   onClick('clearOldResultsBtn',    clearOldResults);
   onClick('clearAllResultsBtn',    clearAllResults);
@@ -1935,6 +2153,13 @@ async function renderDeveloperHome() {
   try { renderTeachersList();       } catch (e) {}
   try { subscribeAllSessions();     } catch (e) {}
   try { subscribeAllResults();      } catch (e) {}
+  try { renderSeasonsPanel();       } catch (e) {}
+  // Спец-обработка: клик по кнопке «Сезоны» в top-nav скроллит к панели
+  const seasonsNavBtn = document.querySelector('[data-nav="seasons"]');
+  if (seasonsNavBtn) seasonsNavBtn.onclick = () => {
+    const el = document.getElementById('seasonsPanel');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 }
 
 async function rebuildTeacherLookup() {
@@ -4178,8 +4403,8 @@ function renderFinishedScreen(sss, topbar, test, myRec, code) {
   const score = myRec.score || 0;
   sss.innerHTML = topbar + `
     <div class="sss-hero">
-      <div style="font-size:72px;margin-bottom:8px;">🏁</div>
-      <h2 style="color:var(--violet);margin:0 0 8px;">Тест завершён!</h2>
+      <div style="font-size:72px;margin-bottom:8px;">${document.body.classList.contains('season-newyear') ? '🎄' : '🏁'}</div>
+      <h2 style="color:var(--violet);margin:0 0 8px;">${document.body.classList.contains('season-newyear') ? '🎄 С Новым годом! Тест завершён!' : 'Тест завершён!'}</h2>
       <div class="score">${formatScore(score)}</div>
       <p style="color:#94a3b8;font-weight:700;font-size:14px;">из ${formatScore(maxScore)} возможных</p>
       <p style="color:#475569;font-weight:700;margin-top:8px;">${interpretScore(score, maxScore)}</p>
@@ -4346,6 +4571,181 @@ async function terminateStudent(reason, message) {
   }
 }
 
+
+
+/* ============================================================
+   UI СЕЗОНОВ (#992) — панель разработчика
+   ============================================================ */
+async function renderSeasonsPanel() {
+  const listEl = document.getElementById('seasonsListArea');
+  const forceEl = document.getElementById('seasonsForceArea');
+  if (!listEl) return;
+
+  await loadSeasons();
+
+  // --- Блок форс-переключателя ---
+  const active = getActiveSeason();
+  const forceVal = seasonalForceCache && seasonalForceCache.theme ? seasonalForceCache.theme : '';
+  if (forceEl) {
+    forceEl.innerHTML = `
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:#f8fafc;padding:12px 16px;border-radius:12px;border:2px solid #e2e8f0;">
+        <div style="font-weight:800;font-size:13px;">🎯 Форсировать тему сейчас:</div>
+        <select id="seasonForceSelect" style="flex:1;min-width:220px;margin:0;">
+          <option value="">— Не форсировать (по датам) —</option>
+          ${Object.entries(SEASON_THEMES).map(([id, t]) => 
+            `<option value="${escapeAttr(id)}" ${forceVal === id ? 'selected' : ''}>${escapeHtml(t.name)}</option>`
+          ).join('')}
+        </select>
+        <button class="small green" id="applyForceBtn">Применить</button>
+        ${forceVal ? '<button class="small danger" id="clearForceBtn">Сбросить</button>' : ''}
+      </div>
+      <p class="hint" style="margin:8px 0 0 0;">
+        ${active 
+          ? `Сейчас активно: <b>${escapeHtml(active.name)}</b>${active.forced ? ' <span class="season-force-badge">ФОРС</span>' : ''}`
+          : 'Сейчас сезон не активен — обычная тема.'}
+      </p>
+    `;
+    const applyBtn = document.getElementById('applyForceBtn');
+    if (applyBtn) applyBtn.onclick = async () => {
+      const val = document.getElementById('seasonForceSelect').value;
+      try {
+        if (val) {
+          await window.FB.set(window.FB.ref(window.FB.db, 'seasonal_force'), { theme: val, setAt: Date.now() });
+        } else {
+          await window.FB.remove(window.FB.ref(window.FB.db, 'seasonal_force'));
+        }
+        await refreshSeasonTheme();
+        renderSeasonsPanel();
+      } catch (e) { alert('Ошибка: ' + e.message); }
+    };
+    const clearBtn = document.getElementById('clearForceBtn');
+    if (clearBtn) clearBtn.onclick = async () => {
+      try {
+        await window.FB.remove(window.FB.ref(window.FB.db, 'seasonal_force'));
+        await refreshSeasonTheme();
+        renderSeasonsPanel();
+      } catch (e) { alert('Ошибка: ' + e.message); }
+    };
+  }
+
+  // --- Список периодов ---
+  const periods = Object.entries(seasonalPeriodsCache);
+  if (periods.length === 0) {
+    listEl.innerHTML = `<p class="hint">Периодов нет. Нажми «➕ Добавить период», чтобы создать первый.</p>`;
+    return;
+  }
+  const rows = periods
+    .sort((a, b) => (a[1].from || '').localeCompare(b[1].from || ''))
+    .map(([id, p]) => {
+      const isActive = p.active && p.theme && SEASON_THEMES[p.theme] && p.from && p.to && dateInRange(todayISO(), p.from, p.to);
+      const themeName = SEASON_THEMES[p.theme] ? SEASON_THEMES[p.theme].name : ('⚠️ неизвестная тема: ' + (p.theme || '—'));
+      return `
+        <tr>
+          <td>${escapeHtml(p.name || '—')}</td>
+          <td>${escapeHtml(themeName)}</td>
+          <td style="font-size:12px;font-weight:700;">${escapeHtml(p.from || '—')} → ${escapeHtml(p.to || '—')}</td>
+          <td style="text-align:center;">
+            ${p.active ? '<span class="badge published">ВКЛ</span>' : '<span class="badge draft">ВЫКЛ</span>'}
+            ${isActive ? ' <span style="color:#10b981;font-weight:900;">● сейчас</span>' : ''}
+          </td>
+          <td class="action-cell">
+            <button class="small" data-edit-season="${id}">✏</button>
+            <button class="small danger" data-del-season="${id}">✕</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  listEl.innerHTML = `<table>
+    <thead><tr>
+      <th>Название</th><th>Тема</th><th>Период</th><th style="text-align:center;">Статус</th><th>Действия</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+
+  listEl.querySelectorAll('[data-edit-season]').forEach(b => {
+    b.onclick = () => openSeasonEditor(b.dataset.editSeason, seasonalPeriodsCache[b.dataset.editSeason]);
+  });
+  listEl.querySelectorAll('[data-del-season]').forEach(b => {
+    b.onclick = async () => {
+      const id = b.dataset.delSeason;
+      const p = seasonalPeriodsCache[id];
+      if (!confirm('Удалить период «' + (p.name || id) + '»?')) return;
+      try {
+        await window.FB.remove(window.FB.ref(window.FB.db, 'seasonal_periods/' + id));
+        await refreshSeasonTheme();
+        renderSeasonsPanel();
+      } catch (e) { alert('Ошибка: ' + e.message); }
+    };
+  });
+}
+
+function openSeasonEditor(seasonId, seasonData) {
+  const isNew = !seasonId;
+  const initial = seasonData || {
+    name: '', theme: 'newyear', from: todayISO(), to: todayISO(), active: true
+  };
+  const m = openModal(`<div class="modal-body">
+    <h2>${isNew ? '➕ Новый сезонный период' : '✏ Редактирование периода'}</h2>
+    <p class="hint">Период действует включительно с даты «С» по дату «По». В этот промежуток тема применяется автоматически (если нет форса).</p>
+
+    <label class="label">Название (для себя)</label>
+    <input type="text" id="seasonName" value="${escapeHtml(initial.name || '')}" placeholder="Новый год 2026">
+
+    <label class="label">🎨 Тема</label>
+    <select id="seasonTheme">
+      ${Object.entries(SEASON_THEMES).map(([id, t]) =>
+        `<option value="${id}" ${initial.theme === id ? 'selected' : ''}>${escapeHtml(t.name)}</option>`
+      ).join('')}
+    </select>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div>
+        <label class="label">С даты</label>
+        <input type="date" id="seasonFrom" value="${escapeAttr(initial.from || todayISO())}">
+      </div>
+      <div>
+        <label class="label">По дату (включительно)</label>
+        <input type="date" id="seasonTo" value="${escapeAttr(initial.to || todayISO())}">
+      </div>
+    </div>
+
+    <label style="display:flex;align-items:center;gap:8px;margin:14px 0;font-weight:700;cursor:pointer;">
+      <input type="checkbox" id="seasonActive" ${initial.active ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--violet);">
+      Период включён
+    </label>
+
+    <div style="display:flex;gap:10px;margin-top:14px;">
+      <button id="saveSeason" class="green" style="flex:1;">💾 Сохранить</button>
+      <button class="back" id="closeSeason">Отмена</button>
+    </div>
+  </div>`, 560);
+
+  m.$('#closeSeason').onclick = () => m.close();
+  m.$('#saveSeason').onclick = async () => {
+    const name = m.$('#seasonName').value.trim();
+    const theme = m.$('#seasonTheme').value;
+    const from = m.$('#seasonFrom').value;
+    const to = m.$('#seasonTo').value;
+    const active = m.$('#seasonActive').checked;
+
+    if (!theme || !SEASON_THEMES[theme]) { alert('Выбери тему'); return; }
+    if (!from || !to) { alert('Укажи обе даты'); return; }
+    if (from > to) { alert('Дата «С» должна быть раньше или равна дате «По»'); return; }
+
+    const id = seasonId || ('season_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6));
+    const payload = { name: name || SEASON_THEMES[theme].name, theme, from, to, active, updatedAt: Date.now() };
+    if (isNew) payload.createdAt = Date.now();
+
+    try {
+      if (isNew) await window.FB.set(window.FB.ref(window.FB.db, 'seasonal_periods/' + id), payload);
+      else       await window.FB.update(window.FB.ref(window.FB.db, 'seasonal_periods/' + id), payload);
+      m.close();
+      await refreshSeasonTheme();
+      renderSeasonsPanel();
+    } catch (e) { alert('Ошибка: ' + e.message); }
+  };
+}
+
 /* ============ MODAL ============ */
 function openModal(innerHTML, maxWidth, wide) {
   const el = document.createElement('div');
@@ -4361,6 +4761,8 @@ function openModal(innerHTML, maxWidth, wide) {
 function boot() {
   loadTests();
   loadDirections();
+  // #992: сезонные темы — грузим и применяем сразу
+  refreshSeasonTheme();
   if (mode === 'developer') {
     document.body.className = 'theme-developer';
     window.FB.auth.onAuthStateChanged(async (user) => {
