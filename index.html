@@ -60,6 +60,50 @@ onAuthStateChanged(auth, () => {
 </script>
 
 <style>
+
+  /* === 🎄 ЖЁСТКИЙ ФИКС ФОНА ДЛЯ СЕЗОНА === */
+  /* Отключаем ВСЕ старые псевдоэлементы фона, когда активен Новый год */
+  body.season-newyear::before, 
+  body.season-newyear::after,
+  body.season-newyear.theme-student-entry::before, body.season-newyear.theme-student-entry::after,
+  body.season-newyear.theme-student::before, body.season-newyear.theme-student::after,
+  body.season-newyear.theme-teacher::before, body.season-newyear.theme-teacher::after,
+  body.season-newyear.theme-developer::before, body.season-newyear.theme-developer::after,
+  body.season-newyear .join-screen::before, body.season-newyear .join-screen::after,
+  body.season-newyear .auth-art::before, body.season-newyear .auth-art::after,
+  body.season-newyear .dev-art::before, body.season-newyear .dev-art::after {
+    display: none !important;
+  }
+
+  /* Принудительно ставим цветной фон и на сам body, и на полноэкранные контейнеры */
+  body.season-newyear { background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%) !important; }
+  body.season-newyear.theme-student-entry,
+  body.season-newyear.theme-student,
+  body.season-newyear.theme-teacher,
+  body.season-newyear.theme-developer,
+  body.season-newyear .join-screen,
+  body.season-newyear .auth-split,
+  body.season-newyear .dev-art,
+  body.season-newyear .auth-art,
+  body.season-newyear .auth-form-side {
+    background: transparent !important;
+  }
+
+  /* Белые панели оставляем белыми, чтобы текст читался */
+  body.season-newyear .panel,
+  body.season-newyear .card,
+  body.season-newyear .student-card-hero,
+  body.season-newyear .sync-teacher-panel,
+  body.season-newyear .top-nav,
+  body.season-newyear .big-action,
+  body.season-newyear .auth-form-card .btn-login-big { 
+    background-color: #fff;
+  }
+  body.season-newyear .big-action {
+    background: linear-gradient(135deg, #1c4e9c 0%, #2e9a3d 50%, #10b981 100%) !important; /* Новогодний акцент на кнопку */
+  }
+
+
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   :root {
     --violet: #7c3aed; --violet-d: #6d28d9; --pink: #ec4899;
@@ -790,255 +834,497 @@ onAuthStateChanged(auth, () => {
 
   /* 2. Снег (крупный, падающий) */
   
-  /* === 🎄 НОВЫЙ ГОД v3 === */
   
-  /* 1. Фоны для ВСЕХ ролей */
-  body.season-newyear { background: radial-gradient(circle at 50% 0%, #0f172a 0%, #064e3b 100%) !important; }
-  body.season-newyear.theme-student-entry, body.season-newyear.theme-student { background: transparent !important; }
-  body.season-newyear.theme-teacher { background-image: radial-gradient(circle at 50% 0%, #0f172a 0%, #064e3b 100%) !important; }
-  body.season-newyear.theme-developer { background-image: radial-gradient(circle at 50% 0%, #0f172a 0%, #064e3b 100%) !important; }
-  body.season-newyear .join-screen { background: transparent !important; }
-  body.season-newyear.theme-teacher::before, body.season-newyear.theme-developer::before { opacity: 0 !important; }
-  body.season-newyear.theme-teacher::after, body.season-newyear.theme-developer::after { opacity: 0 !important; }
+  
+  
+  /* === 🎄 НОВЫЙ ГОД v6 === */
 
-  /* 2. Плавный снег */
-  body.season-newyear::after {
-    content: ''; position: fixed; top: 0; left: 0; width: 100vw; height: 150vh; z-index: 1; pointer-events: none;
-    background-image:
+  /* 1. Идеально плавный снег (3 слоя) */
+  .ny-snow { display: none; position: fixed; inset: 0; pointer-events: none; z-index: 9998; overflow: hidden; }
+  body.season-newyear .ny-snow { display: block; }
+  
+  .ny-snow-layer {
+    position: absolute; top: -100px; left: -100px; right: -100px; bottom: -100px;
+    background-image: 
       radial-gradient(2px 2px at 20px 30px, #fff, transparent),
-      radial-gradient(3px 3px at 40px 70px, rgba(255,255,255,0.8), transparent),
-      radial-gradient(2px 2px at 90px 40px, #fff, transparent),
-      radial-gradient(3px 3px at 130px 80px, rgba(255,255,255,0.9), transparent),
-      radial-gradient(2px 2px at 160px 120px, #fff, transparent);
+      radial-gradient(2px 2px at 40px 70px, #fff, transparent),
+      radial-gradient(1px 1px at 90px 40px, #fff, transparent),
+      radial-gradient(2px 2px at 130px 80px, #fff, transparent),
+      radial-gradient(1px 1px at 160px 120px, #fff, transparent);
+    background-repeat: repeat;
     background-size: 200px 200px;
-    animation: snowFallSmooth 10s linear infinite;
+    opacity: 0.8;
+    animation: snowFall 10s linear infinite;
   }
-  @keyframes snowFallSmooth { 0% { transform: translateY(0); } 100% { transform: translateY(200px); } }
-
-  /* 3. Ёлка и Снеговик */
-  .ny-decor { display: none; position: fixed; bottom: 0; z-index: 0; pointer-events: none; }
-  body.season-newyear .ny-decor { display: block; }
-  
-  .ny-tree { left: 5%; width: 300px; height: 400px; }
-  .ny-tree::before { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 40px; height: 60px; background: #451a03; border-radius: 4px 4px 0 0; }
-  .ny-tree::after { content: ''; position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 120px solid transparent; border-right: 120px solid transparent; border-bottom: 160px solid #065f46; filter: drop-shadow(0 -10px 20px rgba(16, 185, 129, 0.4)); }
-  .ny-tree-mid { position: absolute; bottom: 140px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 90px solid transparent; border-right: 90px solid transparent; border-bottom: 140px solid #047857; }
-  .ny-tree-top { position: absolute; bottom: 230px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 60px solid transparent; border-right: 60px solid transparent; border-bottom: 110px solid #059669; }
-  .ny-star { position: absolute; bottom: 340px; left: 50%; transform: translateX(-50%); width: 30px; height: 30px; background: #fbbf24; border-radius: 50%; box-shadow: 0 0 20px 10px rgba(251,191,36,0.6); animation: pulseStar 1.5s infinite alternate; }
-  @keyframes pulseStar { 0% { box-shadow: 0 0 15px 5px rgba(251,191,36,0.5); } 100% { box-shadow: 0 0 30px 15px rgba(251,191,36,0.9); } }
-  
-  .ny-ornament { position: absolute; border-radius: 50%; box-shadow: 0 0 10px currentColor; animation: twinkle 2s infinite alternate; }
-  @keyframes twinkle { 0% { opacity: 0.6; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1.1); } }
-  .ny-o1 { width: 14px; height: 14px; background: #ef4444; color: #ef4444; bottom: 70px; left: 80px; }
-  .ny-o2 { width: 12px; height: 12px; background: #fbbf24; color: #fbbf24; bottom: 110px; left: 140px; animation-delay: 0.5s; }
-  .ny-o3 { width: 16px; height: 16px; background: #3b82f6; color: #3b82f6; bottom: 160px; left: 200px; animation-delay: 1s; }
-  .ny-o4 { width: 10px; height: 10px; background: #ec4899; color: #ec4899; bottom: 200px; left: 110px; animation-delay: 0.2s; }
-  .ny-o5 { width: 12px; height: 12px; background: #fbbf24; color: #fbbf24; bottom: 250px; left: 160px; animation-delay: 0.8s; }
-
-  .ny-snowman { right: 5%; width: 150px; height: 250px; }
-  .ny-sm-bottom { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 100px; height: 100px; background: #fff; border-radius: 50%; box-shadow: inset -10px -10px 20px rgba(0,0,0,0.1); }
-  .ny-sm-mid { position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%); width: 70px; height: 70px; background: #fff; border-radius: 50%; box-shadow: inset -8px -8px 15px rgba(0,0,0,0.1); }
-  .ny-sm-top { position: absolute; bottom: 130px; left: 50%; transform: translateX(-50%); width: 50px; height: 50px; background: #fff; border-radius: 50%; }
-  .ny-sm-hat { position: absolute; bottom: 170px; left: 50%; transform: translateX(-50%); width: 44px; height: 8px; background: #111; border-radius: 2px; }
-  .ny-sm-hat-top { position: absolute; bottom: 178px; left: 50%; transform: translateX(-50%); width: 20px; height: 20px; background: #111; border-radius: 4px 4px 0 0; }
-  .ny-sm-eye1 { position: absolute; bottom: 155px; left: 42%; width: 6px; height: 6px; background: #111; border-radius: 50%; }
-  .ny-sm-eye2 { position: absolute; bottom: 155px; right: 42%; width: 6px; height: 6px; background: #111; border-radius: 50%; }
-  .ny-sm-nose { position: absolute; bottom: 145px; left: 50%; width: 16px; height: 16px; background: #f97316; border-radius: 50% 50% 50% 0; transform-origin: left; transform: translateX(-50%) rotate(45deg); }
-  .ny-sm-btn1 { position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%); width: 8px; height: 8px; background: #111; border-radius: 50%; }
-  .ny-sm-btn2 { position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%); width: 8px; height: 8px; background: #111; border-radius: 50%; }
-  
-  @media (max-width: 800px) {
-    .ny-decor { transform: scale(0.6); transform-origin: bottom; }
-    .ny-tree { left: -20px; }
-    .ny-snowman { right: -20px; }
+  .ny-snow-layer:nth-child(2) {
+    background-size: 250px 250px;
+    background-image: 
+      radial-gradient(3px 3px at 50px 50px, #fff, transparent),
+      radial-gradient(2px 2px at 150px 100px, #fff, transparent),
+      radial-gradient(3px 3px at 250px 200px, #fff, transparent);
+    animation-duration: 15s;
+    opacity: 0.6;
+  }
+  .ny-snow-layer:nth-child(3) {
+    background-size: 150px 150px;
+    animation-duration: 8s;
+    opacity: 0.5;
   }
 
   @keyframes snowFall {
-    0% { background-position: 0px 0px, 0px 0px, 0px 0px, 0px 0px, 0px 0px; }
-    100% { background-position: -50px 200px, -20px 200px, -70px 200px, -30px 200px, -80px 200px; }
+    0% { transform: translateY(0) translateX(0); }
+    100% { transform: translateY(200px) translateX(-50px); }
   }
 
-  /* 3. Ёлка (рисуем через CSS градиенты) */
-  .ny-tree {
-    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
-    width: 300px; height: 400px; z-index: -1; pointer-events: none;
-    display: none;
-  }
-  body.season-newyear .ny-tree { display: block; }
+  /* 2. Украшения */
+  .ny-decor { display: none; position: fixed; bottom: 0; z-index: 0; pointer-events: none; }
+  body.season-newyear .ny-decor { display: block; }
   
-  /* Ствол */
-  .ny-tree::before {
-    content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
-    width: 40px; height: 60px; background: #451a03; border-radius: 4px 4px 0 0;
-    box-shadow: inset -10px 0 10px rgba(0,0,0,0.5);
+  /* Ёлка */
+  .ny-tree { left: 3%; width: 300px; height: 400px; }
+  .ny-tree::before { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 30px; height: 50px; background: #451a03; border-radius: 4px 4px 0 0; }
+  
+  .ny-t1, .ny-t2, .ny-t3, .ny-t4, .ny-t5 {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    width: 0; height: 0; border-left: solid transparent; border-right: solid transparent; border-bottom: solid #064e3b;
+    filter: drop-shadow(0 -5px 15px rgba(16, 185, 129, 0.3));
   }
-  /* Крона (3 треугольника) */
-  .ny-tree::after {
-    content: ''; position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%);
-    width: 0; height: 0;
-    border-left: 120px solid transparent; border-right: 120px solid transparent; border-bottom: 160px solid #065f46;
-    filter: drop-shadow(0 -10px 20px rgba(16, 185, 129, 0.4));
-  }
-  .ny-tree-mid {
-    position: absolute; bottom: 140px; left: 50%; transform: translateX(-50%);
-    width: 0; height: 0;
-    border-left: 90px solid transparent; border-right: 90px solid transparent; border-bottom: 140px solid #047857;
-  }
-  .ny-tree-top {
-    position: absolute; bottom: 230px; left: 50%; transform: translateX(-50%);
-    width: 0; height: 0;
-    border-left: 60px solid transparent; border-right: 60px solid transparent; border-bottom: 110px solid #059669;
-  }
-
-  /* Игрушки на ёлке */
-  .ny-ornament {
-    position: absolute; border-radius: 50%; box-shadow: 0 0 10px currentColor;
-    animation: twinkle 2s infinite alternate;
-  }
-  @keyframes twinkle { 0% { opacity: 0.6; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1.1); } }
-  .ny-o1 { width: 14px; height: 14px; background: #ef4444; color: #ef4444; bottom: 70px; left: 80px; }
-  .ny-o2 { width: 12px; height: 12px; background: #fbbf24; color: #fbbf24; bottom: 110px; left: 140px; animation-delay: 0.5s; }
-  .ny-o3 { width: 16px; height: 16px; background: #3b82f6; color: #3b82f6; bottom: 160px; left: 200px; animation-delay: 1s; }
-  .ny-o4 { width: 10px; height: 10px; background: #ec4899; color: #ec4899; bottom: 200px; left: 110px; animation-delay: 0.2s; }
-  .ny-o5 { width: 12px; height: 12px; background: #fbbf24; color: #fbbf24; bottom: 250px; left: 160px; animation-delay: 0.8s; }
-
-  /* Звезда */
+  .ny-t1 { bottom: 40px; border-left-width: 140px; border-right-width: 140px; border-bottom-width: 110px; }
+  .ny-t2 { bottom: 100px; border-left-width: 110px; border-right-width: 110px; border-bottom-width: 100px; border-bottom-color: #065f46; }
+  .ny-t3 { bottom: 160px; border-left-width: 85px; border-right-width: 85px; border-bottom-width: 90px; border-bottom-color: #047857; }
+  .ny-t4 { bottom: 220px; border-left-width: 60px; border-right-width: 60px; border-bottom-width: 80px; border-bottom-color: #059669; }
+  .ny-t5 { bottom: 280px; border-left-width: 35px; border-right-width: 35px; border-bottom-width: 70px; border-bottom-color: #10b981; }
+  
+  /* 🌟 Макушка (Сияющий шар с лучами, вместо острой звезды) */
   .ny-star {
     position: absolute; bottom: 340px; left: 50%; transform: translateX(-50%);
-    width: 30px; height: 30px; background: #fbbf24; border-radius: 50%;
-    box-shadow: 0 0 20px 10px rgba(251,191,36,0.6);
-    animation: pulseStar 1.5s infinite alternate;
+    width: 40px; height: 40px; background: #fef08a; border-radius: 50%;
+    box-shadow: 0 0 30px 15px rgba(250, 204, 21, 0.6), inset -5px -5px 10px rgba(234, 179, 8, 0.8);
+    animation: starPulse 2s infinite alternate; z-index: 2;
   }
-  @keyframes pulseStar { 0% { box-shadow: 0 0 15px 5px rgba(251,191,36,0.5); } 100% { box-shadow: 0 0 30px 15px rgba(251,191,36,0.9); } }
+  .ny-star::after {
+    content: ''; position: absolute; top: 50%; left: 50%; width: 100px; height: 4px; background: rgba(250, 204, 21, 0.4);
+    transform: translate(-50%, -50%); border-radius: 50%; box-shadow: 0 0 15px 5px rgba(250, 204, 21, 0.4);
+  }
+  .ny-star::before {
+    content: ''; position: absolute; top: 50%; left: 50%; width: 4px; height: 100px; background: rgba(250, 204, 21, 0.4);
+    transform: translate(-50%, -50%); border-radius: 50%; box-shadow: 0 0 15px 5px rgba(250, 204, 21, 0.4);
+  }
+  @keyframes starPulse {
+    0% { transform: translateX(-50%) scale(1); filter: drop-shadow(0 0 15px #fef08a); }
+    100% { transform: translateX(-50%) scale(1.1); filter: drop-shadow(0 0 35px #fef08a); }
+  }
 
-  /* 4. Акценты для учителя и разработчика */
-  body.theme-teacher.season-newyear .top-nav { border-bottom: 3px solid #10b981 !important; background: #fff; }
-  body.theme-developer.season-newyear { background-image: linear-gradient(160deg, #f0fdf4 0%, #f8f8fe 100%); }
+  /* Шары */
+  .ny-ball { position: absolute; border-radius: 50%; box-shadow: inset -3px -3px 5px rgba(0,0,0,0.4), 0 0 10px currentColor; animation: twinkle 2s infinite alternate; z-index: 3; }
+  @keyframes twinkle { 0% { filter: brightness(1); transform: scale(0.9); } 100% { filter: brightness(1.5); transform: scale(1.1); } }
+  .ny-b1 { width: 18px; height: 18px; background: #ef4444; color: #ef4444; bottom: 120px; left: 70px; }
+  .ny-b2 { width: 16px; height: 16px; background: #3b82f6; color: #3b82f6; bottom: 90px; left: 210px; animation-delay: 0.5s; }
+  .ny-b3 { width: 20px; height: 20px; background: #fbbf24; color: #fbbf24; bottom: 170px; left: 100px; animation-delay: 1s; }
+  .ny-b4 { width: 14px; height: 14px; background: #ec4899; color: #ec4899; bottom: 190px; left: 190px; animation-delay: 0.3s; }
+  .ny-b5 { width: 16px; height: 16px; background: #8b5cf6; color: #8b5cf6; bottom: 240px; left: 120px; animation-delay: 0.8s; }
+  .ny-b6 { width: 12px; height: 12px; background: #ef4444; color: #ef4444; bottom: 260px; left: 170px; animation-delay: 1.2s; }
+  .ny-b7 { width: 14px; height: 14px; background: #fbbf24; color: #fbbf24; bottom: 300px; left: 140px; animation-delay: 0.6s; }
+
+  /* ☃️ ВЕСЁЛЫЙ СНЕГОВИК (Мультяшный стиль) */
+  .ny-snowman { right: 5%; width: 180px; height: 280px; }
   
-  @media (max-width: 700px) {
-    .ny-tree { transform: translateX(-50%) scale(0.7); transform-origin: bottom center; }
+  /* Основа (3 шара с бликами) */
+  .ny-sm-bottom { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 140px; height: 140px; background: radial-gradient(circle at 35% 35%, #ffffff 0%, #e2e8f0 70%, #cbd5e1 100%); border-radius: 50%; box-shadow: inset -10px -10px 20px rgba(0,0,0,0.15), 0 10px 20px rgba(0,0,0,0.2); }
+  .ny-sm-mid { position: absolute; bottom: 105px; left: 50%; transform: translateX(-50%); width: 100px; height: 100px; background: radial-gradient(circle at 35% 35%, #ffffff 0%, #e2e8f0 70%, #cbd5e1 100%); border-radius: 50%; box-shadow: inset -8px -8px 15px rgba(0,0,0,0.15); }
+  .ny-sm-top { position: absolute; bottom: 195px; left: 50%; transform: translateX(-50%); width: 80px; height: 80px; background: radial-gradient(circle at 35% 35%, #ffffff 0%, #e2e8f0 70%, #cbd5e1 100%); border-radius: 50%; box-shadow: inset -6px -6px 12px rgba(0,0,0,0.15); }
+  
+  /* Румяные щёки */
+  .ny-sm-cheek-l { position: absolute; bottom: 230px; left: 30%; width: 14px; height: 8px; background: rgba(244, 63, 94, 0.5); border-radius: 50%; transform: rotate(-10deg); filter: blur(2px); }
+  .ny-sm-cheek-r { position: absolute; bottom: 230px; right: 30%; width: 14px; height: 8px; background: rgba(244, 63, 94, 0.5); border-radius: 50%; transform: rotate(10deg); filter: blur(2px); }
+  
+  /* Весёлые глаза (с бликом) */
+  .ny-sm-eye1 { position: absolute; bottom: 245px; left: 42%; width: 10px; height: 10px; background: #111827; border-radius: 50%; box-shadow: inset -2px -2px 0 rgba(255,255,255,0.8); }
+  .ny-sm-eye2 { position: absolute; bottom: 245px; right: 42%; width: 10px; height: 10px; background: #111827; border-radius: 50%; box-shadow: inset -2px -2px 0 rgba(255,255,255,0.8); }
+  
+  /* Нос-морковка */
+  .ny-sm-nose { position: absolute; bottom: 230px; left: 50%; width: 24px; height: 10px; background: linear-gradient(to right, #ea580c, #f97316); border-radius: 5px 50% 50% 5px; transform: translateX(-50%) rotate(15deg); box-shadow: inset 0 -2px 4px rgba(0,0,0,0.2); }
+  
+  /* Широкая улыбка */
+  .ny-sm-mouth { position: absolute; bottom: 215px; left: 50%; transform: translateX(-50%); width: 34px; height: 14px; border-bottom: 4px solid #111827; border-radius: 50%; }
+  
+  /* Пуговицы на животе */
+  .ny-sm-btn1 { position: absolute; bottom: 140px; left: 50%; transform: translateX(-50%); width: 10px; height: 10px; background: #111827; border-radius: 50%; box-shadow: inset -2px -2px 4px rgba(255,255,255,0.3); }
+  .ny-sm-btn2 { position: absolute; bottom: 110px; left: 50%; transform: translateX(-50%); width: 10px; height: 10px; background: #111827; border-radius: 50%; box-shadow: inset -2px -2px 4px rgba(255,255,255,0.3); }
+  .ny-sm-btn3 { position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); width: 12px; height: 12px; background: #111827; border-radius: 50%; box-shadow: inset -2px -2px 4px rgba(255,255,255,0.3); }
+
+  /* 🪣 Классическое красное ведро на голове */
+  .ny-sm-hat { position: absolute; bottom: 265px; left: 50%; transform: translateX(-50%); width: 64px; height: 12px; background: #dc2626; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+  .ny-sm-hat-top { position: absolute; bottom: 277px; left: 50%; transform: translateX(-50%); width: 50px; height: 30px; background: linear-gradient(to right, #991b1b, #ef4444, #991b1b); border-radius: 4px 4px 0 0; box-shadow: inset 2px 0 5px rgba(255,255,255,0.3), 0 -2px 5px rgba(0,0,0,0.2); }
+  /* Ручка ведра */
+  .ny-sm-hat-handle { position: absolute; bottom: 270px; left: 50%; transform: translateX(-50%); width: 72px; height: 30px; border: 4px solid #b91c1c; border-bottom: none; border-radius: 40px 40px 0 0; z-index: 3; }
+
+  /* Ручки-веточки (подняты вверх, как будто машет) */
+  .ny-sm-arm-l { position: absolute; bottom: 160px; left: -15px; width: 50px; height: 8px; background: #451a03; transform: rotate(35deg); border-radius: 4px; }
+  .ny-sm-arm-r { position: absolute; bottom: 180px; right: -15px; width: 50px; height: 8px; background: #451a03; transform: rotate(-45deg); border-radius: 4px; }
+
+  /* Яркий шарф */
+  .ny-sm-scarf { position: absolute; bottom: 180px; left: 50%; transform: translateX(-50%); width: 84px; height: 18px; background: #10b981; border-radius: 6px; z-index: 2; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+  /* Полоски на шарфе */
+  .ny-sm-scarf::after { content: ''; position: absolute; top: 0; left: 20px; width: 10px; height: 100%; background: #fbbf24; }
+  .ny-sm-scarf::before { content: ''; position: absolute; top: 0; left: 50px; width: 10px; height: 100%; background: #fbbf24; }
+  
+  .ny-sm-scarf-tail { position: absolute; bottom: 130px; left: 70%; width: 18px; height: 50px; background: #10b981; border-radius: 0 0 6px 6px; z-index: 1; transform: rotate(-15deg); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+  .ny-sm-scarf-tail::after { content: ''; position: absolute; top: 10px; left: 0; width: 100%; height: 10px; background: #fbbf24; }
+
+  @media (max-width: 800px) {
+    .ny-decor { transform: scale(0.6); transform-origin: bottom; }
+    .ny-tree { left: -30px; }
+    .ny-snowman { right: -30px; }
   }
 
-  body.season-cosmos::after {
+  /* === 🎄 ФИКС ТЕКСТА И КОНТРАСТА (v8) === */
+  
+  /* 1. Делаем все заголовки и текст белыми при Новом годе */
+  body.season-newyear h1,
+  body.season-newyear h2,
+  body.season-newyear h3,
+  body.season-newyear p,
+  body.season-newyear span:not(.badge):not(.code):not(.opt span),
+  body.season-newyear label,
+  body.season-newyear .hint,
+  body.season-newyear .student-sub,
+  body.season-newyear .student-title,
+  body.season-newyear .session-row .title,
+  body.season-newyear .session-row .date,
+  body.season-newyear .session-row .time,
+  body.season-newyear .kpi-line,
+  body.season-newyear .kpi-line b,
+  body.season-newyear .nav-user span {
+    color: #f8fafc !important;
+  }
+
+  /* Восстанавливаем цвета для элементов, которые должны остаться цветными */
+  body.season-newyear .code,
+  body.season-newyear .badge,
+  body.season-newyear .badge *,
+  body.season-newyear .opt span,
+  body.season-newyear .ok,
+  body.season-newyear .bad,
+  body.season-newyear .score {
+    color: inherit !important;
+  }
+  
+  /* Кнопки "Открыть" и иконки оставляем как есть */
+  body.season-newyear .session-row .btn-start-session {
+    color: #fff !important;
+  }
+
+  /* 2. Фикс черного квадрата (⬛) в вариантах ответа */
+  /* Когда фигурка черная, делаем её белой, так как на цветном фоне она сливается */
+  body.season-newyear .opt .fig {
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+  }
+  /* Но если это квадрат, делаем его белым */
+  body.season-newyear .opt .fig:contains('⬛') {
+    color: #ffffff !important;
+  }
+  
+  /* Хак для замены конкретно черного квадрата на белый */
+  body.season-newyear .opt:nth-child(2) .fig {
+    /* Если это второй ответ (который часто синий), делаем контрастным */
+  }
+  
+  /* Более надёжно: перекрашиваем цвет всех символов внутри .fig в белый */
+  body.season-newyear .opt .fig span,
+  body.season-newyear .opt .fig {
+    color: #ffffff !important;
+    text-shadow: 0 0 4px rgba(0,0,0,0.3);
+  }
+
+  /* Плашки внутри сессии (Индивидуальный режим) */
+  body.season-newyear .stp-phase {
+    color: inherit !important;
+  }
+  
+  /* Текст в белых карточках (например, внутри теста) должен остаться тёмным */
+  body.season-newyear .sync-student-screen .sss-hero p,
+  body.season-newyear .sync-student-screen .sss-hero h1,
+  body.season-newyear .sync-student-screen .sss-hero h2,
+  body.season-newyear .sync-student-screen .sss-hero .question-text,
+  body.season-newyear .panel h1,
+  body.season-newyear .panel h2,
+  body.season-newyear .panel h3,
+  body.season-newyear .panel p,
+  body.season-newyear .panel span,
+  body.season-newyear .panel label,
+  body.season-newyear .panel .hint,
+  body.season-newyear .panel .session-row .title,
+  body.season-newyear .panel .session-row .date,
+  body.season-newyear .panel .session-row .time,
+  body.season-newyear .student-card-hero h1,
+  body.season-newyear .student-card-hero p,
+  body.season-newyear .student-card-hero label,
+  body.season-newyear .modal h2,
+  body.season-newyear .modal p,
+  body.season-newyear .modal label {
+    color: var(--ink) !important;
+  }
+
+  /* Возвращаем белый цвет для карточек в тесте (кнопки ответов) */
+  body.season-newyear .opt span {
+    color: #fff !important;
+  }
+
+
+  /* === ⬛ ФИКС ЧЕРНОГО КВАДРАТА === */
+  /* Делаем все символы внутри круглой фигурки (fig) белыми и с тенью */
+  body.season-newyear .opt .fig,
+  body.season-newyear .opt .fig span,
+  body.season-newyear .opt .fig .pupil {
+    color: #ffffff !important;
+    fill: #ffffff !important;
+    text-shadow: 0 0 4px rgba(0,0,0,0.4) !important;
+  }
+
+
+  /* === ЕДИНЫЙ ТЁМНЫЙ ФОН (Разработчик / Учитель / Ученик) === */
+  
+  /* Базовый градиент для всех */
+  body.theme-developer, body.theme-teacher, body.theme-student {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%) !important;
+    background-attachment: fixed !important;
+  }
+
+  /* Общая сетка и свечения (как у разработчика) */
+  body.theme-developer::before, 
+  body.theme-teacher::before, 
+  body.theme-student::before {
+    content: ''; position: fixed; inset: 0; z-index: -2; pointer-events: none;
     background-image:
-      radial-gradient(1px 1px at 10px 10px, #fff, transparent),
-      radial-gradient(1.5px 1.5px at 60px 40px, #fff, transparent),
-      radial-gradient(1px 1px at 120px 80px, #fff, transparent),
-      radial-gradient(2px 2px at 180px 30px, #fff, transparent),
-      radial-gradient(1px 1px at 220px 120px, #fff, transparent);
-    background-size: 250px 150px;
-    opacity: 0.5;
-    animation: seasonTwinkle 4s ease-in-out infinite;
+      linear-gradient(rgba(124,58,237,0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,58,237,0.1) 1px, transparent 1px);
+    background-size: 40px 40px;
+    -webkit-mask-image: radial-gradient(ellipse at center, #000 20%, transparent 80%);
+    mask-image: radial-gradient(ellipse at center, #000 20%, transparent 80%);
   }
-  body.season-sept1::after {
+
+  body.theme-developer::after, 
+  body.theme-teacher::after, 
+  body.theme-student::after {
+    content: ''; position: fixed; inset: -18%; z-index: -1; pointer-events: none;
+    background-repeat: no-repeat;
+    background-size: 44.1% 47.8%, 40.4% 44.1%;
     background-image:
-      radial-gradient(4px 6px at 30px 40px, rgba(245,158,11,0.75), transparent),
-      radial-gradient(3px 5px at 90px 80px, rgba(239,68,68,0.65), transparent),
-      radial-gradient(4px 6px at 150px 50px, rgba(234,179,8,0.7), transparent),
-      radial-gradient(3px 5px at 200px 110px, rgba(217,119,6,0.65), transparent);
-    background-size: 260px 200px;
-    opacity: 0.55;
-    animation: seasonLeafFall 10s linear infinite;
+      radial-gradient(closest-side, rgba(124,58,237,0.45), transparent),
+      radial-gradient(closest-side, rgba(34,211,238,0.35), transparent);
+    background-position: 31.6% 37.7%, 69.4% 63.2%;
+    will-change: transform;
+    animation: glowSwirl 18s ease-in-out infinite alternate;
   }
-  body.season-drone::after {
+
+  /* Скрываем старые гекс-паттерны, чтобы не мешали */
+  body.theme-developer::before, body.theme-teacher::before { background-image: none; }
+  .auth-art::before, .dev-art::before { display: none !important; }
+  .auth-art::after, .dev-art::after { display: none !important; }
+  
+  /* Ученику: делаем контейнер входа прозрачным */
+  .join-screen { background: transparent !important; }
+  
+  /* Для учителя: убираем светлый фон у форм входа */
+  .auth-form-side { background: transparent !important; }
+  .auth-form-card { background: transparent !important; }
+  
+  /* Текст на тёмном фоне: делаем заголовки белыми */
+  body.theme-teacher h1, body.theme-teacher h2, body.theme-teacher h3, body.theme-teacher p, body.theme-teacher label { color: #f8fafc; }
+  body.theme-teacher .student-title { color: var(--violet); }
+  body.theme-teacher .big-action p, body.theme-teacher .big-action h2 { color: #fff; }
+  body.theme-teacher .student-sub { color: #cbd5e1; }
+  body.theme-student h1, body.theme-student h2, body.theme-student h3, body.theme-student p { color: #f8fafc; }
+  body.theme-student .student-title { color: var(--violet); }
+  body.theme-student .student-sub { color: #cbd5e1; }
+  
+  /* Учитель: шапка навигации на тёмном фоне тоже тёмная */
+  body.theme-teacher .top-nav {
+    background: rgba(15, 23, 42, 0.8) !important;
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  body.theme-teacher .top-nav .nav-logo { color: #a78bfa; }
+  body.theme-teacher .top-nav .nav-user span { color: #e2e8f0; }
+  body.theme-teacher .top-nav .nav-links button { color: #94a3b8; }
+  body.theme-teacher .top-nav .nav-links button.active { background: rgba(124,58,237,0.2); color: #c4b5fd; }
+  
+  /* Карточки на тёмном фоне (стеклянный эффект) */
+  body.theme-teacher .panel, body.theme-teacher .card { background: rgba(255,255,255,0.95) !important; }
+  body.theme-student .student-card-hero { background: #fff !important; }
+
+  /* Убираем старые стили фона у тем */
+  body.theme-developer { --c1: 99,102,241; --c2: 14,165,233; --c3: 45,212,191; --c4: 167,139,250; }
+  body.theme-teacher { --c1: 99,102,241; --c2: 14,165,233; --c3: 45,212,191; --c4: 167,139,250; }
+  body.theme-student { --c1: 99,102,241; --c2: 14,165,233; --c3: 45,212,191; --c4: 167,139,250; }
+
+  /* Если включен сезон (Новый год) — он перекроет этот фон */
+  body.season-newyear { background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%) !important; }
+  
+
+  /* === ФИКС: Убираем старый светлый фон у ученика во время теста === */
+  
+  /* Убираем градиент с самого body */
+  body.theme-student { 
+    background: transparent !important; 
+  }
+  
+  /* Убираем старые псевдоэлементы фона (сетка, свечения) */
+  body.theme-student::before, 
+  body.theme-student::after { 
+    display: none !important; 
+  }
+
+  /* На всякий случай принудительно задаем тёмный фон */
+  body.theme-student {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%) !important;
+    background-attachment: fixed !important;
+  }
+
+  /* Возвращаем сетку и свечения для ученика, как у разработчика */
+  body.theme-student::before {
+    content: ''; position: fixed; inset: 0; z-index: -2; pointer-events: none; display: block !important;
     background-image:
-      radial-gradient(3px 3px at 40px 40px, rgba(59,130,246,0.65), transparent),
-      radial-gradient(3px 3px at 120px 90px, rgba(59,130,246,0.55), transparent),
-      radial-gradient(2px 2px at 200px 50px, rgba(34,211,238,0.6), transparent);
-    background-size: 240px 180px;
-    opacity: 0.45;
-    animation: seasonDrift 14s linear infinite;
+      linear-gradient(rgba(124,58,237,0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,58,237,0.1) 1px, transparent 1px);
+    background-size: 40px 40px;
+    -webkit-mask-image: radial-gradient(ellipse at center, #000 20%, transparent 80%);
+    mask-image: radial-gradient(ellipse at center, #000 20%, transparent 80%);
   }
-  body.season-halloween::after {
+
+  body.theme-student::after {
+    content: ''; position: fixed; inset: -18%; z-index: -1; pointer-events: none; display: block !important;
+    background-repeat: no-repeat;
+    background-size: 44.1% 47.8%, 40.4% 44.1%;
     background-image:
-      radial-gradient(6px 6px at 40px 60px, rgba(249,115,22,0.7), transparent),
-      radial-gradient(5px 5px at 120px 100px, rgba(168,85,247,0.6), transparent),
-      radial-gradient(6px 6px at 200px 40px, rgba(249,115,22,0.7), transparent);
-    background-size: 250px 160px;
-    opacity: 0.5;
-    animation: seasonTwinkle 6s ease-in-out infinite;
-  }
-  @keyframes seasonSnowFall { from { background-position: 0 0; } to { background-position: 0 200px; } }
-  @keyframes seasonLeafFall { from { background-position: 0 0; } to { background-position: 0 200px; } }
-  @keyframes seasonTwinkle  { 0%,100% { opacity: 0.35; } 50% { opacity: 0.7; } }
-  @keyframes seasonDrift    { from { background-position: 0 0; } to { background-position: 240px 0; } }
-
-  /* Полная тема для ученика */
-  body.theme-student.season-newyear    { --season-accent: #0ea5e9; }
-  body.theme-student.season-cosmos     { --season-accent: #8b5cf6; }
-  body.theme-student.season-sept1      { --season-accent: #f59e0b; }
-  body.theme-student.season-drone      { --season-accent: #3b82f6; }
-  body.theme-student.season-halloween  { --season-accent: #f97316; }
-
-  /* Лёгкий акцент в шапке для учителя */
-  body.theme-teacher.season-newyear   .top-nav { border-bottom-color: #0ea5e9 !important; }
-  body.theme-teacher.season-cosmos    .top-nav { border-bottom-color: #8b5cf6 !important; }
-  body.theme-teacher.season-sept1     .top-nav { border-bottom-color: #f59e0b !important; }
-  body.theme-teacher.season-drone     .top-nav { border-bottom-color: #3b82f6 !important; }
-  body.theme-teacher.season-halloween .top-nav { border-bottom-color: #f97316 !important; }
-
-  /* Лёгкий фон для разработчика */
-  body.theme-developer.season-newyear   { background-image: linear-gradient(160deg, #f0f9ff 0%, #f8f8fe 100%); }
-  body.theme-developer.season-cosmos    { background-image: linear-gradient(160deg, #f5f3ff 0%, #f8f8fe 100%); }
-  body.theme-developer.season-sept1     { background-image: linear-gradient(160deg, #fffbeb 0%, #f8f8fe 100%); }
-  body.theme-developer.season-drone     { background-image: linear-gradient(160deg, #eff6ff 0%, #f8f8fe 100%); }
-  body.theme-developer.season-halloween { background-image: linear-gradient(160deg, #fff7ed 0%, #f8f8fe 100%); }
-
-  /* Плашка «форсировано» */
-  .season-force-badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 4px 10px; border-radius: 8px;
-    background: #fef3c7; color: #b45309; border: 2px solid #fde68a;
-    font-size: 11px; font-weight: 800; text-transform: uppercase;
-    margin-left: 8px;
+      radial-gradient(closest-side, rgba(124,58,237,0.45), transparent),
+      radial-gradient(closest-side, rgba(34,211,238,0.35), transparent);
+    background-position: 31.6% 37.7%, 69.4% 63.2%;
+    will-change: transform;
+    animation: glowSwirl 18s ease-in-out infinite alternate;
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    body.season-newyear::after, body.season-cosmos::after,
-    body.season-sept1::after, body.season-drone::after, body.season-halloween::after {
-      animation: none !important;
-    }
+  /* Если включен сезон (Новый год) — он перекроет этот фон */
+  body.season-newyear { 
+    background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%) !important; 
   }
+  body.season-newyear::before, body.season-newyear::after {
+    display: none !important; /* Для сезона свои фоны */
+  }
+  
 
+  /* Фикс для SVG в фигурках */
+  button.opt .fig svg {
+    width: 22px;
+    height: 22px;
+    fill: #fff !important;
+    display: block;
+  }
+  
 </style>
+
+  <style>
+    /* ФИКС ПЕРЕКРЫТИЯ: Контент поверх ёлки и снеговика */
+    .container { position: relative; z-index: 10; }
+    
+    /* Убеждаемся, что украшения строго на фоне */
+    .ny-decor { z-index: 0 !important; }
+    .ny-snow { z-index: 1 !important; } /* Снег можно чуть выше фона, но ниже контента */
+    
+    /* Но чтобы снег летел поверх карточек, можно сделать его z-index: 50, а не 9998 */
+    body.season-newyear .ny-snow { z-index: 50 !important; }
+  </style>
+  
 </head>
 <body>
 
-<!-- 🎄 Новогодние украшения -->
+<div class="ny-snow" aria-hidden="true">
+  <div class="ny-snow-layer"></div>
+  <div class="ny-snow-layer"></div>
+  <div class="ny-snow-layer"></div>
+</div>
 <div class="ny-decor ny-tree" aria-hidden="true">
+  <div class="ny-t1"></div>
+  <div class="ny-t2"></div>
+  <div class="ny-t3"></div>
+  <div class="ny-t4"></div>
+  <div class="ny-t5"></div>
   <div class="ny-star"></div>
-  <div class="ny-tree-top"></div>
-  <div class="ny-tree-mid"></div>
-  <div class="ny-ornament ny-o1"></div>
-  <div class="ny-ornament ny-o2"></div>
-  <div class="ny-ornament ny-o3"></div>
-  <div class="ny-ornament ny-o4"></div>
-  <div class="ny-ornament ny-o5"></div>
+  <div class="ny-ball ny-b1"></div>
+  <div class="ny-ball ny-b2"></div>
+  <div class="ny-ball ny-b3"></div>
+  <div class="ny-ball ny-b4"></div>
+  <div class="ny-ball ny-b5"></div>
+  <div class="ny-ball ny-b6"></div>
+  <div class="ny-ball ny-b7"></div>
 </div>
 <div class="ny-decor ny-snowman" aria-hidden="true">
+  <div class="ny-sm-hat-handle"></div>
+  <div class="ny-sm-hat-top"></div>
+  <div class="ny-sm-hat"></div>
+  <div class="ny-sm-arm-l"></div>
+  <div class="ny-sm-arm-r"></div>
   <div class="ny-sm-bottom"></div>
   <div class="ny-sm-mid"></div>
   <div class="ny-sm-top"></div>
-  <div class="ny-sm-hat"></div>
-  <div class="ny-sm-hat-top"></div>
+  <div class="ny-sm-cheek-l"></div>
+  <div class="ny-sm-cheek-r"></div>
   <div class="ny-sm-eye1"></div>
   <div class="ny-sm-eye2"></div>
   <div class="ny-sm-nose"></div>
+  <div class="ny-sm-mouth"></div>
+  <div class="ny-sm-scarf"></div>
+  <div class="ny-sm-scarf-tail"></div>
   <div class="ny-sm-btn1"></div>
   <div class="ny-sm-btn2"></div>
+  <div class="ny-sm-btn3"></div>
 </div>
 
-<!-- 🎄 Новогодняя Ёлка (появляется только в сезон) -->
-<div class="ny-tree" aria-hidden="true">
-  <div class="ny-star"></div>
-  <div class="ny-tree-top"></div>
-  <div class="ny-tree-mid"></div>
-  <div class="ny-ornament ny-o1"></div>
-  <div class="ny-ornament ny-o2"></div>
-  <div class="ny-ornament ny-o3"></div>
-  <div class="ny-ornament ny-o4"></div>
-  <div class="ny-ornament ny-o5"></div>
+
+
+
+<div class="ny-snow" aria-hidden="true">
+  <div class="ny-snow-layer"></div>
+  <div class="ny-snow-layer"></div>
+  <div class="ny-snow-layer"></div>
 </div>
+<div class="ny-decor ny-tree" aria-hidden="true">
+  <div class="ny-t1"></div>
+  <div class="ny-t2"></div>
+  <div class="ny-t3"></div>
+  <div class="ny-t4"></div>
+  <div class="ny-t5"></div>
+  <div class="ny-star"></div>
+  <div class="ny-ball ny-b1"></div>
+  <div class="ny-ball ny-b2"></div>
+  <div class="ny-ball ny-b3"></div>
+  <div class="ny-ball ny-b4"></div>
+  <div class="ny-ball ny-b5"></div>
+  <div class="ny-ball ny-b6"></div>
+  <div class="ny-ball ny-b7"></div>
+</div>
+<div class="ny-decor ny-snowman" aria-hidden="true">
+  <div class="ny-sm-hat-handle"></div>
+  <div class="ny-sm-hat"></div>
+  <div class="ny-sm-hat-top"></div>
+  <div class="ny-sm-arm-l"></div>
+  <div class="ny-sm-arm-r"></div>
+  <div class="ny-sm-bottom"></div>
+  <div class="ny-sm-mid"></div>
+  <div class="ny-sm-scarf"></div>
+  <div class="ny-sm-scarf-tail"></div>
+  <div class="ny-sm-top"></div>
+  <div class="ny-sm-eye1"></div>
+  <div class="ny-sm-eye2"></div>
+  <div class="ny-sm-nose"></div>
+  <div class="ny-sm-mouth"></div>
+  <div class="ny-sm-btn1"></div>
+  <div class="ny-sm-btn2"></div>
+  <div class="ny-sm-btn3"></div>
+</div>
+
 <div class="container" id="app">
   <p style="text-align:center; color:#94a3b8; padding:40px 0;">
     <span class="loading-spinner"></span>Подключение…
@@ -1068,7 +1354,12 @@ const SESSION_TTL_MS = 10 * 24 * 60 * 60 * 1000;
 const OLD_RESULTS_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const MAX_NAME_LEN = 25;
 const MAX_IMG_SIZE_KB = 400;
-const FIGURES = ['⬤', '⬛', '▲', '★'];
+const FIGURES = [
+    '⬤', 
+    `<svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><rect x="4" y="4" width="12" height="12" rx="2"/></svg>`, 
+    '▲', 
+    '★'
+  ];
 const TIME_PER_QUESTION = 20;
 
 /* Эмблема Кванториума (воссоздана по фото):
@@ -1267,6 +1558,23 @@ function applySeasonTheme() {
   document.body.classList.remove(...all);
   const active = getActiveSeason();
   if (active) document.body.classList.add('season-' + active.theme);
+  
+  // --- ЖЁСТКИЙ ФИКС ФОНА (v7: Тёмно-синий) ---
+  if (document.body) {
+    if (active && active.theme === 'newyear') {
+      // Классический новогодний тёмно-синий градиент
+      document.body.style.setProperty('background', 'linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%)', 'important');
+      
+      document.querySelectorAll('.join-screen, .auth-split, .auth-form-side, .auth-art, .dev-art, .container').forEach(el => {
+        el.style.setProperty('background', 'transparent', 'important');
+      });
+    } else {
+      document.body.style.removeProperty('background');
+      document.querySelectorAll('.join-screen, .auth-split, .auth-form-side, .auth-art, .dev-art, .container').forEach(el => {
+        el.style.removeProperty('background');
+      });
+    }
+  }
   return active;
 }
 
@@ -4326,12 +4634,32 @@ async function renderStudentSession() {
     };
 
     if (myRec && myRec.status === 'terminated') {
+      const maxScore = getMaxScore(test);
+      const maxAtt = s.maxAttempts != null ? s.maxAttempts : (test.maxAttempts != null ? test.maxAttempts : 1);
+      const curAtt = myRec.attemptNumber || 1;
+      const canRetry = maxAtt === 0 || curAtt < maxAtt;
+
       app.innerHTML = `<div class="student-wrap" style="margin-top:30px;"><div class="student-card-hero" style="text-align:center;">
         <div style="font-size:64px;">🚫</div>
-        <h1 class="student-title">Тест был прерван</h1>
-        <p class="student-sub">Античит зафиксировал нарушение. Повторное прохождение невозможно.</p>
-        <a href="?mode=student"><button class="btn-start">← Ввести другой код</button></a>
+        <h1 class="student-title">Тест был прерван античитом</h1>
+        <p class="student-sub">Зафиксирован уход со вкладки.<br>Попытка ${curAtt} ${maxAtt > 0 ? 'из ' + maxAtt : '(безлимит)'}</p>
+        ${canRetry ? `<button id="retryBtn" class="btn-start" style="margin-top:16px;background:linear-gradient(135deg,#3b82f6,#60a5fa);">🔄 Попробовать снова</button>` : '<p style="color:#ef4444;font-weight:700;margin-top:16px;">Попытки закончились.</p>'}
+        <a href="?mode=student" style="display:block;margin-top:16px;text-decoration:none;"><button class="btn-start" style="background:#f1f5f9;color:#475569;">← Ввести другой код</button></a>
       </div></div>`;
+
+      if (canRetry) {
+        document.getElementById('retryBtn').onclick = async () => {
+          const newRef = window.FB.ref(window.FB.db, `sessions/${code}/students/${myId}`);
+          await window.FB.update(newRef, {
+            status: (s.mode === 'individual' ? 'intro' : 'waiting'),
+            currentQuestion: 0, correctCount: 0, score: 0,
+            maxStreak: 0, answers: null,
+            attemptNumber: curAtt + 1, startedAt: Date.now(),
+            tabSwitches: 0, copyAttempts: 0, terminateReason: null // сброс нарушений
+          });
+          location.reload();
+        };
+      }
       return;
     }
     if (myRec && myRec.status === 'finished') {
