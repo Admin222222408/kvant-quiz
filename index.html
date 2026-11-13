@@ -3279,9 +3279,20 @@ function openTestEditor(testId, testData) {
       </main>
     </div>`, null, true);
 
-  let questions = JSON.parse(JSON.stringify(initial.questions)).map(q => ({
-    q: q.q, options: q.options, correct: q.correct, image: q.image || '', time: q.time || null
-  }));
+  let questions = JSON.parse(JSON.stringify(initial.questions)).map(q => {
+    const type = q.type || 'single';
+    const out = { q: q.q, type, image: q.image || '', time: q.time || null };
+    if (type === 'single' || type === 'multi') {
+      out.options = q.options || ['','','',''];
+      if (type === 'multi') out.correct = Array.isArray(q.correct) ? q.correct : [];
+      else out.correct = typeof q.correct === 'number' ? q.correct : 0;
+    } else if (type === 'tf') {
+      out.correct = q.correct === 1 || q.correct === true ? 1 : 0;
+    } else if (type === 'text') {
+      out.correct = Array.isArray(q.correct) ? q.correct : [q.correct || ''];
+    }
+    return out;
+  });
   let activeTab = 'settings';
   let activeQ = 0;
   let settings = {
@@ -3489,34 +3500,61 @@ function openTestEditor(testId, testData) {
 
   function renderQuestionEditor() {
     const q = questions[activeQ];
-    editorHead.innerHTML = `
-      <h3><span class="q-badge">${activeQ + 1}</span> ${escapeHtml((q.q || 'Новый вопрос').slice(0, 40))}</h3>
-      <div class="editor-head-actions">
-        <button data-dupe="${activeQ}">📋</button>
-        <button class="danger" data-remove-q="${activeQ}">🗑</button>
-      </div>`;
-    editorBody.innerHTML = `
-      <div class="field-row">
-        <div>
-          <label class="field-label">Текст вопроса <span class="req">*</span></label>
-          <textarea id="qText" style="min-height:110px;">${escapeHtml(q.q)}</textarea>
-          <label class="field-label">⏱ Своё время (сек)</label>
-          <input type="number" id="qTime" min="5" max="300" value="${q.time || ''}" placeholder="${settings.timePerQuestion}">
-        </div>
-        <div>
-          <label class="field-label">Медиа</label>
-          <input type="text" id="qImage" placeholder="URL" value="${escapeHtml(q.image && !q.image.startsWith('data:') ? q.image : '')}">
-          <input type="file" id="qImageFile" accept="image/*">
-          <div class="cover-preview" id="qImagePreview" style="min-height:120px;">${q.image ? `<img src="${escapeAttr(q.image)}">` : '🖼 Превью'}</div>
-        </div>
-      </div>
-      <label class="field-label">Ответы <span class="req">*</span></label>
-      <div>${q.options.map((opt, oi) => `
-        <div class="answer-row ${q.correct === oi ? 'correct' : ''}" data-oi="${oi}">
-          <input type="radio" name="correct" ${q.correct === oi ? 'checked' : ''} data-set-correct="${oi}">
-          <input type="text" class="ans-text" data-oi="${oi}" value="${escapeHtml(opt)}">
-        </div>`).join('')}</div>`;
-
+    const qType = q.type || 'single';
+    
+    editorHead.innerHTML = '<h3><span class="q-badge">' + (activeQ + 1) + '</span> ' + escapeHtml((q.q || 'Новый вопрос').slice(0, 30)) + '</h3>' +
+      '<div class="editor-head-actions">' +
+        '<button data-preview="' + activeQ + '" title="Предпросмотр от ученика">👁</button>' +
+        '<button data-dupe="' + activeQ + '">📋</button>' +
+        '<button class="danger" data-remove-q="' + activeQ + '">🗑</button>' +
+      '</div>';
+    
+    const typesHTML = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">' +
+        '<button type="button" class="small" data-set-type="single" style="' + (qType==='single'?'background:#7c3aed;':'') + '">Один ответ</button>' +
+        '<button type="button" class="small" data-set-type="multi" style="' + (qType==='multi'?'background:#7c3aed;':'') + '">Много ответов</button>' +
+        '<button type="button" class="small" data-set-type="tf" style="' + (qType==='tf'?'background:#7c3aed;':'') + '">Верно/Неверно</button>' +
+        '<button type="button" class="small" data-set-type="text" style="' + (qType==='text'?'background:#7c3aed;':'') + '">Текстовый</button>' +
+      '</div>';
+    
+    let answersHTML = '';
+    if (qType === 'single' || qType === 'multi') {
+      const opts = q.options || ['','','',''];
+      answersHTML = '<label class="field-label">Ответы <span class="req">*</span></label><div>' +
+        opts.map((opt, oi) => 
+          '<div class="answer-row ' + ((Array.isArray(q.correct) ? q.correct.includes(oi) : q.correct === oi) ? 'correct' : '') + '" data-oi="' + oi + '">' +
+            '<input type="' + (qType === 'multi' ? 'checkbox' : 'radio') + '" name="correct_' + activeQ + '" ' + ((Array.isArray(q.correct) ? q.correct.includes(oi) : q.correct === oi) ? 'checked' : '') + ' data-set-correct="' + oi + '">' +
+            '<input type="text" class="ans-text" data-oi="' + oi + '" value="' + escapeHtml(opt) + '">' +
+          '</div>').join('') + '</div>';
+    } else if (qType === 'tf') {
+      const isTrue = q.correct === 1 || q.correct === true || q.correct === 'true';
+      answersHTML = '<label class="field-label">Правильный ответ <span class="req">*</span></label>' +
+        '<div style="display:flex;gap:14px;">' +
+          '<label style="flex:1;display:flex;align-items:center;gap:8px;padding:14px;background:#f0fdf4;border:2px solid #86efac;border-radius:12px;cursor:pointer;font-weight:700;"><input type="radio" name="tfcorrect" value="1" ' + (isTrue?'checked':'') + ' data-set-tf="1"> Верно</label>' +
+          '<label style="flex:1;display:flex;align-items:center;gap:8px;padding:14px;background:#fef2f2;border:2px solid #fecaca;border-radius:12px;cursor:pointer;font-weight:700;"><input type="radio" name="tfcorrect" value="0" ' + (!isTrue?'checked':'') + ' data-set-tf="0"> Неверно</label>' +
+        '</div>';
+    } else if (qType === 'text') {
+      const validAnswers = Array.isArray(q.correct) ? q.correct : [q.correct || ''];
+      answersHTML = '<label class="field-label">Правильные ответы (через запятую или ;) <span class="req">*</span></label>' +
+        '<input type="text" id="qTextAnswer" value="' + escapeHtml(validAnswers.join('; ')) + '" placeholder="октокоптер; окто">' +
+        '<p class="hint">Проверка нечувствительна к регистру и лишним пробелам. Можно указать несколько синонимов через ;</p>';
+    }
+    
+    editorBody.innerHTML = typesHTML +
+      '<div class="field-row">' +
+        '<div>' +
+          '<label class="field-label">Текст вопроса <span class="req">*</span></label>' +
+          '<textarea id="qText" style="min-height:110px;">' + escapeHtml(q.q) + '</textarea>' +
+          '<label class="field-label">⏱ Своё время (сек)</label>' +
+          '<input type="number" id="qTime" min="5" max="300" value="' + (q.time || '') + '" placeholder="' + settings.timePerQuestion + '">' +
+        '</div>' +
+        '<div>' +
+          '<label class="field-label">Медиа</label>' +
+          '<input type="text" id="qImage" placeholder="URL" value="' + escapeHtml(q.image && !q.image.startsWith('data:') ? q.image : '') + '">' +
+          '<input type="file" id="qImageFile" accept="image/*">' +
+          '<div class="cover-preview" id="qImagePreview" style="min-height:120px;">' + (q.image ? '<img src="' + escapeAttr(q.image) + '">' : '🖼 Превью') + '</div>' +
+        '</div>' +
+      '</div>' + answersHTML;
+    
     m.$('#qText').oninput = (e) => { questions[activeQ].q = e.target.value; renderSidebar(); };
     m.$('#qTime').oninput = (e) => {
       const v = e.target.value.trim();
@@ -3525,7 +3563,7 @@ function openTestEditor(testId, testData) {
     m.$('#qImage').oninput = (e) => {
       const v = e.target.value.trim();
       if (v) questions[activeQ].image = v;
-      m.$('#qImagePreview').innerHTML = questions[activeQ].image ? `<img src="${escapeAttr(questions[activeQ].image)}">` : '🖼 Превью';
+      m.$('#qImagePreview').innerHTML = questions[activeQ].image ? '<img src="' + escapeAttr(questions[activeQ].image) + '">' : '🖼 Превью';
     };
     m.$('#qImageFile').onchange = async (e) => {
       const f = e.target.files[0]; if (!f) return;
@@ -3533,14 +3571,91 @@ function openTestEditor(testId, testData) {
         const d = await readFileAsDataURL(f);
         questions[activeQ].image = d;
         m.$('#qImage').value = '';
-        m.$('#qImagePreview').innerHTML = `<img src="${d}">`;
+        m.$('#qImagePreview').innerHTML = '<img src="' + d + '">';
       } catch (err) { alert(err.message); }
     };
-    m.$$('.ans-text').forEach(inp => inp.oninput = () => { questions[activeQ].options[+inp.dataset.oi] = inp.value; });
-    m.$$('[data-set-correct]').forEach(rb => rb.onchange = () => {
-      questions[activeQ].correct = +rb.dataset.setCorrect;
-      m.$$('.answer-row').forEach(r => r.classList.toggle('correct', +r.dataset.oi === questions[activeQ].correct));
+    
+    editorBody.querySelectorAll('[data-set-type]').forEach(b => b.onclick = () => {
+      const newType = b.dataset.setType;
+      const oldType = questions[activeQ].type || 'single';
+      if (newType === oldType) return;
+      questions[activeQ].type = newType;
+      if (newType === 'single') { questions[activeQ].options = questions[activeQ].options || ['','','','']; questions[activeQ].correct = 0; }
+      else if (newType === 'multi') { questions[activeQ].options = questions[activeQ].options || ['','','','']; questions[activeQ].correct = []; }
+      else if (newType === 'tf') { delete questions[activeQ].options; questions[activeQ].correct = 1; }
+      else if (newType === 'text') { delete questions[activeQ].options; questions[activeQ].correct = ['']; }
+      renderSidebar(); renderMain();
     });
+    
+    if (qType === 'single' || qType === 'multi') {
+      m.$$('.ans-text').forEach(inp => inp.oninput = () => { 
+        questions[activeQ].options[+inp.dataset.oi] = inp.value; 
+      });
+      m.$$('[data-set-correct]').forEach(rb => rb.onchange = () => {
+        const oi = +rb.dataset.setCorrect;
+        if (qType === 'single') {
+          questions[activeQ].correct = oi;
+          m.$$('.answer-row').forEach(r => r.classList.toggle('correct', +r.dataset.oi === oi));
+        } else {
+          const set = new Set(questions[activeQ].correct || []);
+          if (rb.checked) set.add(oi); else set.delete(oi);
+          questions[activeQ].correct = Array.from(set);
+          m.$$('.answer-row').forEach(r => r.classList.toggle('correct', (questions[activeQ].correct || []).includes(+r.dataset.oi)));
+        }
+      });
+    }
+    
+    if (qType === 'tf') {
+      m.$$('[data-set-tf]').forEach(rb => rb.onchange = () => {
+        questions[activeQ].correct = +rb.dataset.setTf;
+      });
+    }
+    
+    if (qType === 'text') {
+      const inp = m.$('#qTextAnswer');
+      if (inp) inp.oninput = () => {
+        const arr = inp.value.split(';').map(s => s.trim()).filter(Boolean);
+        questions[activeQ].correct = arr.length ? arr : [''];
+      };
+    }
+    
+    editorHead.querySelector('[data-preview]').onclick = () => {
+      const q = questions[activeQ];
+      const type = q.type || 'single';
+      let answersHTML = '';
+      if (type === 'single' || type === 'multi') {
+        answersHTML = '<div>' + q.options.map((opt, oi) => 
+          '<button class="opt ' + (type === 'multi' ? 'checkbox' : '') + '" data-oi="' + oi + '" disabled>' +
+            '<span class="fig">' + FIGURES[oi] + '</span><span>' + escapeHtml(opt) + '</span>' +
+          '</button>').join('') + '</div>';
+      } else if (type === 'tf') {
+        answersHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">' +
+          '<button class="opt tf-btn" disabled style="background:linear-gradient(135deg,#10b981,#34d399);"><span class="fig">✓</span><span>Верно</span></button>' +
+          '<button class="opt tf-btn" disabled style="background:linear-gradient(135deg,#ef4444,#f87171);"><span class="fig">✗</span><span>Неверно</span></button>' +
+        '</div>';
+      } else if (type === 'text') {
+        answersHTML = '<input type="text" class="short-answer-input" placeholder="Введите ответ..." disabled>';
+      }
+      const pm = openModal('<div class="modal-body">' +
+          '<div style="padding:14px 20px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">' +
+            '<b style="font-size:14px;">👁 Предпросмотр (как видит ученик)</b>' +
+            '<button class="small back" onclick="this.closest(\'.modal-backdrop\').remove()">Закрыть</button>' +
+          '</div>' +
+          '<div style="padding:20px;background:#0f172a;">' +
+            '<div class="preview-frame">' +
+              '<div class="timer-circle" style="opacity:0.5;">' +
+                '<svg viewBox="0 0 76 76"><circle class="t-bg" cx="38" cy="38" r="32"></circle><circle class="t-fg" cx="38" cy="38" r="32" stroke-dasharray="201" stroke-dashoffset="0" stroke="url(#timer-gradient)"></circle></svg>' +
+                '<div class="t-num">20</div>' +
+              '</div>' +
+              '<div style="font-size:12px;color:var(--muted);font-weight:800;text-transform:uppercase;margin-bottom:12px;">Вопрос 1 из N</div>' +
+              (q.image ? '<div class="question-image"><img src="' + escapeAttr(q.image) + '"></div>' : '') +
+              '<p class="question-text">' + escapeHtml(q.q || 'Текст вопроса') + '</p>' +
+              answersHTML +
+            '</div>' +
+          '</div>' +
+        '</div>', 720);
+    };
+    
     editorHead.querySelector('[data-dupe]').onclick = () => {
       const copy = JSON.parse(JSON.stringify(questions[activeQ]));
       questions.splice(activeQ + 1, 0, copy);
@@ -3555,6 +3670,7 @@ function openTestEditor(testId, testData) {
       renderSidebar(); renderMain();
     };
   }
+
 
   m.$('#csvUpload').onchange = async (e) => {
     const f = e.target.files[0]; if (!f) return;
@@ -3589,7 +3705,7 @@ function openTestEditor(testId, testData) {
     if (questions.length === 0) { alert('Добавьте вопросы'); return false; }
     for (let i = 0; i < questions.length; i++) {
       if (!questions[i].q.trim()) { alert(`Вопрос ${i+1}: пустая формулировка`); return false; }
-      if (questions[i].options.some(o => !o.trim())) { alert(`Вопрос ${i+1}: заполните варианты`); return false; }
+      if (questions[i].type !== 'text' && questions[i].type !== 'tf' && questions[i].options && questions[i].options.some(o => !o.trim())) { alert(`Вопрос ${i+1}: заполните варианты`); return false; }
     }
     const now = Date.now();
     const id = testId || genId('t');
@@ -3606,7 +3722,19 @@ function openTestEditor(testId, testData) {
       status: publish ? 'published' : 'draft',
       antiCheatMode: settings.antiCheatMode,
       maxAttempts: parseInt(settings.maxAttempts, 10) || 0,
-      questions: questions.map(q => ({ q: q.q, options: q.options, correct: q.correct, image: q.image || '', time: q.time || null })),
+      questions: questions.map(q => {
+        const type = q.type || 'single';
+        const base = { q: q.q, type, image: q.image || '', time: q.time || null };
+        if (type === 'single' || type === 'multi') {
+          base.options = q.options;
+          base.correct = type === 'multi' ? (Array.isArray(q.correct) ? q.correct : []) : q.correct;
+        } else if (type === 'tf') {
+          base.correct = q.correct === 1 || q.correct === true ? 1 : 0;
+        } else if (type === 'text') {
+          base.correct = Array.isArray(q.correct) ? q.correct : [q.correct];
+        }
+        return base;
+      }),
       createdBy: currentUser.uid, updatedAt: now
     };
     if (isNew) payload.createdAt = now;
@@ -4202,7 +4330,21 @@ async function exportSessionSummary(code, test) {
     }).join('');
     const avg = students.length ? round1(students.reduce((s, st) => s + (st.score || 0), 0) / students.length) : 0;
     const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
-<head><meta charset="UTF-8"><style>${excelStyles()}</style></head><body><table>
+<head><meta charset="UTF-8"><style>${excelStyles()}
+  /* === НОВЫЕ ТИПЫ ВОПРОСОВ === */
+  .opt.checkbox .fig { border-radius: 8px; }
+  .opt.checkbox.checked { filter: brightness(0.9); box-shadow: inset 0 0 0 3px #fff; }
+  .opt.tf-btn { justify-content: center; font-size: 18px; }
+  .short-answer-input {
+    width: 100%; padding: 18px; font-size: 20px; font-weight: 700;
+    border: 3px solid #cbd5e1; border-radius: 14px; text-align: center;
+    margin: 20px 0; transition: border-color 0.2s;
+  }
+  .short-answer-input:focus { border-color: var(--violet); outline: none; box-shadow: 0 0 0 4px rgba(124,58,237,0.15); }
+  .kbd-hint { display: inline-block; padding: 2px 8px; background: rgba(0,0,0,0.1); border-radius: 4px; font-family: monospace; font-size: 11px; margin-left: 6px; }
+  .preview-modal .modal-body { padding: 0; overflow: hidden; border-radius: 22px; background: transparent; }
+  .preview-frame { background: #fff; border-radius: 26px; padding: 32px 28px; box-shadow: 0 24px 60px rgba(0,0,0,0.25); text-align: center; }
+  </style></head><body><table>
   <tr><td colspan="6" class="title">${escapeHtml(session.testTitle || 'Тест')} — сводная</td></tr>
   <tr><td colspan="3" class="header-meta"><b>Учитель:</b> ${escapeHtml(session.teacherName || session.teacherEmail || '—')}</td>
       <td colspan="3" class="header-meta"><b>Дата:</b> ${escapeHtml(formatDate(Date.now()))}</td></tr>
@@ -4948,147 +5090,113 @@ function renderAnsweredHero(sss, topbar, myAnswer) {
     </div>`;
 }
 
+
+window.renderQuestionBody = function(q, idx, totalQ, code, sessionMode) {
+  const timeTotal = q.time || window.syncState.test.timePerQuestion || 20;
+  if (!window.syncState.localQuestionStartTimes) window.syncState.localQuestionStartTimes = {};
+  if (!window.syncState.localQuestionStartTimes[idx]) window.syncState.localQuestionStartTimes[idx] = Date.now();
+  const myStart = window.syncState.localQuestionStartTimes[idx];
+  const remaining = Math.max(0, Math.floor(timeTotal - (Date.now() - myStart) / 1000));
+  const circumference = 2 * Math.PI * 32;
+  const offset = circumference * (1 - remaining / timeTotal);
+  const warning = remaining <= 5;
+
+  const qType = q.type || 'single';
+  let answersHTML = '';
+  
+  if (qType === 'single' || qType === 'multi') {
+    answersHTML = '<div class="answers-box">' + q.options.map((opt, oi) => 
+      '<button class="opt ' + (qType === 'multi' ? 'checkbox' : '') + '" data-oi="' + oi + '">' +
+        '<span class="fig">' + FIGURES[oi] + '</span>' +
+        '<span>' + escapeHtml(opt) + '</span>' +
+      '</button>').join('') + '</div>';
+    if (qType === 'multi') {
+      answersHTML += '<button id="submitMulti" class="btn-start" style="margin-top:14px;background:linear-gradient(135deg,#3b82f6,#60a5fa);" disabled>Ответить <span class="kbd-hint">Enter</span></button>';
+    }
+  } else if (qType === 'tf') {
+    answersHTML = '<div class="answers-box" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">' +
+      '<button class="opt tf-btn" data-oi="1" style="background:linear-gradient(135deg,#10b981,#34d399);"><span class="fig">✓</span><span>Верно</span></button>' +
+      '<button class="opt tf-btn" data-oi="0" style="background:linear-gradient(135deg,#ef4444,#f87171);"><span class="fig">✗</span><span>Неверно</span></button>' +
+    '</div>';
+  } else if (qType === 'text') {
+    answersHTML = '<div><input type="text" id="shortAnswer" class="short-answer-input" placeholder="Введите ответ..." autocomplete="off" autofocus>' +
+      '<button id="submitText" class="btn-start" style="background:linear-gradient(135deg,#3b82f6,#60a5fa);">Ответить <span class="kbd-hint">Enter</span></button></div>';
+  }
+
+  return '<div class="sss-hero">' +
+    '<div class="timer-circle ' + (warning ? 'warning' : '') + '">' +
+      '<svg viewBox="0 0 76 76"><circle class="t-bg" cx="38" cy="38" r="32"></circle><circle class="t-fg" cx="38" cy="38" r="32" stroke-dasharray="' + circumference + '" stroke-dashoffset="' + offset + '"></circle></svg>' +
+      '<div class="t-num" id="syncTimer">' + remaining + '</div>' +
+    '</div>' +
+    '<div style="font-size:12px;color:var(--muted);font-weight:800;text-transform:uppercase;margin-bottom:12px;">Вопрос ' + (idx + 1) + ' из ' + totalQ + '</div>' +
+    (q.image ? '<div class="question-image"><img src="' + escapeAttr(q.image) + '"></div>' : '') +
+    '<p class="question-text">' + escapeHtml(q.q) + '</p>' +
+    answersHTML + '</div>';
+};
+
+window.bindQuestionEvents = function(container, q, idx, totalQ, code, sessionMode) {
+  const qType = q.type || 'single';
+  const timeTotal = q.time || window.syncState.test.timePerQuestion || 20;
+  
+  if (qType === 'single') {
+    container.querySelectorAll('[data-oi]').forEach(b => b.onclick = () => window.submitAnswer(code, idx, +b.dataset.oi, timeTotal, sessionMode, 'single'));
+  } else if (qType === 'multi') {
+    const selected = new Set();
+    const submitBtn = container.querySelector('#submitMulti');
+    container.querySelectorAll('[data-oi]').forEach(b => {
+      b.onclick = () => {
+        const oi = +b.dataset.oi;
+        if (selected.has(oi)) { selected.delete(oi); b.classList.remove('checked'); }
+        else { selected.add(oi); b.classList.add('checked'); }
+        if (submitBtn) submitBtn.disabled = selected.size === 0;
+      };
+    });
+    if (submitBtn) submitBtn.onclick = () => window.submitAnswer(code, idx, Array.from(selected), timeTotal, sessionMode, 'multi');
+    container._submitMulti = () => { if (submitBtn && !submitBtn.disabled) submitBtn.click(); };
+  } else if (qType === 'tf') {
+    container.querySelectorAll('[data-oi]').forEach(b => b.onclick = () => window.submitAnswer(code, idx, +b.dataset.oi, timeTotal, sessionMode, 'tf'));
+  } else if (qType === 'text') {
+    const input = container.querySelector('#shortAnswer');
+    const submitBtn = container.querySelector('#submitText');
+    if (submitBtn) submitBtn.onclick = () => window.submitAnswer(code, idx, input.value, timeTotal, sessionMode, 'text');
+    if (input) input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submitBtn.click(); } });
+    container._submitText = () => { if (submitBtn) submitBtn.click(); };
+  }
+  
+  if (window.syncTimerInterval) clearInterval(window.syncTimerInterval);
+  const myStart = window.syncState.localQuestionStartTimes[idx];
+  function updateTimer() {
+    const el = document.getElementById('syncTimer');
+    const circle = document.querySelector('.timer-circle .t-fg');
+    if (!el) { clearInterval(window.syncTimerInterval); return; }
+    const elapsed = (Date.now() - myStart) / 1000;
+    const rem = Math.max(0, timeTotal - elapsed);
+    el.textContent = Math.ceil(rem);
+    if (circle) circle.style.strokeDashoffset = 201.06 * (1 - rem / timeTotal);
+    if (rem <= 5) el.parentElement.classList.add('warning');
+    if (rem <= 0) {
+      clearInterval(window.syncTimerInterval);
+      if (qType === 'multi') { const btn = container.querySelector('#submitMulti'); if (btn) btn.click(); else window.submitAnswer(code, idx, [], timeTotal, sessionMode, 'multi'); }
+      else if (qType === 'text') window.submitAnswer(code, idx, '', timeTotal, sessionMode, 'text');
+      else window.submitAnswer(code, idx, null, timeTotal, sessionMode, 'single');
+    }
+  }
+  updateTimer();
+  window.syncTimerInterval = setInterval(updateTimer, 50);
+};
+
 function renderLobbyQuestion(sss, topbar, test, idx, code) {
   const q = test.questions[idx];
   if (!q) return;
-  const timeTotal = q.time || test.timePerQuestion || TIME_PER_QUESTION;
-  if (!syncState.localQuestionStartTimes) syncState.localQuestionStartTimes = {};
-  if (!syncState.localQuestionStartTimes[idx]) syncState.localQuestionStartTimes[idx] = Date.now();
-  const myStart = syncState.localQuestionStartTimes[idx];
-  const remaining = Math.max(0, Math.floor(timeTotal - (Date.now() - myStart) / 1000));
-  const circumference = 2 * Math.PI * 32;
-  const offset = circumference * (1 - remaining / timeTotal);
-  const warning = remaining <= 5;
-
-  sss.innerHTML = topbar + `
-    <div class="sss-hero">
-      <div class="timer-circle ${warning ? 'warning' : ''}">
-        <svg viewBox="0 0 76 76">
-          <circle class="t-bg" cx="38" cy="38" r="32"></circle>
-          <circle class="t-fg" cx="38" cy="38" r="32" stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"></circle>
-        </svg>
-        <div class="t-num" id="syncTimer">${remaining}</div>
-      </div>
-      <div style="font-size:12px;color:var(--muted);font-weight:800;text-transform:uppercase;margin-bottom:12px;">
-        Вопрос ${idx + 1} из ${test.questions.length}
-      </div>
-      ${q.image ? `<div class="question-image"><img src="${escapeAttr(q.image)}"></div>` : ''}
-      <p class="question-text">${escapeHtml(q.q)}</p>
-      <div>
-        ${q.options.map((opt, oi) => `
-          <button class="opt" data-oi="${oi}">
-            <span class="fig">${FIGURES[oi]}</span>
-            <span>${escapeHtml(opt)}</span>
-          </button>`).join('')}
-      </div>
-    </div>`;
-
-  sss.querySelectorAll('[data-oi]').forEach(b => b.onclick = () => submitAnswer(code, idx, +b.dataset.oi, timeTotal, 'lobby'));
-
-  if (syncTimerInterval) clearInterval(syncTimerInterval);
-  
-  function updateLobbyTimer() {
-    const el = document.getElementById('syncTimer');
-    const circle = document.querySelector('.timer-circle .t-fg');
-    if (!el) { clearInterval(syncTimerInterval); return; }
-    
-    const now = Date.now();
-    const elapsed = (now - myStart) / 1000;
-    const rem = Math.max(0, timeTotal - elapsed);
-    
-    // Обновляем цифру
-    el.textContent = Math.ceil(rem);
-    
-    // Плавно двигаем полоску (circumference = 2 * Math.PI * 32 ≈ 201.06)
-    if (circle) {
-      const circ = 201.06;
-      const offset = circ * (1 - rem / timeTotal);
-      circle.style.strokeDashoffset = offset;
-    }
-    
-    // Включаем пульсацию на последних 5 секундах
-    if (rem <= 5) el.parentElement.classList.add('warning');
-    
-    // Останавливаем по нулю
-    if (rem <= 0) clearInterval(syncTimerInterval);
-  }
-  
-  updateLobbyTimer();
-  syncTimerInterval = setInterval(updateLobbyTimer, 50);
+  sss.innerHTML = topbar + window.renderQuestionBody(q, idx, test.questions.length, code, 'lobby');
+  window.bindQuestionEvents(sss, q, idx, test.questions.length, code, 'lobby');
 }
-
 function renderIndividualQuestion(sss, topbar, test, idx, code) {
   const q = test.questions[idx];
   if (!q) return;
-  const timeTotal = q.time || test.timePerQuestion || TIME_PER_QUESTION;
-  if (!syncState.localQuestionStartTimes) syncState.localQuestionStartTimes = {};
-  if (!syncState.localQuestionStartTimes[idx]) syncState.localQuestionStartTimes[idx] = Date.now();
-  const myStart = syncState.localQuestionStartTimes[idx];
-  const remaining = Math.max(0, Math.floor(timeTotal - (Date.now() - myStart) / 1000));
-  const circumference = 2 * Math.PI * 32;
-  const offset = circumference * (1 - remaining / timeTotal);
-  const warning = remaining <= 5;
-
-  sss.innerHTML = topbar + `
-    <div class="sss-hero">
-      <div class="timer-circle ${warning ? 'warning' : ''}">
-        <svg viewBox="0 0 76 76">
-          <circle class="t-bg" cx="38" cy="38" r="32"></circle>
-          <circle class="t-fg" cx="38" cy="38" r="32" stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"></circle>
-        </svg>
-        <div class="t-num" id="syncTimer">${remaining}</div>
-      </div>
-      <div style="font-size:12px;color:var(--muted);font-weight:800;text-transform:uppercase;margin-bottom:12px;">
-        Вопрос ${idx + 1} из ${test.questions.length}
-      </div>
-      ${q.image ? `<div class="question-image"><img src="${escapeAttr(q.image)}"></div>` : ''}
-      <p class="question-text">${escapeHtml(q.q)}</p>
-      <div>
-        ${q.options.map((opt, oi) => `
-          <button class="opt" data-oi="${oi}">
-            <span class="fig">${FIGURES[oi]}</span>
-            <span>${escapeHtml(opt)}</span>
-          </button>`).join('')}
-      </div>
-    </div>`;
-
-  sss.querySelectorAll('[data-oi]').forEach(b => b.onclick = () => submitAnswer(code, idx, +b.dataset.oi, timeTotal, 'individual'));
-
-  if (syncTimerInterval) clearInterval(syncTimerInterval);
-  
-  function updateIndividualTimer() {
-    const el = document.getElementById('syncTimer');
-    const circle = document.querySelector('.timer-circle .t-fg');
-    if (!el) { clearInterval(syncTimerInterval); return; }
-    
-    const now = Date.now();
-    const elapsed = (now - myStart) / 1000;
-    const rem = Math.max(0, timeTotal - elapsed);
-    
-    // Обновляем цифру
-    el.textContent = Math.ceil(rem);
-    
-    // Плавно двигаем полоску
-    if (circle) {
-      const circ = 201.06;
-      const offset = circ * (1 - rem / timeTotal);
-      circle.style.strokeDashoffset = offset;
-    }
-    
-    // Включаем пульсацию на последних 5 секундах
-    if (rem <= 5) el.parentElement.classList.add('warning');
-    
-    // Автоматический пропуск по нулю
-    if (rem <= 0) { 
-      clearInterval(syncTimerInterval); 
-      submitAnswer(code, idx, null, timeTotal, 'individual'); 
-    }
-  }
-  
-  updateIndividualTimer();
-  syncTimerInterval = setInterval(updateIndividualTimer, 50);
+  sss.innerHTML = topbar + window.renderQuestionBody(q, idx, test.questions.length, code, 'individual');
+  window.bindQuestionEvents(sss, q, idx, test.questions.length, code, 'individual');
 }
-
 function renderFinishedScreen(sss, topbar, test, myRec, code) {
   const maxScore = getMaxScore(test);
   const score = myRec.score || 0;
@@ -5118,61 +5226,86 @@ function renderFinishedScreen(sss, topbar, test, myRec, code) {
   });
 }
 
-async function submitAnswer(code, idx, oi, timeTotal, sessionMode) {
-  if (acTerminated || syncState.status === 'terminated') return;
-  if (syncState.answersByQ[idx]) return;
-  const test = syncState.test;
+async function submitAnswer(code, idx, answer, timeTotal, sessionMode, qType) {
+  if (window.acTerminated || window.syncState.status === 'terminated') return;
+  if (window.syncState.answersByQ[idx]) return;
+  const test = window.syncState.test;
   const q = test.questions[idx];
-  const isCorrect = oi !== null && oi === q.correct;
-  const myStart = (syncState.localQuestionStartTimes && syncState.localQuestionStartTimes[idx]) || Date.now();
+  const type = qType || q.type || 'single';
+  
+  let isCorrect = false;
+  let selectedIndex = null;
+  let selectedText = null;
+  
+  if (type === 'single' || type === 'tf') {
+    if (answer !== null && answer !== undefined && answer !== -1) {
+      selectedIndex = typeof answer === 'number' ? answer : (answer === 'true' ? 1 : 0);
+      isCorrect = selectedIndex === q.correct;
+      selectedText = q.options ? q.options[selectedIndex] : (selectedIndex === 1 ? 'Верно' : 'Неверно');
+    }
+  } else if (type === 'multi') {
+    const arr = Array.isArray(answer) ? answer : [];
+    selectedIndex = arr;
+    const correctArr = Array.isArray(q.correct) ? q.correct : [q.correct];
+    isCorrect = arr.length === correctArr.length && correctArr.every(c => arr.includes(c));
+    selectedText = arr.map(i => q.options[i]).join(', ');
+  } else if (type === 'text') {
+    const norm = s => String(s || '').trim().toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ').replace(/[.,!?;:()]/g, '');
+    const userAns = norm(answer);
+    const valid = Array.isArray(q.correct) ? q.correct : [q.correct];
+    isCorrect = valid.some(v => norm(v) === userAns);
+    selectedText = String(answer || '').trim();
+  }
+  
+  const myStart = (window.syncState.localQuestionStartTimes && window.syncState.localQuestionStartTimes[idx]) || Date.now();
   const timeSpentMs = Math.max(0, Date.now() - myStart);
   const timeSpentSec = timeSpentMs / 1000;
-  const base = getBasePoints(test);
-  const speedBonus = (isCorrect && sessionMode === 'lobby')
-    ? calcSpeedBonus(test, timeSpentSec, timeTotal) : 0;
-  const points = isCorrect ? round1(base + speedBonus) : 0;
-  if (isCorrect) syncState.currentStreak = (syncState.currentStreak || 0) + 1; else syncState.currentStreak = 0;
-  const newMaxStreak = Math.max(syncState.maxStreak || 0, syncState.currentStreak || 0);
-  const newCorrectCount = (syncState.correctCount || 0) + (isCorrect ? 1 : 0);
-  const newScore = round1((syncState.score || 0) + points);
+  const base = window.getBasePoints(test);
+  const speedBonus = (isCorrect && sessionMode === 'lobby') ? window.calcSpeedBonus(test, timeSpentSec, timeTotal) : 0;
+  const points = isCorrect ? window.round1(base + speedBonus) : 0;
+  
+  if (isCorrect) window.syncState.currentStreak = (window.syncState.currentStreak || 0) + 1; else window.syncState.currentStreak = 0;
+  const newMaxStreak = Math.max(window.syncState.maxStreak || 0, window.syncState.currentStreak || 0);
+  const newCorrectCount = (window.syncState.correctCount || 0) + (isCorrect ? 1 : 0);
+  const newScore = window.round1((window.syncState.score || 0) + points);
+  
   const answerRecord = {
-    selected: oi !== null ? oi : -1,
-    selectedText: oi !== null ? q.options[oi] : null,
+    selected: selectedIndex,
+    selectedText: selectedText,
     correct: isCorrect,
     questionText: q.q,
-    correctText: q.options[q.correct],
+    correctText: type === 'text' ? (Array.isArray(q.correct) ? q.correct[0] : q.correct) : (q.options ? q.options[q.correct] : (q.correct === 1 ? 'Верно' : 'Неверно')),
     image: q.image || '',
-    points, basePoints: base, speedBonus: round1(speedBonus),
-    timeSpentMs, timeSpentSec: round2(timeSpentSec), answeredAt: Date.now()
+    points, basePoints: base, speedBonus: window.round1(speedBonus),
+    timeSpentMs, timeSpentSec: window.round2(timeSpentSec), answeredAt: Date.now()
   };
   try {
-    const updates = {
-      [`answers/${idx}`]: answerRecord,
-      correctCount: newCorrectCount, score: newScore,
-      maxStreak: newMaxStreak, lastAnswerAt: Date.now()
-    };
-    if (sessionMode === 'individual') updates.currentQuestion = idx + 1;
-    await window.FB.update(window.FB.ref(window.FB.db, `sessions/${code}/students/${syncState.studentId}`), updates);
-    syncState.answersByQ[idx] = answerRecord;
-    syncState.correctCount = newCorrectCount;
-    syncState.score = newScore;
-    syncState.maxStreak = newMaxStreak;
+    const updates = {};
+    updates['answers/' + idx] = answerRecord;
+    updates['correctCount'] = newCorrectCount;
+    updates['score'] = newScore;
+    updates['maxStreak'] = newMaxStreak;
+    updates['lastAnswerAt'] = Date.now();
+    if (sessionMode === 'individual') updates['currentQuestion'] = idx + 1;
+    
+    await window.FB.update(window.FB.ref(window.FB.db, 'sessions/' + code + '/students/' + window.syncState.studentId), updates);
+    window.syncState.answersByQ[idx] = answerRecord;
+    window.syncState.correctCount = newCorrectCount;
+    window.syncState.score = newScore;
+    window.syncState.maxStreak = newMaxStreak;
 
     if (sessionMode === 'individual') {
       setTimeout(() => {
         if (idx + 1 >= test.questions.length) {
-          finishStudentIndividual(code);
+          window.finishStudentIndividual(code);
         } else {
           const root = document.getElementById('sss');
-          const topbar = `
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;
-              background:rgba(255,255,255,0.15);padding:12px 18px;border-radius:14px;margin-bottom:14px;color:#fff;font-weight:700;">
-              <span>👤 ${escapeHtml(syncState.studentName)}</span>
-              <span>⭐ ${formatScore(syncState.score)} б.</span>
-            </div>`;
-          renderIndividualQuestion(root, topbar, test, idx + 1, code);
+          const topbar = '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;background:rgba(255,255,255,0.15);padding:12px 18px;border-radius:14px;margin-bottom:14px;color:#fff;font-weight:700;"><span>👤 ' + escapeHtml(window.syncState.studentName) + '</span><span>⭐ ' + window.formatScore(window.syncState.score) + ' б.</span></div>';
+          window.renderIndividualQuestion(root, topbar, test, idx + 1, code);
         }
       }, 600);
+    } else {
+      window.renderAnsweredHero(document.getElementById('sss'), document.querySelector('.sync-student-screen > div'), answerRecord);
     }
   } catch (e) { console.error('submitAnswer:', e); }
 }
@@ -5520,6 +5653,41 @@ function openModal(innerHTML, maxWidth, wide) {
 }
 
 /* ============ ЗАПУСК ============ */
+
+document.addEventListener('keydown', (e) => {
+  if (!document.body.classList.contains('theme-student') && !document.body.classList.contains('theme-teacher')) return;
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+  const key = e.key;
+  const sss = document.getElementById('sss');
+  const phaseContent = document.getElementById('phaseContent');
+  
+  if (sss && sss.innerHTML) {
+    if (['1','2','3','4'].includes(key)) {
+      e.preventDefault();
+      const btn = sss.querySelector('[data-oi="' + (+key - 1) + '"]');
+      if (btn) btn.click();
+    }
+    if (key === 'Enter') {
+      e.preventDefault();
+      if (sss._submitMulti) sss._submitMulti();
+      else if (sss._submitText) sss._submitText();
+    }
+  }
+  
+  if (phaseContent && phaseContent.innerHTML) {
+    if (key === 'ArrowRight' || key === 'r' || key === 'R' || key === 'к' || key === 'К') {
+      e.preventDefault();
+      const next = phaseContent.querySelector('#nextBtn, #revealBtn, #startBtn, #finishBtn');
+      if (next) next.click();
+    }
+    if (key === 'l' || key === 'L' || key === 'д' || key === 'Д') {
+      e.preventDefault();
+      const lb = phaseContent.querySelector('#leaderboardBtn');
+      if (lb) lb.click();
+    }
+  }
+});
+
 function boot() {
   loadTests();
   loadDirections();
